@@ -9,6 +9,9 @@ repositories {
 // define dependencies
 dependencies {
     compile 'com.google.protobuf:protobuf-java:3.4.0'
+    compile 'io.grpc:grpc-core:1.6.1'
+    compile 'io.grpc:grpc-protobuf:1.6.1'
+    compile 'io.grpc:grpc-stub:1.6.1'
 }
 
 // build script
@@ -23,6 +26,22 @@ buildscript {
 }
 
 // protobuf protoc
-protobuf.protoc {
-    artifact = 'com.google.protobuf:protoc:3.4.0'
+protobuf{
+    protoc {
+        artifact = 'com.google.protobuf:protoc:3.4.0'
+    }
+
+    plugins {
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.6.1'
+        }
+    }
+
+    generateProtoTasks {
+        all().each() { task -> 
+            task.plugins {
+                grpc { }
+            }
+        }
+    }
 }
