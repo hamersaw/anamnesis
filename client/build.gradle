@@ -1,5 +1,8 @@
+apply plugin: 'application'
 apply plugin: 'java'
 apply plugin: 'com.google.protobuf'
+
+mainClassName = 'com.bushpath.phoenix.client.Main'
 
 // define repositories
 repositories {

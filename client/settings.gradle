@@ -1,0 +1,4 @@
+rootProject.name = 'phoenix-client'
+
+include ':phoenix'
+project(':phoenix').projectDir = new File(settingsDir, '../')

@@ -1,0 +1,4 @@
+rootProject.name = 'phoenix-datanode'
+
+include ':phoenix'
+project(':phoenix').projectDir = new File(settingsDir, '../')
