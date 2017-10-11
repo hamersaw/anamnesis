@@ -8,6 +8,7 @@ repositories {
 
 // define dependencies
 dependencies {
+    compile 'com.google.protobuf:protobuf-java:3.4.0'
 }
 
 // build script
@@ -22,14 +23,17 @@ buildscript {
 }
 
 // protobuf protoc
-protobuf {
-    protoc {
-        artifact = 'com.google.protobuf:protobuf-java:3.4.0'
-    }
+protobuf.protoc {
+    artifact = 'com.google.protobuf:protoc:3.4.0'
+}
 
-    generateProtoTasks {
-        all().each { task ->
-            // TODO - configure each task
+/*sourceSets {
+    main {
+        proto {
+            srcDirs 'src/main/proto/client', 'src/main/proto/common', 'src/main/proto/hdfs'
+        }
+        java {
+            srcDir 'src/main/java'
         }
     }
-}
+}*/
