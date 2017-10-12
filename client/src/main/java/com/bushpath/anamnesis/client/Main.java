@@ -1,4 +1,4 @@
-package com.bushpath.phoenix.client;
+package com.bushpath.anamnesis.client;
 
 public class Main {
     public static void main(String[] args) {

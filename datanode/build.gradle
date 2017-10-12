@@ -1,7 +1,7 @@
 apply plugin: 'application'
 apply plugin: 'java'
 
-mainClassName = 'com.bushpath.phoenix.datanode.Main'
+mainClassName = 'com.bushpath.anamnesis.datanode.Main'
 
 // define repositories
 repositories {
@@ -10,6 +10,5 @@ repositories {
 
 // define dependencies
 dependencies {
-    compile project(':phoenix')
-    //compile 'com.google.protobuf:protobuf-java:3.4.0'
+    compile project(':anamnesis')
 }

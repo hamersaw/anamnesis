@@ -1,4 +1,4 @@
-package com.bushpath.phoenix.namenode;
+package com.bushpath.anamnesis.namenode.protocol;
 
 import org.apache.hadoop.hdfs.protocol.proto.NamenodeProtocolServiceGrpc;
 

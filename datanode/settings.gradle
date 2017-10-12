@@ -1,4 +1,4 @@
-rootProject.name = 'phoenix-datanode'
+rootProject.name = 'anamnesis-datanode'
 
-include ':phoenix'
-project(':phoenix').projectDir = new File(settingsDir, '../')
+include ':anamnesis'
+project(':anamnesis').projectDir = new File(settingsDir, '../')

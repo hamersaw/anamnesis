@@ -1,4 +1,4 @@
-rootProject.name = 'phoenix-client'
+rootProject.name = 'anamnesis-client'
 
-include ':phoenix'
-project(':phoenix').projectDir = new File(settingsDir, '../')
+include ':anamnesis'
+project(':anamnesis').projectDir = new File(settingsDir, '../')

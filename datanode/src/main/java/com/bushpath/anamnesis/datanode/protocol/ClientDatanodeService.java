@@ -1,4 +1,4 @@
-package com.bushpath.phoenix.datanode;
+package com.bushpath.anamnesis.datanode;
 
 import org.apache.hadoop.hdfs.protocol.proto.ClientDatanodeProtocolServiceGrpc;
 
