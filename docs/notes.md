@@ -1,7 +1,7 @@
 # APPROACHES
 - both require separate API for clients to tell namenodes where to store data
     (is this true? can we just use clients to store data wherever we want?)
-## IMPLEMENT OFF PROTOBUF PROTOCOLS
+## IMPLEMENT PROTOBUF PROTOCOLS
 - extremely lightweight
 - various backend storage systems
 - 1-2 weeks
@@ -9,6 +9,10 @@
 - could be quite difficult (tons of unknown / undocumented code)
 - gives lots of uneccessary functionality
 - ~ 3 weeks
+
+# BUILD ADDITIONAL PROTOCOLS ON TOP?
+- **choose which node to write data to**
+- view datanode resource (consumption)
 
 # PROTOCOLS
 DatanodeLifelineProtocol (1)

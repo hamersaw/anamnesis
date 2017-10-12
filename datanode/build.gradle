@@ -11,4 +11,5 @@ repositories {
 // define dependencies
 dependencies {
     compile project(':anamnesis')
+    compile 'io.grpc:grpc-netty:1.6.1'
 }
