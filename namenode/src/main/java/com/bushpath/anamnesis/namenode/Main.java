@@ -1,13 +1,17 @@
 package com.bushpath.anamnesis.namenode;
 
+import io.grpc.BindableService;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 
+import com.bushpath.anamnesis.GrpcServer;
 import com.bushpath.anamnesis.namenode.protocol.ClientNamenodeService;
 import com.bushpath.anamnesis.namenode.protocol.DatanodeService;
 import com.bushpath.anamnesis.namenode.protocol.NamenodeService;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 public class Main {
@@ -17,8 +21,15 @@ public class Main {
         try {
             int port = 12289;
 
+            // initialize datanode pool
+            DatanodePool datanodePool = new DatanodePool();
+
             // start server
-            NamenodeServer server = new NamenodeServer(port);
+            List<BindableService> services = new ArrayList<>();
+            services.add(new ClientNamenodeService(datanodePool));
+            services.add(new DatanodeService(datanodePool));
+            services.add(new NamenodeService());
+            GrpcServer server = new GrpcServer(port, services);
             server.start();
             logger.info("server started on port " + port);
 
@@ -26,49 +37,6 @@ public class Main {
             server.blockUntilShutdown();
         } catch (Exception e) {
             e.printStackTrace();
-        }
-    }
-
-    private static class NamenodeServer {
-        private Server server;
-        private int port;
-
-        public NamenodeServer(int port) throws IOException {
-            this.server = ServerBuilder.forPort(port)
-                            .addService(new ClientNamenodeService())
-                            .addService(new DatanodeService())
-                            .addService(new NamenodeService())
-                            .build();
-
-            this.port = port;
-        }
-
-        // start server with services
-        private void start() throws IOException {
-            this.server.start();
-
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                @Override
-                public void run() {
-                    System.err.println("Shutting down GRPC server.");
-                    NamenodeServer.this.stop();
-                    System.err.println("Shutdown complete");
-                }
-            });
-        }
-
-        // stop server
-        private void stop() {
-            if (this.server != null) {
-                this.server.shutdown();
-            }
-        }
-
-        // keep server running until implicitly shutdown
-        private void blockUntilShutdown() throws InterruptedException {
-            if (this.server != null) {
-                this.server.awaitTermination();
-            }
         }
     }
 }

@@ -5,6 +5,7 @@ import org.apache.hadoop.hdfs.protocol.proto.DatanodeProtocolProtos;
 import org.apache.hadoop.hdfs.protocol.proto.DatanodeProtocolServiceGrpc;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsServerProtos;
 
+import com.bushpath.anamnesis.namenode.DatanodePool;
 import com.bushpath.anamnesis.protocol.DatanodeProtocol;
 import com.bushpath.anamnesis.protocol.HdfsServer;
 
@@ -16,6 +17,12 @@ public class DatanodeService
         extends DatanodeProtocolServiceGrpc.DatanodeProtocolServiceImplBase {
     private static final Logger logger =
         Logger.getLogger(DatanodeService.class.getName());
+
+    private DatanodePool datanodePool;
+
+    public DatanodeService(DatanodePool datanodePool) {
+        this.datanodePool = datanodePool;
+    }
 
     @Override
     public void registerDatanode(DatanodeProtocolProtos.RegisterDatanodeRequestProto req,
