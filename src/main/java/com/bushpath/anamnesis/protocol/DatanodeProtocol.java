@@ -4,6 +4,8 @@ import org.apache.hadoop.hdfs.protocol.proto.DatanodeProtocolProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsServerProtos;
 
+import java.util.List;
+
 public class DatanodeProtocol {
     public static DatanodeProtocolProtos.RegisterDatanodeRequestProto
         buildRegisterDatanodeRequestProto(
@@ -20,6 +22,28 @@ public class DatanodeProtocol {
 
         return DatanodeProtocolProtos.RegisterDatanodeResponseProto.newBuilder()
             .setRegistration(registration)
+            .build();
+    }
+
+    public static DatanodeProtocolProtos.HeartbeatRequestProto 
+        buildHeartbeatRequestProto(
+            DatanodeProtocolProtos.DatanodeRegistrationProto registration,
+            List<HdfsProtos.StorageReportProto> reports) {
+
+        return DatanodeProtocolProtos.HeartbeatRequestProto.newBuilder()
+            .setRegistration(registration)
+            // TODO - set reports
+            .build();
+    }
+
+    public static DatanodeProtocolProtos.HeartbeatResponseProto 
+        buildHeartbeatResponseProto(
+            List<DatanodeProtocolProtos.DatanodeCommandProto> cmds, // can be empty
+            HdfsServerProtos.NNHAStatusHeartbeatProto haStatus) {
+
+        return DatanodeProtocolProtos.HeartbeatResponseProto.newBuilder()
+            // TODO - set cmds
+            .setHaStatus(haStatus)
             .build();
     }
 

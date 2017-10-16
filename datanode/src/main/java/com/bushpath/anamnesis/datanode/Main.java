@@ -7,6 +7,8 @@ import com.bushpath.anamnesis.datanode.protocol.ClientDatanodeService;
 import com.bushpath.anamnesis.datanode.protocol.DataNodeClient;
 
 import java.io.IOException;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.logging.Logger;
 
 public class Main {
@@ -29,6 +31,10 @@ public class Main {
             DataNodeClient client = new DataNodeClient(namenodeIpAddr, namenodePort);
             client.registerDatanode(ipAddr, hostName, datanodeUuid, xferPort, 
                 infoPort, ipcPort, namespceID, clusterID);
+
+            // start heartbeat timer
+            Timer timer = new Timer(true);
+            timer.scheduleAtFixedRate(new HeartbeatTask(client), 0, 5 * 1000);
 
             // wait until shutdown command issued
             server.blockUntilShutdown();
@@ -75,6 +81,24 @@ public class Main {
             if (this.server != null) {
                 this.server.awaitTermination();
             }
+        }
+    }
+
+    private static class HeartbeatTask extends TimerTask {
+        private DataNodeClient client;
+
+        public HeartbeatTask(DataNodeClient client) {
+            this.client = client;
+        }
+
+        @Override
+        public void run() {
+            String ipAddr = "localhost", hostName = "foo", datanodeUuid = "", 
+                clusterID = "";
+            int xferPort = -1, infoPort = -1, ipcPort = -1, namespceID = 0;
+
+            client.sendHeartbeat(ipAddr, hostName, datanodeUuid, xferPort, 
+                infoPort, ipcPort, namespceID, clusterID);
         }
     }
 }

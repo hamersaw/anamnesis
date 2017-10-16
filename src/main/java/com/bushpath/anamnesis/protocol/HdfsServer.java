@@ -38,4 +38,22 @@ public class HdfsServer {
             .setExpiryDate(expiryDate)
             .build();
     }
+
+    public static HdfsServerProtos.NNHAStatusHeartbeatProto
+        buildNNHAStatusHeartbeatProto(
+            HdfsServerProtos.NNHAStatusHeartbeatProto.State state, long txid) {
+
+        return HdfsServerProtos.NNHAStatusHeartbeatProto.newBuilder()
+            .setState(state)
+            .setTxid(txid)
+            .build();
+    }
+/*message NNHAStatusHeartbeatProto {
+  enum State {
+    ACTIVE = 0;
+    STANDBY = 1;
+  }
+  required State state = 1;
+  required uint64 txid = 2;
+}*/
 }

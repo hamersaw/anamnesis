@@ -64,17 +64,54 @@ public class DataNodeClient {
                 this.KEY_UPDATE_INTERVAL, this.TOKEN_LIFETIME, currentKey, allKeys);
 
         DatanodeProtocolProtos.DatanodeRegistrationProto datanodeRegistrationProto = 
-            DatanodeProtocol.buildDatanodeRegistrationProto(
-            datanodeIDProto ,/*HdfsProtos.DatanodeIDProto datanodeID*/
-            storageInfoProto, /*HdfsServerProtos.StorageInfoProto storageInfo*/
-            exportedBlockKeysProto, /*HdfsServerProtos.ExportedBlockKeysProto keys*/
-            this.HDFS_VERSION); /*String softwareVersion*/
+            DatanodeProtocol.buildDatanodeRegistrationProto( datanodeIDProto,
+                storageInfoProto, exportedBlockKeysProto, this.HDFS_VERSION);
 
-        DatanodeProtocolProtos.RegisterDatanodeRequestProto request =
+        DatanodeProtocolProtos.RegisterDatanodeRequestProto req =
             DatanodeProtocol.buildRegisterDatanodeRequestProto(datanodeRegistrationProto);
 
         // send RegisterDatanodeRequestProto
         DatanodeProtocolProtos.RegisterDatanodeResponseProto response =
-            this.blockingStub.registerDatanode(request);
+            this.blockingStub.registerDatanode(req);
+
+        // TODO - handle response
+    }
+
+    public void sendHeartbeat(String ipAddr, String hostName, String datanodeUuid,
+            int xferPort, int infoPort, int ipcPort, int namespceID, String clusterID) {
+        logger.info("sending heartbeat");
+
+        // construct heartbeat request protobuf components
+        HdfsProtos.DatanodeIDProto datanodeIDProto = Hdfs.buildDatanodeIDProto(
+                ipAddr, hostName, datanodeUuid, xferPort, infoPort, ipcPort);
+
+        HdfsServerProtos.StorageInfoProto storageInfoProto = 
+            HdfsServer.buildStorageInfoProto(this.LAYOUT_VERSION, namespceID, 
+                clusterID, System.currentTimeMillis());
+
+        HdfsServerProtos.BlockKeyProto currentKey = HdfsServer.buildBlockKeyProto(
+            this.currentKeyID, System.currentTimeMillis() + this.TOKEN_LIFETIME);
+
+        List<HdfsServerProtos.BlockKeyProto> allKeys = new ArrayList<>(); // TODO - fill
+
+        HdfsServerProtos.ExportedBlockKeysProto exportedBlockKeysProto =
+            HdfsServer.buildExportedBlockKeysProto(this.IS_BLOCK_TOKEN_ENABLED, 
+                this.KEY_UPDATE_INTERVAL, this.TOKEN_LIFETIME, currentKey, allKeys);
+
+        DatanodeProtocolProtos.DatanodeRegistrationProto datanodeRegistrationProto = 
+            DatanodeProtocol.buildDatanodeRegistrationProto( datanodeIDProto,
+                storageInfoProto, exportedBlockKeysProto, this.HDFS_VERSION);
+
+        List<HdfsProtos.StorageReportProto> reports = new ArrayList<>();
+        
+        DatanodeProtocolProtos.HeartbeatRequestProto req = 
+            DatanodeProtocol.buildHeartbeatRequestProto(
+                    datanodeRegistrationProto, reports);
+
+        // send HeartbeatRequest
+        DatanodeProtocolProtos.HeartbeatResponseProto respnose =
+            this.blockingStub.sendHeartbeat(req);
+
+        // TODO - handle response
     }
 }
