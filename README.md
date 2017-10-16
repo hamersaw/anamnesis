@@ -3,4 +3,5 @@
 An in-memory, location aware, HDFS based file system.
 
 ## TODO
-- everything
+- configuration files for datanode and namenode (java resource?)
+- implement datanode service (in namenode)

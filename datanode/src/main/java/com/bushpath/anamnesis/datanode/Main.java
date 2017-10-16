@@ -4,6 +4,7 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 
 import com.bushpath.anamnesis.datanode.protocol.ClientDatanodeService;
+import com.bushpath.anamnesis.datanode.protocol.DataNodeClient;
 
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -13,12 +14,21 @@ public class Main {
 
     public static void main(String[] args) {
         try {
-            int port = 15605;
-
             // start server
-            DatanodeServer server = new DatanodeServer(port);
+            int serverPort = 15605;
+            DatanodeServer server = new DatanodeServer(serverPort);
             server.start();
-            logger.info("server started on port " + port);
+            logger.info("server started on port " + serverPort);
+            
+            // start DataNodeClient
+            String namenodeIpAddr = "localhost", ipAddr = "localhost", 
+                hostName = "foo", datanodeUuid = "", clusterID = "";
+            int namenodePort = 12289, xferPort = -1, infoPort = -1, ipcPort = -1,
+                namespceID = 0;
+
+            DataNodeClient client = new DataNodeClient(namenodeIpAddr, namenodePort);
+            client.registerDatanode(ipAddr, hostName, datanodeUuid, xferPort, 
+                infoPort, ipcPort, namespceID, clusterID);
 
             // wait until shutdown command issued
             server.blockUntilShutdown();

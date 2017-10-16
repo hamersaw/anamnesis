@@ -33,7 +33,7 @@ public class Main {
         private Server server;
         private int port;
 
-        public DatanodeServer(int port) throws IOException {
+        public NamenodeServer(int port) throws IOException {
             this.server = ServerBuilder.forPort(port)
                             .addService(new ClientNamenodeService())
                             .addService(new DatanodeService())
@@ -51,7 +51,7 @@ public class Main {
                 @Override
                 public void run() {
                     System.err.println("Shutting down GRPC server.");
-                    DatanodeServer.this.stop();
+                    NamenodeServer.this.stop();
                     System.err.println("Shutdown complete");
                 }
             });

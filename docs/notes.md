@@ -4,11 +4,11 @@
 ## IMPLEMENT PROTOBUF PROTOCOLS
 - extremely lightweight
 - various backend storage systems
-- 1-2 weeks
+- ~1 week
 ## EXTEND HDFS IMPLEMENTATION
 - could be quite difficult (tons of unknown / undocumented code)
 - gives lots of uneccessary functionality
-- ~ 3 weeks
+- ~3 weeks
 
 # BUILD ADDITIONAL PROTOCOLS ON TOP?
 - **choose which node to write data to**
