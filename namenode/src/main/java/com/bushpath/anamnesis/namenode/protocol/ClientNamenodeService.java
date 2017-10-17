@@ -5,6 +5,7 @@ import org.apache.hadoop.hdfs.protocol.proto.ClientNamenodeProtocolGrpc;
 import org.apache.hadoop.hdfs.protocol.proto.ClientNamenodeProtocolProtos;
 
 import com.bushpath.anamnesis.namenode.DatanodeManager;
+import com.bushpath.anamnesis.protocol.ClientNamenodeProtocol;
 
 import java.util.logging.Logger;
 
@@ -31,7 +32,12 @@ public class ClientNamenodeService
     public void mkdirs(ClientNamenodeProtocolProtos.MkdirsRequestProto req,
             StreamObserver<ClientNamenodeProtocolProtos.MkdirsResponseProto>
             responseObserver) {
+        logger.info("creating directory '" + req.getSrc() + "'");
 
+        ClientNamenodeProtocolProtos.MkdirsResponseProto response =
+            ClientNamenodeProtocol.buildMkdirsResponseProto(false);
+
+        responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 }

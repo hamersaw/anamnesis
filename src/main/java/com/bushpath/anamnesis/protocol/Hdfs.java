@@ -16,4 +16,10 @@ public class Hdfs {
             .setIpcPort(ipcPort)
             .build();
     }
+
+    public static HdfsProtos.FsPermissionProto buildFsPermissionProto(int perm) {
+        return HdfsProtos.FsPermissionProto.newBuilder()
+            .setPerm(perm) // only 16 bits used
+            .build();
+    }
 }

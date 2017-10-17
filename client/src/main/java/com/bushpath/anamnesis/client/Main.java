@@ -3,8 +3,6 @@ package com.bushpath.anamnesis.client;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
-import java.util.logging.Logger;
-
 public class Main {
     public static final String USAGE = 
         "anamnesis [OPTIONS] COMMAND\n" +
@@ -14,11 +12,9 @@ public class Main {
         "    --path              remove path\n" +
         "  COMMANDS\n" +
         "    help                display this screen\n" +
-        "    mkdir               create a directory";
+        "    mkdir               create a directory (--path)";
 
     public static void main(String[] args) {
-        //DFSClient dfsClient = new DFSClient("localhost", 8020);
-
         // parse arguments
         Arguments arguments = new Arguments();
         JCommander.newBuilder()
@@ -26,9 +22,13 @@ public class Main {
             .build()
             .parse(args);
 
+        // create DFSClient
+        DFSClient dfsClient = new DFSClient("localhost", 8020);
+
+        // execute command
         switch (arguments.command) {
         case "mkdir":
-            System.out.println("TODO - mkdir '" + arguments.path + "'");
+            dfsClient.mkdir(arguments.path);
             break;
         case "help":
         default:
