@@ -19,7 +19,7 @@ public class Main {
 
     public static void main(String[] args) {
         try {
-            int port = 12289;
+            int port = 8020;
 
             // initialize managers
             DatanodeManager datanodeManager = new DatanodeManager();

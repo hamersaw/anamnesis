@@ -3,6 +3,15 @@ apply plugin: 'java'
 
 mainClassName = 'com.bushpath.anamnesis.client.Main'
 
+task execute(type: JavaExec, dependsOn: assemble) {
+    classpath sourceSets.main.runtimeClasspath
+    main = "com.bushpath.anamnesis.client.Main"
+
+    if ( project.hasProperty("appArgs") ) {
+        args Eval.me(appArgs)
+    }
+}
+
 // define repositories
 repositories {
     mavenCentral()
@@ -11,4 +20,5 @@ repositories {
 // define dependencies
 dependencies {
     compile project(":anamnesis")
+    compile 'com.beust:jcommander:1.72'
 }

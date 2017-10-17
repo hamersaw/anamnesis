@@ -21,18 +21,17 @@ public class Main {
     public static void main(String[] args) {
         try {
             // start server
-            int serverPort = 15605;
+            int xferPort = 50010, ipcPort = 50020, infoPort = 50075;
             List<BindableService> services = new ArrayList<>();
             services.add(new ClientDatanodeService());
-            GrpcServer server = new GrpcServer(15605, services);
+            GrpcServer server = new GrpcServer(ipcPort, services);
             server.start();
-            logger.info("server started on port " + serverPort);
+            logger.info("server started on port " + ipcPort);
             
             // start DatanodeClient
             String namenodeIpAddr = "localhost", ipAddr = "localhost", 
                 hostName = "foo", datanodeUuid = "", clusterID = "";
-            int namenodePort = 12289, xferPort = -1, infoPort = -1, ipcPort = -1,
-                namespceID = 0;
+            int namenodePort = 8020, namespceID = 0;
 
             DatanodeClient client = new DatanodeClient(namenodeIpAddr, namenodePort);
             client.registerDatanode(ipAddr, hostName, datanodeUuid, xferPort, 
