@@ -5,7 +5,7 @@ import org.apache.hadoop.hdfs.protocol.proto.DatanodeProtocolProtos;
 import org.apache.hadoop.hdfs.protocol.proto.DatanodeProtocolServiceGrpc;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsServerProtos;
 
-import com.bushpath.anamnesis.namenode.DatanodePool;
+import com.bushpath.anamnesis.namenode.DatanodeManager;
 import com.bushpath.anamnesis.protocol.DatanodeProtocol;
 import com.bushpath.anamnesis.protocol.HdfsServer;
 
@@ -18,10 +18,10 @@ public class DatanodeService
     private static final Logger logger =
         Logger.getLogger(DatanodeService.class.getName());
 
-    private DatanodePool datanodePool;
+    private DatanodeManager datanodeManager;
 
-    public DatanodeService(DatanodePool datanodePool) {
-        this.datanodePool = datanodePool;
+    public DatanodeService(DatanodeManager datanodeManager) {
+        this.datanodeManager = datanodeManager;
     }
 
     @Override
@@ -29,6 +29,7 @@ public class DatanodeService
             StreamObserver<DatanodeProtocolProtos.RegisterDatanodeResponseProto> 
             responseObserver) {
         logger.info("TODO - registering datanode");
+        this.datanodeManager.processRegistration(req);
 
         // TODO - do some stuff eh
         DatanodeProtocolProtos.RegisterDatanodeResponseProto response =
@@ -43,6 +44,7 @@ public class DatanodeService
             StreamObserver<DatanodeProtocolProtos.HeartbeatResponseProto>
             responseObserver) {
         logger.info("TODO - datanode heartbeat");
+        this.datanodeManager.processHeartbeat(req);
 
         // TODO - do some stuff eh
         // can be empty

@@ -15,9 +15,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class DataNodeClient {
+public class DatanodeClient {
     private static final Logger logger = 
-        Logger.getLogger(DataNodeClient.class.getName());
+        Logger.getLogger(DatanodeClient.class.getName());
     private static final String HDFS_VERSION = "2.8.0";
     private static final int LAYOUT_VERSION = 0;
     private static final boolean IS_BLOCK_TOKEN_ENABLED = false;
@@ -31,7 +31,7 @@ public class DataNodeClient {
     // instance variables
     protected int currentKeyID;
 
-    public DataNodeClient(String host, int port) {
+    public DatanodeClient(String host, int port) {
         // construct channel and initialize blocking stub
         this.channel = ManagedChannelBuilder.forAddress(host, port)
                         .usePlaintext(true)

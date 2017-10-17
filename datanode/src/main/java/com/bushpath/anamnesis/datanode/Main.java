@@ -6,7 +6,7 @@ import io.grpc.ServerBuilder;
 
 import com.bushpath.anamnesis.GrpcServer;
 import com.bushpath.anamnesis.datanode.protocol.ClientDatanodeService;
-import com.bushpath.anamnesis.datanode.protocol.DataNodeClient;
+import com.bushpath.anamnesis.datanode.protocol.DatanodeClient;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,13 +28,13 @@ public class Main {
             server.start();
             logger.info("server started on port " + serverPort);
             
-            // start DataNodeClient
+            // start DatanodeClient
             String namenodeIpAddr = "localhost", ipAddr = "localhost", 
                 hostName = "foo", datanodeUuid = "", clusterID = "";
             int namenodePort = 12289, xferPort = -1, infoPort = -1, ipcPort = -1,
                 namespceID = 0;
 
-            DataNodeClient client = new DataNodeClient(namenodeIpAddr, namenodePort);
+            DatanodeClient client = new DatanodeClient(namenodeIpAddr, namenodePort);
             client.registerDatanode(ipAddr, hostName, datanodeUuid, xferPort, 
                 infoPort, ipcPort, namespceID, clusterID);
 
@@ -50,9 +50,9 @@ public class Main {
     }
 
     private static class HeartbeatTask extends TimerTask {
-        private DataNodeClient client;
+        private DatanodeClient client;
 
-        public HeartbeatTask(DataNodeClient client) {
+        public HeartbeatTask(DatanodeClient client) {
             this.client = client;
         }
 

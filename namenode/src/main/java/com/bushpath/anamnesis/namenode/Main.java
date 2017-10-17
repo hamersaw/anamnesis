@@ -21,13 +21,13 @@ public class Main {
         try {
             int port = 12289;
 
-            // initialize datanode pool
-            DatanodePool datanodePool = new DatanodePool();
+            // initialize managers
+            DatanodeManager datanodeManager = new DatanodeManager();
 
             // start server
             List<BindableService> services = new ArrayList<>();
-            services.add(new ClientNamenodeService(datanodePool));
-            services.add(new DatanodeService(datanodePool));
+            services.add(new ClientNamenodeService(datanodeManager));
+            services.add(new DatanodeService(datanodeManager));
             services.add(new NamenodeService());
             GrpcServer server = new GrpcServer(port, services);
             server.start();
