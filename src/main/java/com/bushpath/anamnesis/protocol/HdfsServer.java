@@ -26,7 +26,7 @@ public class HdfsServer {
             .setKeyUpdateInterval(keyUpdateInterval)
             .setTokenLifeTime(tokenLifeTime)
             .setCurrentKey(currentKey)
-            // TODO - all keys
+            .addAllAllKeys(allKeys)
             .build();
     }
 
@@ -48,12 +48,4 @@ public class HdfsServer {
             .setTxid(txid)
             .build();
     }
-/*message NNHAStatusHeartbeatProto {
-  enum State {
-    ACTIVE = 0;
-    STANDBY = 1;
-  }
-  required State state = 1;
-  required uint64 txid = 2;
-}*/
 }

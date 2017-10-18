@@ -32,7 +32,7 @@ public class DatanodeProtocol {
 
         return DatanodeProtocolProtos.HeartbeatRequestProto.newBuilder()
             .setRegistration(registration)
-            // TODO - set reports
+            .addAllReports(reports)
             .build();
     }
 
@@ -42,7 +42,7 @@ public class DatanodeProtocol {
             HdfsServerProtos.NNHAStatusHeartbeatProto haStatus) {
 
         return DatanodeProtocolProtos.HeartbeatResponseProto.newBuilder()
-            // TODO - set cmds
+            .addAllCmds(cmds)
             .setHaStatus(haStatus)
             .build();
     }

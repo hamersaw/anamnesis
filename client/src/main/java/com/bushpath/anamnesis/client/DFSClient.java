@@ -12,9 +12,14 @@ public class DFSClient {
         this.clientNamenodeClient = new ClientNamenodeClient(ipAddr, port);
     }
 
+    public void ls(String path) {
+        logger.info("get listings for '" + path + "'");
+        this.clientNamenodeClient.getListing(path, new byte[]{}, false);
+    }
+
     public void mkdir(String path) {
         logger.info("creating directory '" + path + "'");
-        this.clientNamenodeClient.mkdir(path, 65535, true);
+        this.clientNamenodeClient.mkdir(path, Integer.MAX_VALUE, true);
     }
 
     public void create(String path) {

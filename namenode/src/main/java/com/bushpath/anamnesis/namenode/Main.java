@@ -23,10 +23,11 @@ public class Main {
 
             // initialize managers
             DatanodeManager datanodeManager = new DatanodeManager();
+            NameSystem nameSystem = new NameSystem();
 
             // start server
             List<BindableService> services = new ArrayList<>();
-            services.add(new ClientNamenodeService(datanodeManager));
+            services.add(new ClientNamenodeService(datanodeManager, nameSystem));
             services.add(new DatanodeService(datanodeManager));
             services.add(new NamenodeService());
             GrpcServer server = new GrpcServer(port, services);

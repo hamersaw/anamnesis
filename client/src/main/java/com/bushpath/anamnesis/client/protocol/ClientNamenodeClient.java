@@ -9,6 +9,7 @@ import org.apache.hadoop.hdfs.protocol.proto.ClientNamenodeProtocolProtos;
 import org.apache.hadoop.hdfs.protocol.proto.ClientNamenodeProtocolGrpc;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
+import java.util.List;
 import java.util.logging.Logger;
 
 public class ClientNamenodeClient {
@@ -28,6 +29,25 @@ public class ClientNamenodeClient {
                         .build();
 
         this.blockingStub = ClientNamenodeProtocolGrpc.newBlockingStub(channel);
+    }
+
+    public void getListing(String path, byte[] startAfter, boolean needLocation) {
+        // construct protobuf components
+        ClientNamenodeProtocolProtos.GetListingRequestProto req =
+            ClientNamenodeProtocol.buildGetListingRequestProto(path, 
+                startAfter, needLocation);
+
+        // send GetListingRequestProto
+        ClientNamenodeProtocolProtos.GetListingResponseProto response =
+            this.blockingStub.getListing(req);
+
+        // TODO - handle response
+        List<HdfsProtos.HdfsFileStatusProto> list = response.getDirList()
+            .getPartialListingList();
+
+        for (HdfsProtos.HdfsFileStatusProto file: list) {
+            System.out.println(file.getFileType() + ":" + file.getModificationTime());
+        }
     }
 
     public void mkdir(String path, int perm, boolean createParent) {

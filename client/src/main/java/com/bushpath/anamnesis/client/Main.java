@@ -12,6 +12,7 @@ public class Main {
         "    --path              remove path\n" +
         "  COMMANDS\n" +
         "    help                display this screen\n" +
+        "    ls                  list contents (--path)\n" +
         "    mkdir               create a directory (--path)";
 
     public static void main(String[] args) {
@@ -27,6 +28,9 @@ public class Main {
 
         // execute command
         switch (arguments.command) {
+        case "ls":
+            dfsClient.ls(arguments.path);
+            break;
         case "mkdir":
             dfsClient.mkdir(arguments.path);
             break;
