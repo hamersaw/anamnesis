@@ -6,7 +6,7 @@ An in-memory, location aware, HDFS based file system.
 #### NAMENODE
 > gradle run
 #### DATANODE
-> TODO
+> gradle execute -PappArgs="['src/main/resources/config1.properties']"
 #### CLIENT
 > gradle execute -PappArgs="['mkdir','--path','foo/bar']"
 > gradle execute -PappArgs="['mkdir','--path','foo/baz']"

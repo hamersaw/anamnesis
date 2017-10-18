@@ -3,6 +3,15 @@ apply plugin: 'java'
 
 mainClassName = 'com.bushpath.anamnesis.datanode.Main'
 
+task execute(type: JavaExec, dependsOn: assemble) {
+    classpath sourceSets.main.runtimeClasspath
+    main = "com.bushpath.anamnesis.datanode.Main"
+
+    if ( project.hasProperty("appArgs") ) {
+        args Eval.me(appArgs)
+    }
+}
+
 // define repositories
 repositories {
     mavenCentral()

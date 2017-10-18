@@ -9,8 +9,6 @@ import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 import com.bushpath.anamnesis.namenode.DatanodeManager;
 import com.bushpath.anamnesis.namenode.NameSystem;
 import com.bushpath.anamnesis.namenode.NameSystemFile;
-import com.bushpath.anamnesis.protocol.ClientNamenodeProtocol;
-import com.bushpath.anamnesis.protocol.Hdfs;
 
 import java.util.ArrayList;
 import java.util.Collection;

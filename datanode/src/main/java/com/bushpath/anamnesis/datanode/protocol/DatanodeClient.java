@@ -2,14 +2,14 @@ package com.bushpath.anamnesis.datanode.protocol;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-
-import com.bushpath.anamnesis.protocol.DatanodeProtocol;
-import com.bushpath.anamnesis.protocol.Hdfs;
-import com.bushpath.anamnesis.protocol.HdfsServer;
 import org.apache.hadoop.hdfs.protocol.proto.DatanodeProtocolProtos;
 import org.apache.hadoop.hdfs.protocol.proto.DatanodeProtocolServiceGrpc;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsServerProtos;
+
+import com.bushpath.anamnesis.protocol.DatanodeProtocol;
+import com.bushpath.anamnesis.protocol.Hdfs;
+import com.bushpath.anamnesis.protocol.HdfsServer;
 
 import java.util.ArrayList;
 import java.util.List;

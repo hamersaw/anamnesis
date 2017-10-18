@@ -20,26 +20,30 @@ public class Main {
 
     public static void main(String[] args) {
         try {
+            // parse configuration file
+            if (args.length != 1) {
+                System.out.println("USAGE: ./datanode CONFIG_FILE");
+                System.exit(1);
+            }
+            Configuration config = new Configuration(args[0]);
+
             // start server
-            int xferPort = 50010, ipcPort = 50020, infoPort = 50075;
             List<BindableService> services = new ArrayList<>();
             services.add(new ClientDatanodeService());
-            GrpcServer server = new GrpcServer(ipcPort, services);
+            GrpcServer server = new GrpcServer(config.ipcPort, services);
             server.start();
-            logger.info("server started on port " + ipcPort);
+            logger.info("server started on port " + config.ipcPort);
             
             // start DatanodeClient
-            String namenodeIpAddr = "localhost", ipAddr = "localhost", 
-                hostName = "foo", datanodeUuid = "", clusterID = "";
-            int namenodePort = 8020, namespceID = 0;
-
-            DatanodeClient client = new DatanodeClient(namenodeIpAddr, namenodePort);
-            client.registerDatanode(ipAddr, hostName, datanodeUuid, xferPort, 
-                infoPort, ipcPort, namespceID, clusterID);
+            DatanodeClient client = new DatanodeClient(config.namenodeIpAddr,
+                config.namenodePort);
+            client.registerDatanode(config.ipAddr, config.hostname, config.datanodeUuid,
+                config.xferPort, config.infoPort, config.ipcPort, 
+                config.namespceId, config.clusterId);
 
             // start heartbeat timer
             Timer timer = new Timer(true);
-            timer.scheduleAtFixedRate(new HeartbeatTask(client), 0, 5 * 1000);
+            timer.scheduleAtFixedRate(new HeartbeatTask(client, config), 0, 5 * 1000);
 
             // wait until shutdown command issued
             server.blockUntilShutdown();
@@ -50,19 +54,18 @@ public class Main {
 
     private static class HeartbeatTask extends TimerTask {
         private DatanodeClient client;
+        private Configuration config;
 
-        public HeartbeatTask(DatanodeClient client) {
+        public HeartbeatTask(DatanodeClient client, Configuration config) {
             this.client = client;
+            this.config = config;
         }
 
         @Override
         public void run() {
-            String ipAddr = "localhost", hostName = "foo", datanodeUuid = "", 
-                clusterID = "";
-            int xferPort = -1, infoPort = -1, ipcPort = -1, namespceID = 0;
-
-            client.sendHeartbeat(ipAddr, hostName, datanodeUuid, xferPort, 
-                infoPort, ipcPort, namespceID, clusterID);
+            client.sendHeartbeat(this.config.ipAddr, this.config.hostname, 
+                this.config.datanodeUuid, this.config.xferPort, this.config.infoPort,
+                this.config.ipcPort, this.config.namespceId, this.config.clusterId);
         }
     }
 }
