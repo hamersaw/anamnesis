@@ -32,62 +32,25 @@ public class ClientNamenodeClient {
         this.blockingStub = ClientNamenodeProtocolGrpc.newBlockingStub(channel);
     }
 
-    public void create(String path, int perm, String clientName, int createFlag,
-            boolean createParent, int replication, long blockSize) {
+    public void addBlock() {
 
-        // construct protobuf components
-        HdfsProtos.FsPermissionProto fsPermissionProto = 
-            Hdfs.buildFsPermissionProto(perm);
-
-        List<HdfsProtos.CryptoProtocolVersionProto> cryptoProtocolVersion
-            = new ArrayList<>();
-        cryptoProtocolVersion.add(
-                HdfsProtos.CryptoProtocolVersionProto.UNKNOWN_PROTOCOL_VERSION);
-
-        ClientNamenodeProtocolProtos.CreateRequestProto req =
-            ClientNamenodeProtocol.buildCreateRequestProto(path, fsPermissionProto,
-                clientName, createFlag, createParent, replication, blockSize,
-                cryptoProtocolVersion);
-
-        // send CreateRequestProto
-        ClientNamenodeProtocolProtos.CreateResponseProto response =
-            this.blockingStub.create(req);
-
-        // TODO - handle response
     }
 
-    public void getListing(String path, byte[] startAfter, boolean needLocation) {
-        // construct protobuf components
-        ClientNamenodeProtocolProtos.GetListingRequestProto req =
-            ClientNamenodeProtocol.buildGetListingRequestProto(path, 
-                startAfter, needLocation);
+    public ClientNamenodeProtocolProtos.CreateResponseProto 
+        create(ClientNamenodeProtocolProtos.CreateRequestProto req) {
 
-        // send GetListingRequestProto
-        ClientNamenodeProtocolProtos.GetListingResponseProto response =
-            this.blockingStub.getListing(req);
-
-        // TODO - handle response
-        List<HdfsProtos.HdfsFileStatusProto> list = response.getDirList()
-            .getPartialListingList();
-
-        for (HdfsProtos.HdfsFileStatusProto file: list) {
-            System.out.println(file.getFileType() + ":" + file.getModificationTime());
-        }
+        return this.blockingStub.create(req);
     }
 
-    public void mkdir(String path, int perm, boolean createParent) {
-        // construct protobuf components
-        HdfsProtos.FsPermissionProto fsPermissionProto = 
-            Hdfs.buildFsPermissionProto(perm);
+    public ClientNamenodeProtocolProtos.GetListingResponseProto 
+        getListing(ClientNamenodeProtocolProtos.GetListingRequestProto req) {
+ 
+        return this.blockingStub.getListing(req);
+    }
 
-        ClientNamenodeProtocolProtos.MkdirsRequestProto req = 
-            ClientNamenodeProtocol.buildMkdirsRequestProto(path, 
-                fsPermissionProto, createParent);
-
-        // send MkdirsRequestProto
-        ClientNamenodeProtocolProtos.MkdirsResponseProto response =
-            this.blockingStub.mkdirs(req);
-
-        // TODO - handle response
+    public ClientNamenodeProtocolProtos.MkdirsResponseProto
+        mkdirs(ClientNamenodeProtocolProtos.MkdirsRequestProto req) {
+            
+        return this.blockingStub.mkdirs(req);
     }
 }

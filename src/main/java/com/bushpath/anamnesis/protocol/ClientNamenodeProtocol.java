@@ -8,6 +8,25 @@ import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 import java.util.List;
 
 public class ClientNamenodeProtocol {
+    public static ClientNamenodeProtocolProtos.AddBlockRequestProto
+        buildAddBlockRequestProto(String src, String clientName,
+            List<String> favoredNodes) {
+
+        return ClientNamenodeProtocolProtos.AddBlockRequestProto.newBuilder()
+            .setSrc(src)
+            .setClientName(clientName)
+            .addAllFavoredNodes(favoredNodes)
+            .build();
+    }
+
+    public static ClientNamenodeProtocolProtos.AddBlockResponseProto
+        buildAddBlockResponsetProto(HdfsProtos.LocatedBlockProto block) {
+
+        return ClientNamenodeProtocolProtos.AddBlockResponseProto.newBuilder()
+            .setBlock(block)
+            .build();
+    }
+
     public static ClientNamenodeProtocolProtos.CreateRequestProto
         buildCreateRequestProto(String src, HdfsProtos.FsPermissionProto masked, 
             String clientName, int createFlag, boolean createParent, int replication,
