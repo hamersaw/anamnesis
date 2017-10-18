@@ -4,7 +4,7 @@ An in-memory, location aware, HDFS based file system.
 
 ## EXECUTE
 #### NAMENODE
-> gradle run
+> gradle execute -PappArgs="['src/main/resources/config.properties']"
 #### DATANODE
 > gradle execute -PappArgs="['src/main/resources/config1.properties']"
 #### CLIENT
@@ -13,7 +13,6 @@ An in-memory, location aware, HDFS based file system.
 > gradle execute -PappArgs="['ls','--path','foo']"
 
 ## TODO
-- configuration files for datanode and namenode (java resource?)
+- complete implementing creating new file
 - combine code from create and mkdirs in NameSystem namenode code
-- set file path name in Hdfs.HdfsFileStatusProto (ls command)
 - implement datanode heartbeat storage information (datanode side)

@@ -19,7 +19,12 @@ public class Main {
 
     public static void main(String[] args) {
         try {
-            int port = 8020;
+            // parse configuration file
+            if (args.length != 1) {
+                System.out.println("USAGE: ./namenode CONFIG_FILE");
+                System.exit(1);
+            }
+            Configuration config = new Configuration(args[0]);
 
             // initialize managers
             DatanodeManager datanodeManager = new DatanodeManager();
@@ -30,9 +35,9 @@ public class Main {
             services.add(new ClientNamenodeService(datanodeManager, nameSystem));
             services.add(new DatanodeService(datanodeManager));
             services.add(new NamenodeService());
-            GrpcServer server = new GrpcServer(port, services);
+            GrpcServer server = new GrpcServer(config.port, services);
             server.start();
-            logger.info("server started on port " + port);
+            logger.info("server started on port " + config.port);
 
             // wait until shutdown command issued
             server.blockUntilShutdown();
