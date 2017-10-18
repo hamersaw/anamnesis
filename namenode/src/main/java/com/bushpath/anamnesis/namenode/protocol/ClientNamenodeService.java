@@ -1,5 +1,6 @@
 package com.bushpath.anamnesis.namenode.protocol;
 
+import com.google.protobuf.ByteString;
 import io.grpc.stub.StreamObserver;
 import org.apache.hadoop.hdfs.protocol.proto.ClientNamenodeProtocolGrpc;
 import org.apache.hadoop.hdfs.protocol.proto.ClientNamenodeProtocolProtos;
@@ -46,7 +47,8 @@ public class ClientNamenodeService
 
         // respond to request
         ClientNamenodeProtocolProtos.CreateResponseProto response =
-            ClientNamenodeProtocol.buildCreateResponseProto();
+            ClientNamenodeProtocolProtos.CreateResponseProto.newBuilder()
+                .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
@@ -71,26 +73,41 @@ public class ClientNamenodeService
         List<HdfsProtos.HdfsFileStatusProto> list = new ArrayList<>();
         for (NameSystemFile file: files) {
             HdfsProtos.FsPermissionProto permission = 
-                Hdfs.buildFsPermissionProto(file.perm);
+                HdfsProtos.FsPermissionProto.newBuilder()
+                    .setPerm(file.perm)
+                    .build();
 
             HdfsProtos.HdfsFileStatusProto.FileType fileType = 
                 file.file ? HdfsProtos.HdfsFileStatusProto.FileType.IS_FILE : 
                 HdfsProtos.HdfsFileStatusProto.FileType.IS_DIR;
 
-            HdfsProtos.HdfsFileStatusProto fileProto = Hdfs.buildHdfsFileStatusProto(
-                fileType, new byte[]{}, file.length, permission, file.owner, file.group, 
-                file.modificationTime, file.accessTime);
+            HdfsProtos.HdfsFileStatusProto fileProto = 
+                HdfsProtos.HdfsFileStatusProto.newBuilder()
+                    .setFileType(fileType)
+                    .setPath(ByteString.copyFrom(file.name.getBytes()))
+                    .setLength(file.length)
+                    .setPermission(permission)
+                    .setOwner(file.owner)
+                    .setGroup(file.group)
+                    .setModificationTime(file.modificationTime)
+                    .setAccessTime(file.accessTime)
+                    .build();
 
             list.add(fileProto);
         }
 
 
         HdfsProtos.DirectoryListingProto directoryListingProto = 
-            Hdfs.buildDirectoryListingProto(list, 0);
+            HdfsProtos.DirectoryListingProto.newBuilder()
+                .addAllPartialListing(list)
+                .setRemainingEntries(0)
+                .build();
 
         // respond to request
         ClientNamenodeProtocolProtos.GetListingResponseProto response =
-            ClientNamenodeProtocol.buildGetListingResponseProto(directoryListingProto);
+            ClientNamenodeProtocolProtos.GetListingResponseProto.newBuilder()
+                .setDirList(directoryListingProto)
+                .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
@@ -103,18 +120,20 @@ public class ClientNamenodeService
         logger.info("recv create directory request");
 
         // use name system to make directory
-        boolean success = true;
+        boolean result = true;
         try {
             this.nameSystem.mkdir(req.getSrc(), req.getMasked().getPerm(),
                 req.getCreateParent());
         } catch (Exception e) {
             logger.severe(e.toString());
-            success = false;
+            result = false;
         }
 
         // respond to request
         ClientNamenodeProtocolProtos.MkdirsResponseProto response =
-            ClientNamenodeProtocol.buildMkdirsResponseProto(success);
+            ClientNamenodeProtocolProtos.MkdirsResponseProto.newBuilder()
+                .setResult(result)
+                .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();

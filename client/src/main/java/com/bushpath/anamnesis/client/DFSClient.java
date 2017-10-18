@@ -72,7 +72,9 @@ public class DFSClient {
             .getPartialListingList();
 
         for (HdfsProtos.HdfsFileStatusProto file: list) {
-            System.out.println(file.getFileType() + ":" + file.getModificationTime());
+            System.out.println(new String(file.getPath().toByteArray())
+                    + ":" + file.getFileType() 
+                    + ":" + file.getModificationTime());
         }
     }
 
