@@ -17,13 +17,46 @@ public class NameSystem {
 
     public NameSystem() {
         this.lock = new ReentrantReadWriteLock();
-        this.root = new NameSystemFile("", true, false, Integer.MAX_VALUE, 0);
+        this.root = NameSystemFile.newDirectory("", "NAMESYSTEM", 
+            "NAMESYSTEM", Integer.MAX_VALUE);
     }
 
-    public void create(String path, int perm) throws Exception {
+    public void create(String path, int perm, String owner, boolean createParent,
+            long blockSize) throws Exception {
         this.lock.writeLock().lock();
         try {
-            logger.info("TODO");
+            NameSystemFile current = this.root;
+            String[] elements = parseElements(path);
+
+            // iterate over path elements
+            for (int i=0; i<elements.length; i++) {
+                if (i == elements.length - 1) {
+                    // last element
+                    if (current.children.containsKey(elements[i])) {
+                        throw new Exception("directory already exists");
+                    } else {
+                        // create file
+                        NameSystemFile f = NameSystemFile.newFile(elements[i], 
+                                "NAMESYSTEM", "NAMESYSTEM", perm, blockSize);
+                        f.parent = current;
+                        current.children.put(elements[i], f);
+                    }
+                } else {
+                    // not last element
+                    if (current.children.containsKey(elements[i])) {
+                        current = current.children.get(elements[i]);
+                    } else if (createParent) {
+                        // create missing directory
+                        NameSystemFile f = NameSystemFile.newDirectory(elements[i], 
+                            "NAMESYSTEM", "NAMESYSTEM", perm);
+                        f.parent = current;
+                        current.children.put(elements[i], f);
+                        current = f;
+                    } else {
+                        throw new Exception("parent directory doesn't exist");
+                    }
+                }
+            }
         } finally {
             this.lock.writeLock().unlock();
         }
@@ -72,10 +105,10 @@ public class NameSystem {
                         throw new Exception("directory already exists");
                     } else {
                         // create directory
-                        NameSystemFile f = 
-                            new NameSystemFile(elements[i], true, false, perm, 0);
+                        NameSystemFile f = NameSystemFile.newDirectory(elements[i], 
+                            "NAMESYSTEM", "NAMESYSTEM", perm);
                         f.parent = current;
-                        current = current.children.put(elements[i], f);
+                        current.children.put(elements[i], f);
                     }
                 } else {
                     // not last element
@@ -83,8 +116,8 @@ public class NameSystem {
                         current = current.children.get(elements[i]);
                     } else if (createParent) {
                         // create missing directory
-                        NameSystemFile f = 
-                            new NameSystemFile(elements[i], true, false, perm, 0);
+                        NameSystemFile f = NameSystemFile.newDirectory(elements[i], 
+                            "NAMESYSTEM", "NAMESYSTEM", perm);
                         f.parent = current;
                         current.children.put(elements[i], f);
                         current = f;

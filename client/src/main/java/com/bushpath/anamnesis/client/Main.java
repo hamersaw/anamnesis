@@ -12,6 +12,7 @@ public class Main {
         "    --path              remove path\n" +
         "  COMMANDS\n" +
         "    help                display this screen\n" +
+        "    create              create a new file (--path)\n" +
         "    ls                  list contents (--path)\n" +
         "    mkdir               create a directory (--path)";
 
@@ -28,6 +29,9 @@ public class Main {
 
         // execute command
         switch (arguments.command) {
+        case "create":
+            dfsClient.create(arguments.path);
+            break;
         case "ls":
             dfsClient.ls(arguments.path);
             break;

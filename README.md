@@ -14,6 +14,6 @@ An in-memory, location aware, HDFS based file system.
 
 ## TODO
 - configuration files for datanode and namenode (java resource?)
-- set file path name in Hdfs.HdfsFileStatusProto
+- combine code from create and mkdirs in NameSystem namenode code
+- set file path name in Hdfs.HdfsFileStatusProto (ls command)
 - implement datanode heartbeat storage information (datanode side)
-- implement datanode service (in namenode)

@@ -36,6 +36,19 @@ public class ClientNamenodeService
             responseObserver) {
         logger.info("recv create request");
 
+        // create file with name system
+        try {
+            this.nameSystem.create(req.getSrc(), req.getMasked().getPerm(),
+                req.getClientName(), req.getCreateParent(), req.getBlockSize());
+        } catch (Exception e) {
+            logger.severe(e.toString());
+        }
+
+        // respond to request
+        ClientNamenodeProtocolProtos.CreateResponseProto response =
+            ClientNamenodeProtocol.buildCreateResponseProto();
+
+        responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
@@ -51,6 +64,7 @@ public class ClientNamenodeService
             files = this.nameSystem.getListing(req.getSrc());
         } catch (Exception e) {
             logger.severe(e.toString());
+            files = new ArrayList<>();
         }
     
         // convert NameSystemFile to HdfsFileStatusProto
