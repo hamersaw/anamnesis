@@ -6,8 +6,6 @@ import org.apache.hadoop.hdfs.protocol.proto.DatanodeProtocolServiceGrpc;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsServerProtos;
 
 import com.bushpath.anamnesis.namenode.DatanodeManager;
-import com.bushpath.anamnesis.protocol.DatanodeProtocol;
-import com.bushpath.anamnesis.protocol.HdfsServer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +31,9 @@ public class DatanodeService
 
         // TODO - do some stuff eh
         DatanodeProtocolProtos.RegisterDatanodeResponseProto response =
-            DatanodeProtocol.buildRegisterDatanodeResponseProto(req.getRegistration());
+            DatanodeProtocolProtos.RegisterDatanodeResponseProto.newBuilder()
+                .setRegistration(req.getRegistration())
+                .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
@@ -51,11 +51,16 @@ public class DatanodeService
         List<DatanodeProtocolProtos.DatanodeCommandProto> cmds = new ArrayList<>();
 
         HdfsServerProtos.NNHAStatusHeartbeatProto status = 
-            HdfsServer.buildNNHAStatusHeartbeatProto(
-                HdfsServerProtos.NNHAStatusHeartbeatProto.State.ACTIVE, 0);
+            HdfsServerProtos.NNHAStatusHeartbeatProto.newBuilder()
+                .setState(HdfsServerProtos.NNHAStatusHeartbeatProto.State.ACTIVE)
+                .setTxid(0)
+                .build();
 
         DatanodeProtocolProtos.HeartbeatResponseProto response =
-            DatanodeProtocol.buildHeartbeatResponseProto(cmds, status);
+            DatanodeProtocolProtos.HeartbeatResponseProto.newBuilder()
+                .addAllCmds(cmds)
+                .setHaStatus(status)
+                .build();
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
