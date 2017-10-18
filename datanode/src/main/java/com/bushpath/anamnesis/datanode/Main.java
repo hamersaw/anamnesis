@@ -11,8 +11,6 @@ import com.bushpath.anamnesis.datanode.protocol.DatanodeClient;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.logging.Logger;
 
 public class Main {
@@ -34,38 +32,16 @@ public class Main {
             server.start();
             logger.info("server started on port " + config.ipcPort);
             
-            // start DatanodeClient
+            // start HeartbeatManager
             DatanodeClient client = new DatanodeClient(config.namenodeIpAddr,
                 config.namenodePort);
-            client.registerDatanode(config.ipAddr, config.hostname, config.datanodeUuid,
-                config.xferPort, config.infoPort, config.ipcPort, 
-                config.namespceId, config.clusterId);
 
-            // start heartbeat timer
-            Timer timer = new Timer(true);
-            timer.scheduleAtFixedRate(new HeartbeatTask(client, config), 0, 5 * 1000);
+            HeartbeatManager heartbeatManager = new HeartbeatManager(client, config);
 
             // wait until shutdown command issued
             server.blockUntilShutdown();
         } catch (Exception e) {
             e.printStackTrace();
-        }
-    }
-
-    private static class HeartbeatTask extends TimerTask {
-        private DatanodeClient client;
-        private Configuration config;
-
-        public HeartbeatTask(DatanodeClient client, Configuration config) {
-            this.client = client;
-            this.config = config;
-        }
-
-        @Override
-        public void run() {
-            client.sendHeartbeat(this.config.ipAddr, this.config.hostname, 
-                this.config.datanodeUuid, this.config.xferPort, this.config.infoPort,
-                this.config.ipcPort, this.config.namespceId, this.config.clusterId);
         }
     }
 }
