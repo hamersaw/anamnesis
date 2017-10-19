@@ -27,15 +27,22 @@ public class DatanodeService
             StreamObserver<DatanodeProtocolProtos.RegisterDatanodeResponseProto> 
             responseObserver) {
         logger.info("TODO - registering datanode");
-        this.datanodeManager.processRegistration(req);
+        
+        try {
+            this.datanodeManager.processRegistration(req);
 
-        // TODO - do some stuff eh
-        DatanodeProtocolProtos.RegisterDatanodeResponseProto response =
-            DatanodeProtocolProtos.RegisterDatanodeResponseProto.newBuilder()
-                .setRegistration(req.getRegistration())
-                .build();
+            // TODO - do some stuff eh
+            DatanodeProtocolProtos.RegisterDatanodeResponseProto response =
+                DatanodeProtocolProtos.RegisterDatanodeResponseProto.newBuilder()
+                    .setRegistration(req.getRegistration())
+                    .build();
 
-        responseObserver.onNext(response);
+            responseObserver.onNext(response);
+        } catch (Exception e) {
+            logger.severe(e.toString());
+            responseObserver.onError(e);
+        }
+
         responseObserver.onCompleted();
     }
 
@@ -44,25 +51,32 @@ public class DatanodeService
             StreamObserver<DatanodeProtocolProtos.HeartbeatResponseProto>
             responseObserver) {
         logger.info("TODO - datanode heartbeat");
-        this.datanodeManager.processHeartbeat(req);
 
-        // TODO - do some stuff eh
-        // can be empty
-        List<DatanodeProtocolProtos.DatanodeCommandProto> cmds = new ArrayList<>();
+        try {
+            this.datanodeManager.processHeartbeat(req);
 
-        HdfsServerProtos.NNHAStatusHeartbeatProto status = 
-            HdfsServerProtos.NNHAStatusHeartbeatProto.newBuilder()
-                .setState(HdfsServerProtos.NNHAStatusHeartbeatProto.State.ACTIVE)
-                .setTxid(0)
-                .build();
+            // TODO - do some stuff eh
+            // can be empty
+            List<DatanodeProtocolProtos.DatanodeCommandProto> cmds = new ArrayList<>();
 
-        DatanodeProtocolProtos.HeartbeatResponseProto response =
-            DatanodeProtocolProtos.HeartbeatResponseProto.newBuilder()
-                .addAllCmds(cmds)
-                .setHaStatus(status)
-                .build();
+            HdfsServerProtos.NNHAStatusHeartbeatProto status = 
+                HdfsServerProtos.NNHAStatusHeartbeatProto.newBuilder()
+                    .setState(HdfsServerProtos.NNHAStatusHeartbeatProto.State.ACTIVE)
+                    .setTxid(0)
+                    .build();
 
-        responseObserver.onNext(response);
+            DatanodeProtocolProtos.HeartbeatResponseProto response =
+                DatanodeProtocolProtos.HeartbeatResponseProto.newBuilder()
+                    .addAllCmds(cmds)
+                    .setHaStatus(status)
+                    .build();
+
+            responseObserver.onNext(response);
+        } catch (Exception e) {
+            logger.severe(e.toString());
+            responseObserver.onError(e);
+        }
+
         responseObserver.onCompleted();
     }
 }

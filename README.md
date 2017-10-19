@@ -21,7 +21,6 @@ An in-memory, location aware, HDFS based file system.
 > ./anamnesis.sh download --path foo/test.txt --local-path /tmp/test2.txt
 
 ## TODO
-- return errors from stream observer
 - support favoredNodes on 'create' method (decide which node the data is written to)
 - lots of refactoring (clean this stuff up)
 - implement any kind of error handling!
