@@ -10,24 +10,24 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.logging.Logger;
 
 public class DatanodeManager {
     private static final Logger logger =
         Logger.getLogger(DatanodeManager.class.getName());
-    private static final int STORAGE_REPORT_BUFFER_SIZE = 100;
 
     protected ReadWriteLock lock;
+    protected Random random;
 
-    protected Map<String, HdfsProtos.DatanodeIDProto> datanodes;
-    protected Map<String, List<HdfsProtos.StorageReportProto>> storageReports;
+    protected Map<String, HdfsProtos.DatanodeInfoProto> datanodes;
     protected Map<String, Long> mostRecentHeartbeatMillis;
 
     public DatanodeManager() {
         this.lock = new ReentrantReadWriteLock();
+        this.random = new Random();
         this.datanodes = new HashMap<>();
-        this.storageReports = new HashMap<>();
         this.mostRecentHeartbeatMillis = new HashMap<>();
     }
 
@@ -50,8 +50,13 @@ public class DatanodeManager {
             if (this.datanodes.containsKey(datanodeUuid)) {
                 // TODO - datanode already registered -> error
             } else {
-                this.datanodes.put(datanodeUuid, datanodeIDProto);
-                this.storageReports.put(datanodeUuid, new ArrayList<>());
+                HdfsProtos.DatanodeInfoProto datanodeInfoProto =
+                    HdfsProtos.DatanodeInfoProto.newBuilder()
+                        .setId(datanodeIDProto)
+                        .setLastUpdate(System.currentTimeMillis())
+                        .build();
+
+                this.datanodes.put(datanodeUuid, datanodeInfoProto);
             }
         } finally {
             lock.writeLock().unlock();
@@ -67,33 +72,33 @@ public class DatanodeManager {
             // retrieve datanode uuid
             String datanodeUuid = datanodeIDProto.getDatanodeUuid();
 
-            // update most recent heartbeat millis
-            this.mostRecentHeartbeatMillis.put(datanodeUuid, System.currentTimeMillis());
+            // update last updated
+            HdfsProtos.DatanodeInfoProto datanodeInfoProto =
+                HdfsProtos.DatanodeInfoProto.newBuilder()
+                    .mergeFrom(this.datanodes.get(datanodeUuid))
+                    .setLastUpdate(System.currentTimeMillis())
+                    .build();
 
-            if (!this.storageReports.containsKey(datanodeUuid)) {
-                // TODO - datanode not registered -> error
-            } else {
-                List<HdfsProtos.StorageReportProto> list =
-                    this.storageReports.get(datanodeUuid);
-
-                List<HdfsProtos.StorageReportProto> reports = req.getReportsList();
-                logger.info("adding " + reports.size() 
-                        + " storage reports for datanode '" + datanodeUuid + "'");
-
-                // TODO - ensure reports is smaller than STORAGE_REPORT_BUFFER_SIZE
-                // remove old reports to keep list size under STORAGE_REPORT_BUFFER_SIZE
-                int delta = (list.size() + reports.size())
-                    - this.STORAGE_REPORT_BUFFER_SIZE;
-
-                for (int i=delta; i>0; i--) {
-                    list.remove(list.size() - 1);
-                }
-
-                // add new reports
-                list.addAll(reports);
-            }
+            this.datanodes.put(datanodeUuid, datanodeInfoProto);
         } finally {
             lock.writeLock().unlock();
         }
+    }
+
+    public HdfsProtos.DatanodeInfoProto storeBlock(long blockId, long blockSize,
+            List<String> favoredNodes) {
+
+        // try all favored nodes
+        if (favoredNodes != null) {
+            for (String favoredNode: favoredNodes) {
+                if (this.datanodes.containsKey(favoredNode)) {
+                    return this.datanodes.get(favoredNode);
+                }
+            }
+        }
+
+        // return random node
+        Object[] array = this.datanodes.values().toArray();
+        return (HdfsProtos.DatanodeInfoProto) array[this.random.nextInt(array.length)];
     }
 }

@@ -7,45 +7,58 @@ public class Main {
     public static final String USAGE = 
         "anamnesis [OPTIONS] COMMAND\n" +
         "  OPTIONS\n" +
-        "    -i --ip             ip address of namenode\n" +
-        "    -p --port           port of namenode\n" +
-        "    --path              remove path\n" +
+        "    -c --client       client name\n" +
+        "    -i --ip           ip address of namenode\n" +
+        "    -o --port         port of namenode\n" +
+        "\n" +
+        "    -b --block-size   size of blocks in file\n" +
+        "    -l --local-path   local path\n" +
+        "    -p --path         remove path\n" +
         "  COMMANDS\n" +
-        "    help                display this screen\n" +
-        "    create              create a new file (--path)\n" +
-        "    ls                  list contents (--path)\n" +
-        "    mkdir               create a directory (--path)";
+        "    help              display this screen\n" +
+        "    ls                list contents (-p)\n" +
+        "    mkdir             create a directory (-p)\n" +
+        "    upload            create a new file (-b, -l, -p)";
 
     public static void main(String[] args) {
-        // parse arguments
-        Arguments arguments = new Arguments();
-        JCommander.newBuilder()
-            .addObject(arguments)
-            .build()
-            .parse(args);
+        try {
+            // parse arguments
+            Arguments arguments = new Arguments();
+            JCommander.newBuilder()
+                .addObject(arguments)
+                .build()
+                .parse(args);
 
-        // create DFSClient
-        DFSClient dfsClient = new DFSClient("localhost", 8020);
+            // create DFSClient
+            DFSClient dfsClient = new DFSClient(arguments.ip, arguments.port, 
+                arguments.client);
 
-        // execute command
-        switch (arguments.command) {
-        case "create":
-            dfsClient.create(arguments.path);
-            break;
-        case "ls":
-            dfsClient.ls(arguments.path);
-            break;
-        case "mkdir":
-            dfsClient.mkdir(arguments.path);
-            break;
-        case "help":
-        default:
-            System.out.println(USAGE);
-            System.exit(0);
+            // execute command
+            switch (arguments.command) {
+            case "ls":
+                dfsClient.ls(arguments.path);
+                break;
+            case "mkdir":
+                dfsClient.mkdir(arguments.path);
+                break;
+            case "upload":
+                dfsClient.upload(arguments.localPath, arguments.path, 
+                    arguments.blockSize);
+                break;
+            case "help":
+            default:
+                System.out.println(USAGE);
+                System.exit(0);
+            }
+        } catch (Exception e) {
+            System.out.println("Unexpected Error:" + e.toString());
         }
     }
 
     private static class Arguments {
+        @Parameter(names = {"-c", "--client"}, description = "client name")
+        String client = "anamnesis";
+
         @Parameter(names = {"-i", "--ip"}, description = "ip address of namenode")
         String ip = "localhost";
 
@@ -57,5 +70,11 @@ public class Main {
 
         @Parameter(names = {"--path"}, description = "path" )
         String path;
+
+        @Parameter(names = {"--local-path"}, description = "local path" )
+        String localPath;
+
+        @Parameter(names = {"--block-size"}, description = "block size" )
+        Integer blockSize = 64000;
     }
 }

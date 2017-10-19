@@ -13,6 +13,6 @@ An in-memory, location aware, HDFS based file system.
 > gradle execute -PappArgs="['ls','--path','foo']"
 
 ## TODO
+- implement any kind of error handling!
 - complete implementing creating new file
-- combine code from create and mkdirs in NameSystem namenode code
-- implement datanode heartbeat storage information (datanode side)
+- implement datanode heartbeat storage information (integrate into addBlock)

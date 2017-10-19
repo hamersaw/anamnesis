@@ -17,12 +17,11 @@ public class NameSystem {
 
     public NameSystem() {
         this.lock = new ReentrantReadWriteLock();
-        this.root = NameSystemFile.newDirectory("", "NAMESYSTEM", 
-            "NAMESYSTEM", Integer.MAX_VALUE);
+        this.root = NameSystemFile.newDirectory("", Integer.MAX_VALUE);
     }
 
-    public void create(String path, int perm, String owner, boolean createParent,
-            long blockSize) throws Exception {
+    public void create(String path, int perm, String owner, 
+            boolean createParent, long blockSize) throws Exception {
         this.lock.writeLock().lock();
         try {
             NameSystemFile current = this.root;
@@ -37,7 +36,7 @@ public class NameSystem {
                     } else {
                         // create file
                         NameSystemFile f = NameSystemFile.newFile(elements[i], 
-                                "NAMESYSTEM", "NAMESYSTEM", perm, blockSize);
+                                owner, "NAMESYSTEM", perm, blockSize);
                         f.parent = current;
                         current.children.put(elements[i], f);
                     }
@@ -47,8 +46,8 @@ public class NameSystem {
                         current = current.children.get(elements[i]);
                     } else if (createParent) {
                         // create missing directory
-                        NameSystemFile f = NameSystemFile.newDirectory(elements[i], 
-                            "NAMESYSTEM", "NAMESYSTEM", perm);
+                        NameSystemFile f = 
+                            NameSystemFile.newDirectory(elements[i], perm);
                         f.parent = current;
                         current.children.put(elements[i], f);
                         current = f;
@@ -65,16 +64,21 @@ public class NameSystem {
     public Collection<NameSystemFile> getListing(String path) throws Exception {
         this.lock.readLock().lock();
         try {
+            // check if path is root
+            if (path.replaceAll("/", "").isEmpty()) {
+                return this.root.children.values();
+            }
+
             NameSystemFile current = this.root;
             String[] elements = parseElements(path);
 
-            // find file refered to by path
+            // iterate over path elements
             for (int i=0; i<elements.length; i++) {
-                if (!current.children.containsKey(elements[i])) {
-                    throw new Exception("directory doesn't exist");
+                if (current.children.containsKey(elements[i])) {
+                    current = current.children.get(elements[i]);
+                } else {
+                    throw new Exception("file '" + elements[i] + "' doesn't exist");
                 }
-
-                current = current.children.get(elements[i]);
             }
 
             if (current.file) {
@@ -105,8 +109,8 @@ public class NameSystem {
                         throw new Exception("directory already exists");
                     } else {
                         // create directory
-                        NameSystemFile f = NameSystemFile.newDirectory(elements[i], 
-                            "NAMESYSTEM", "NAMESYSTEM", perm);
+                        NameSystemFile f =
+                            NameSystemFile.newDirectory(elements[i], perm);
                         f.parent = current;
                         current.children.put(elements[i], f);
                     }
@@ -116,8 +120,8 @@ public class NameSystem {
                         current = current.children.get(elements[i]);
                     } else if (createParent) {
                         // create missing directory
-                        NameSystemFile f = NameSystemFile.newDirectory(elements[i], 
-                            "NAMESYSTEM", "NAMESYSTEM", perm);
+                        NameSystemFile f =
+                            NameSystemFile.newDirectory(elements[i], perm);
                         f.parent = current;
                         current.children.put(elements[i], f);
                         current = f;
@@ -128,6 +132,27 @@ public class NameSystem {
             }
         } finally {
             this.lock.writeLock().unlock();
+        }
+    }
+
+    public NameSystemFile getFile(String path) throws Exception {
+        this.lock.readLock().lock();
+        try {
+            NameSystemFile current = this.root;
+            String[] elements = parseElements(path);
+
+            // iterate over path elements
+            for (int i=0; i<elements.length; i++) {
+                if (current.children.containsKey(elements[i])) {
+                    current = current.children.get(elements[i]);
+                } else {
+                    throw new Exception("file '" + path + "' doesn't exist");
+                }
+            }
+
+            return current;
+        } finally {
+            this.lock.readLock().unlock();
         }
     }
 

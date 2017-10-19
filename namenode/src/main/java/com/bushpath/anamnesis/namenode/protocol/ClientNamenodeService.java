@@ -5,7 +5,10 @@ import io.grpc.stub.StreamObserver;
 import org.apache.hadoop.hdfs.protocol.proto.ClientNamenodeProtocolGrpc;
 import org.apache.hadoop.hdfs.protocol.proto.ClientNamenodeProtocolProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
+import org.apache.hadoop.security.proto.SecurityProtos;
 
+import com.bushpath.anamnesis.namenode.Block;
+import com.bushpath.anamnesis.namenode.BlockManager;
 import com.bushpath.anamnesis.namenode.DatanodeManager;
 import com.bushpath.anamnesis.namenode.NameSystem;
 import com.bushpath.anamnesis.namenode.NameSystemFile;
@@ -20,13 +23,103 @@ public class ClientNamenodeService
     private static final Logger logger =
         Logger.getLogger(ClientNamenodeService.class.getName());
 
+    private BlockManager blockManager;
     private DatanodeManager datanodeManager;
     private NameSystem nameSystem;
 
-    public ClientNamenodeService(DatanodeManager datanodeManager,
-            NameSystem nameSystem) {
+    public ClientNamenodeService(BlockManager blockManager,
+            DatanodeManager datanodeManager, NameSystem nameSystem) {
+        this.blockManager = blockManager;
         this.datanodeManager = datanodeManager;
         this.nameSystem = nameSystem;
+    }
+    
+    @Override
+    public void addBlock(ClientNamenodeProtocolProtos.AddBlockRequestProto req,
+            StreamObserver<ClientNamenodeProtocolProtos.AddBlockResponseProto>
+            responseObserver) {
+        logger.info("recv add block request");
+
+        // determine location of block
+        long blockId = -1l, generationStamp = -1l, offset = -1l;
+        List<HdfsProtos.DatanodeInfoProto> locs = new ArrayList<>();
+        List<Boolean> isCached = new ArrayList<>();
+        List<HdfsProtos.StorageTypeProto> storageTypes = new ArrayList<>();
+        List<String> storageIds = new ArrayList<>();
+
+        try {
+            // generate block
+            Block block = this.blockManager.createBlock(req.getSrc(), 
+                req.getFavoredNodesList());
+
+            // retreive block parameters
+            blockId = block.blockId;
+            generationStamp = block.generationStamp;
+            offset = block.offset;
+            locs = block.locs;
+        }  catch(Exception e) {
+            e.printStackTrace();
+            logger.severe(e.toString());
+        }
+
+        // create block protobufs
+        HdfsProtos.ExtendedBlockProto b = HdfsProtos.ExtendedBlockProto.newBuilder()
+            .setPoolId("")
+            .setBlockId(blockId)
+            .setGenerationStamp(generationStamp)
+            .build();
+
+        SecurityProtos.TokenProto blockToken = SecurityProtos.TokenProto.newBuilder()
+            .setIdentifier(ByteString.copyFrom(new byte[]{}))
+            .setPassword(ByteString.copyFrom(new byte[]{}))
+            .setKind("")
+            .setService("")
+            .build();
+
+        HdfsProtos.LocatedBlockProto block = HdfsProtos.LocatedBlockProto.newBuilder()
+            .setB(b)
+            .setOffset(offset)
+            .addAllLocs(locs)
+            .setCorrupt(false)
+            .setBlockToken(blockToken)
+            .addAllIsCached(isCached)
+            .addAllStorageTypes(storageTypes)
+            .addAllStorageIDs(storageIds)
+            .build();
+
+        // respond to request
+        ClientNamenodeProtocolProtos.AddBlockResponseProto response =
+            ClientNamenodeProtocolProtos.AddBlockResponseProto.newBuilder()
+                .setBlock(block)
+                .build();
+
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void complete(ClientNamenodeProtocolProtos.CompleteRequestProto req,
+            StreamObserver<ClientNamenodeProtocolProtos.CompleteResponseProto>
+            responseObserver) {
+        logger.info("recv complete request");
+
+        // complete file with name system
+        boolean result = true;
+        try {
+            // TODO - complete file
+        } catch (Exception e) {
+            logger.severe(e.toString());
+            result = false;
+        }
+
+        // response to request
+        ClientNamenodeProtocolProtos.CompleteResponseProto response =
+            ClientNamenodeProtocolProtos.CompleteResponseProto.newBuilder()
+                .setResult(result)
+                .build();
+
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
     }
 
     @Override

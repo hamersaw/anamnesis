@@ -30,14 +30,22 @@ public class ClientNamenodeClient {
         this.blockingStub = ClientNamenodeProtocolGrpc.newBlockingStub(channel);
     }
 
-    public void addBlock() {
+    public ClientNamenodeProtocolProtos.AddBlockResponseProto
+        addBlock(ClientNamenodeProtocolProtos.AddBlockRequestProto req) {
 
+        return this.blockingStub.addBlock(req);
     }
 
     public ClientNamenodeProtocolProtos.CreateResponseProto 
         create(ClientNamenodeProtocolProtos.CreateRequestProto req) {
 
         return this.blockingStub.create(req);
+    }
+
+    public ClientNamenodeProtocolProtos.CompleteResponseProto 
+        complete(ClientNamenodeProtocolProtos.CompleteRequestProto req) {
+
+        return this.blockingStub.complete(req);
     }
 
     public ClientNamenodeProtocolProtos.GetListingResponseProto 

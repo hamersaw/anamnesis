@@ -1,6 +1,8 @@
 package com.bushpath.anamnesis.namenode;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class NameSystemFile {
@@ -8,17 +10,16 @@ public class NameSystemFile {
     public boolean directory, file;
     public int perm;
     public long modificationTime, accessTime, length, blockSize;
+    public List<Long> blocks;
 
     public NameSystemFile parent;
     public Map<String, NameSystemFile> children;
 
-    public static NameSystemFile newDirectory(String name, String owner, String group, 
-            int perm) {
-
+    public static NameSystemFile newDirectory(String name, int perm) {
         NameSystemFile file = new NameSystemFile();
         file.name = name;
-        file.owner = owner;
-        file.group = group;
+        file.owner = "";
+        file.group = "";
         file.directory = true;
         file.file = false;
         file.perm = perm;
@@ -45,6 +46,7 @@ public class NameSystemFile {
         file.accessTime = file.modificationTime;
         file.length = 0;
         file.blockSize = blockSize;
+        file.blocks = new ArrayList<>();
         return file;
     }
 }
