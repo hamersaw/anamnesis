@@ -2,6 +2,11 @@
 ## OVERVIEW
 An in-memory, location aware, HDFS based file system.
 
+## BUILD
+#### CLIENT
+> gradle build
+> gradle depsJar
+
 ## EXECUTE
 #### NAMENODE
 > gradle execute -PappArgs="['src/main/resources/config.properties']"
@@ -10,12 +15,14 @@ An in-memory, location aware, HDFS based file system.
 > gradle execute -PappArgs="['src/main/resources/config2.properties']"
 > gradle execute -PappArgs="['src/main/resources/config3.properties']"
 #### CLIENT
-> gradle execute -PappArgs="['mkdir','--path','foo/bar']"
-> gradle execute -PappArgs="['ls','--path','foo']"
-> gradle execute -PappArgs="['upload','--local-path','/tmp/test.txt','--path','test.txt']"
-> gradle execute -PappArgs="['download','--local-path','/tmp/test2.txt','--path','test.txt']"
+> ./anamnesis.sh mkdir --path foo/bar
+> ./anamnesis.sh ls --path foo
+> ./anamnesis.sh upload --local-path /tmp/test.txt --path foo/test.txt
+> ./anamnesis.sh download --path foo/test.txt --local-path /tmp/test2.txt
 
 ## TODO
+- return errors from stream observer
+- more configuration files to test datanodes
 - support favoredNodes on 'create' method (decide which node the data is written to)
 - lots of refactoring (clean this stuff up)
 - implement any kind of error handling!
