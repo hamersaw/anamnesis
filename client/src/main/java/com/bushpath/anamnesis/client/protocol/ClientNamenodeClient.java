@@ -48,6 +48,13 @@ public class ClientNamenodeClient {
         return this.blockingStub.complete(req);
     }
 
+    public ClientNamenodeProtocolProtos.GetBlockLocationsResponseProto 
+        getBlockLocations(
+            ClientNamenodeProtocolProtos.GetBlockLocationsRequestProto req) {
+ 
+        return this.blockingStub.getBlockLocations(req);
+    }
+
     public ClientNamenodeProtocolProtos.GetListingResponseProto 
         getListing(ClientNamenodeProtocolProtos.GetListingRequestProto req) {
  

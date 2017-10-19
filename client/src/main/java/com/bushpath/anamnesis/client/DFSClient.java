@@ -7,6 +7,7 @@ import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 import com.bushpath.anamnesis.client.protocol.ClientNamenodeClient;
 
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -21,10 +22,64 @@ public class DFSClient {
         this.clientName = clientName;
     }
 
+    public void download(String path, String localPath) throws Exception {
+        logger.info("downloading file '" + path + "' to '" + localPath + "'");
+
+        // open file output stream
+        FileOutputStream output = new FileOutputStream(localPath);
+
+        // construct getLsting protobuf components
+        ClientNamenodeProtocolProtos.GetListingRequestProto getListingReq =
+            ClientNamenodeProtocolProtos.GetListingRequestProto.newBuilder()
+                .setSrc(path)
+                .setStartAfter(ByteString.copyFrom(new byte[]{}))
+                .setNeedLocation(false) // TODO - support this
+                .build();
+
+        // send GetListingRequestProto
+        ClientNamenodeProtocolProtos.GetListingResponseProto getListingResponse =
+            this.clientNamenodeClient.getListing(getListingReq);
+
+        // handle response
+        List<HdfsProtos.HdfsFileStatusProto> list = getListingResponse.getDirList()
+            .getPartialListingList();
+
+        if (list.size() != 1) {
+            throw new Exception("directory downloads not yet supported");
+        }
+
+        HdfsProtos.HdfsFileStatusProto file = list.get(0);
+
+        // construct getBlockLocations protobuf components
+        ClientNamenodeProtocolProtos.GetBlockLocationsRequestProto getBlockLocationsReq =
+            ClientNamenodeProtocolProtos.GetBlockLocationsRequestProto.newBuilder()
+                .setSrc(path)
+                .setOffset(0)
+                .setLength(file.getLength())
+                .build();
+
+        // send GetBlockLocationsRequestProto
+        ClientNamenodeProtocolProtos.GetBlockLocationsResponseProto
+            getBlockLocationsResponse = this.clientNamenodeClient.getBlockLocations(
+                getBlockLocationsReq);
+
+        // TODO - handle block locations
+        HdfsProtos.LocatedBlocksProto locatedBlocks =
+            getBlockLocationsResponse.getLocations();
+        for (HdfsProtos.LocatedBlockProto block: locatedBlocks.getBlocksList()) {
+            System.out.println("TODO - download block " + block.getB().getBlockId());
+
+            for (HdfsProtos.DatanodeInfoProto loc: block.getLocsList()) {
+                System.out.println("\t" + loc.getId().getIpAddr() + ":" 
+                    + loc.getId().getXferPort());
+            }
+        }
+    }
+
     public void ls(String path) throws Exception {
         logger.info("get listings for '" + path + "'");
 
-        // construct protobuf components
+        // construct GetListing protobuf components
         ClientNamenodeProtocolProtos.GetListingRequestProto req =
             ClientNamenodeProtocolProtos.GetListingRequestProto.newBuilder()
                 .setSrc(path)
@@ -50,7 +105,7 @@ public class DFSClient {
     public void mkdir(String path) throws Exception {
         logger.info("creating directory '" + path + "'");
  
-        // construct protobuf components
+        // construct Mkdir protobuf components
         HdfsProtos.FsPermissionProto fsPermissionProto =
             HdfsProtos.FsPermissionProto.newBuilder()
                 .setPerm(Integer.MAX_VALUE)
@@ -71,7 +126,7 @@ public class DFSClient {
     }
 
     public void upload(String localPath, String path, int blockSize) throws Exception {
-        logger.info("creating file '" + path + "'");
+        logger.info("uploading file '" + localPath + "' to '" + path + "'");
 
         // open local file input stream
         FileInputStream input = new FileInputStream(localPath);

@@ -42,4 +42,8 @@ public class BlockManager {
         this.blocks.put(blockId, block);
         return block;
     }
+
+    public Block getBlock(long blockId) {
+        return this.blocks.get(blockId);
+    }
 }

@@ -58,7 +58,6 @@ public class ClientNamenodeService
             offset = block.offset;
             locs = block.locs;
         }  catch(Exception e) {
-            e.printStackTrace();
             logger.severe(e.toString());
         }
 
@@ -142,6 +141,45 @@ public class ClientNamenodeService
                 .build();
 
         responseObserver.onNext(response);
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getBlockLocations(
+            ClientNamenodeProtocolProtos.GetBlockLocationsRequestProto req,
+            StreamObserver<ClientNamenodeProtocolProtos.GetBlockLocationsResponseProto>
+            responseObserver) {
+
+        try {
+            // look up file
+            NameSystemFile file = this.nameSystem.getFile(req.getSrc());
+
+            // retrieve block information
+            List<HdfsProtos.LocatedBlockProto> blocks = new ArrayList<>();
+            for (Long blockId: file.blocks) {
+                Block block = this.blockManager.getBlock(blockId);
+
+                blocks.add(block.toLocatedBlockProto());
+            }
+
+            HdfsProtos.LocatedBlocksProto locations =
+                HdfsProtos.LocatedBlocksProto.newBuilder()
+                    .setFileLength(file.length)
+                    .addAllBlocks(blocks)
+                    .setUnderConstruction(false) // TODO
+                    .setIsLastBlockComplete(false) // TODO
+                    .build();
+
+            ClientNamenodeProtocolProtos.GetBlockLocationsResponseProto response
+                = ClientNamenodeProtocolProtos.GetBlockLocationsResponseProto.newBuilder()
+                    .setLocations(locations)
+                    .build();
+
+            responseObserver.onNext(response);
+        } catch (Exception e) {
+            logger.severe(e.toString());
+        }
+
         responseObserver.onCompleted();
     }
 

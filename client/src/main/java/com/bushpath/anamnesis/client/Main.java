@@ -35,6 +35,9 @@ public class Main {
 
             // execute command
             switch (arguments.command) {
+            case "download":
+                dfsClient.download(arguments.path, arguments.localPath);
+                break;
             case "ls":
                 dfsClient.ls(arguments.path);
                 break;
@@ -62,19 +65,19 @@ public class Main {
         @Parameter(names = {"-i", "--ip"}, description = "ip address of namenode")
         String ip = "localhost";
 
-        @Parameter(names = {"-p", "--port"}, description = "port of namenode")
+        @Parameter(names = {"-o", "--port"}, description = "port of namenode")
         Integer port = 8020;
 
         @Parameter(description = "command")
         String command;
 
-        @Parameter(names = {"--path"}, description = "path" )
+        @Parameter(names = {"-p", "--path"}, description = "path" )
         String path;
 
-        @Parameter(names = {"--local-path"}, description = "local path" )
+        @Parameter(names = {"-l", "--local-path"}, description = "local path" )
         String localPath;
 
-        @Parameter(names = {"--block-size"}, description = "block size" )
+        @Parameter(names = {"-b", "--block-size"}, description = "block size" )
         Integer blockSize = 64000;
     }
 }
