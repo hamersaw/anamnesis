@@ -22,7 +22,6 @@ An in-memory, location aware, HDFS based file system.
 
 ## TODO
 - return errors from stream observer
-- more configuration files to test datanodes
 - support favoredNodes on 'create' method (decide which node the data is written to)
 - lots of refactoring (clean this stuff up)
 - implement any kind of error handling!
