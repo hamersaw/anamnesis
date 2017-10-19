@@ -16,6 +16,7 @@ An in-memory, location aware, HDFS based file system.
 > gradle execute -PappArgs="['download','--local-path','/tmp/test2.txt','--path','test.txt']"
 
 ## TODO
+- support favoredNodes on 'create' method (decide which node the data is written to)
 - lots of refactoring (clean this stuff up)
 - implement any kind of error handling!
 - complete implementing creating new file
