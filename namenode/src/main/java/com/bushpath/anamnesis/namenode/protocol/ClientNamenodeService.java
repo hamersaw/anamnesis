@@ -11,7 +11,8 @@ import com.bushpath.anamnesis.namenode.Block;
 import com.bushpath.anamnesis.namenode.BlockManager;
 import com.bushpath.anamnesis.namenode.DatanodeManager;
 import com.bushpath.anamnesis.namenode.NameSystem;
-import com.bushpath.anamnesis.namenode.NameSystemFile;
+import com.bushpath.anamnesis.namenode.NSFile;
+import com.bushpath.anamnesis.namenode.NSItem;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -97,20 +98,22 @@ public class ClientNamenodeService
             responseObserver) {
         logger.info("recv create request");
 
-        // create file with name system
         try {
+            // create file with name system
             this.nameSystem.create(req.getSrc(), req.getMasked().getPerm(),
                 req.getClientName(), req.getCreateParent(), req.getBlockSize());
+
+            // respond to request
+            ClientNamenodeProtocolProtos.CreateResponseProto response =
+                ClientNamenodeProtocolProtos.CreateResponseProto.newBuilder()
+                    .build();
+
+            responseObserver.onNext(response);
         } catch (Exception e) {
             logger.severe(e.toString());
+            responseObserver.onError(e);
         }
 
-        // respond to request
-        ClientNamenodeProtocolProtos.CreateResponseProto response =
-            ClientNamenodeProtocolProtos.CreateResponseProto.newBuilder()
-                .build();
-
-        responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
@@ -122,11 +125,15 @@ public class ClientNamenodeService
 
         try {
             // look up file
-            NameSystemFile file = this.nameSystem.getFile(req.getSrc());
+            NSItem item = this.nameSystem.getFile(req.getSrc());
+            if (item.getType() != NSItem.Type.FILE) {
+                throw new Exception("file is not of type 'FILE'");
+            }
+            NSFile file = (NSFile) item;
 
             // retrieve block information
             List<HdfsProtos.LocatedBlockProto> blocks = new ArrayList<>();
-            for (Long blockId: file.blocks) {
+            for (Long blockId: file.getBlocks()) {
                 Block block = this.blockManager.getBlock(blockId);
 
                 blocks.add(block.toLocatedBlockProto());
@@ -134,9 +141,9 @@ public class ClientNamenodeService
 
             HdfsProtos.LocatedBlocksProto locations =
                 HdfsProtos.LocatedBlocksProto.newBuilder()
-                    .setFileLength(file.length)
+                    .setFileLength(file.getLength())
                     .addAllBlocks(blocks)
-                    .setUnderConstruction(false) // TODO
+                    .setUnderConstruction(!file.isComplete())
                     .setIsLastBlockComplete(false) // TODO
                     .build();
 
@@ -162,33 +169,12 @@ public class ClientNamenodeService
         
         // query name system for files
         try {
-            Collection<NameSystemFile> files = this.nameSystem.getListing(req.getSrc());
+            Collection<NSItem> items = this.nameSystem.getListing(req.getSrc());
     
-            // convert NameSystemFile to HdfsFileStatusProto
+            // convert NSItem to HdfsFileStatusProto
             List<HdfsProtos.HdfsFileStatusProto> list = new ArrayList<>();
-            for (NameSystemFile file: files) {
-                HdfsProtos.FsPermissionProto permission = 
-                    HdfsProtos.FsPermissionProto.newBuilder()
-                        .setPerm(file.perm)
-                        .build();
-
-                HdfsProtos.HdfsFileStatusProto.FileType fileType = 
-                    file.file ? HdfsProtos.HdfsFileStatusProto.FileType.IS_FILE : 
-                    HdfsProtos.HdfsFileStatusProto.FileType.IS_DIR;
-
-                HdfsProtos.HdfsFileStatusProto fileProto = 
-                    HdfsProtos.HdfsFileStatusProto.newBuilder()
-                        .setFileType(fileType)
-                        .setPath(ByteString.copyFrom(file.name.getBytes()))
-                        .setLength(file.length)
-                        .setPermission(permission)
-                        .setOwner(file.owner)
-                        .setGroup(file.group)
-                        .setModificationTime(file.modificationTime)
-                        .setAccessTime(file.accessTime)
-                        .build();
-
-                list.add(fileProto);
+            for (NSItem item: items) {
+                list.add(item.toHdfsFileStatusProto());
             }
 
             HdfsProtos.DirectoryListingProto directoryListingProto = 

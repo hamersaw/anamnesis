@@ -24,21 +24,25 @@ public class BlockManager {
 
     public Block createBlock(String path, List<String> favoredNodes) throws Exception {
         // retrieve file for block
-        NameSystemFile file = nameSystem.getFile(path);
+        NSItem item = nameSystem.getFile(path);
+        if (item.getType() != NSItem.Type.FILE) {
+            throw new Exception("file '" + path + "' is not of type 'FILE'");
+        }
+        NSFile file = (NSFile) item;
 
         // create block
         long blockId = random.nextLong(),
              generationStamp = System.currentTimeMillis();
         Block block = new Block(blockId, System.currentTimeMillis(), 
-            file.blockSize * file.blocks.size());
+            file.getBlockSize() * file.getBlockCount());
 
         // find datanodes to store at
         HdfsProtos.DatanodeInfoProto datanodeInfoProto =
-            this.datanodeManager.storeBlock(blockId, file.blockSize, favoredNodes);
+            this.datanodeManager.storeBlock(blockId, file.getBlockSize(), favoredNodes);
 
         block.addLoc(datanodeInfoProto);
 
-        file.blocks.add(blockId);
+        file.addBlock(blockId);
         this.blocks.put(blockId, block);
         return block;
     }
