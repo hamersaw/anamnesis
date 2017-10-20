@@ -3,6 +3,9 @@ package com.bushpath.anamnesis.client;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Main {
     public static final String USAGE = 
         "anamnesis [OPTIONS] COMMAND\n" +
@@ -12,13 +15,14 @@ public class Main {
         "    -o --port         port of namenode\n" +
         "\n" +
         "    -b --block-size   size of blocks in file\n" +
+        "    -f --favored      datanodeuuid of favored node\n" +
         "    -l --local-path   local path\n" +
         "    -p --path         remove path\n" +
         "  COMMANDS\n" +
         "    help              display this screen\n" +
         "    ls                list contents (-p)\n" +
         "    mkdir             create a directory (-p)\n" +
-        "    upload            create a new file (-b, -l, -p)";
+        "    upload            create a new file (-b, -f, -l, -p)";
 
     public static void main(String[] args) {
         try {
@@ -46,7 +50,7 @@ public class Main {
                 break;
             case "upload":
                 dfsClient.upload(arguments.localPath, arguments.path, 
-                    arguments.blockSize);
+                    arguments.blockSize, arguments.favoredNodes);
                 break;
             case "help":
             default:
@@ -71,13 +75,17 @@ public class Main {
         @Parameter(description = "command")
         String command;
 
-        @Parameter(names = {"-p", "--path"}, description = "path" )
-        String path = "";
+        @Parameter(names = {"-b", "--block-size"}, description = "block size")
+        Integer blockSize = 64000;
 
-        @Parameter(names = {"-l", "--local-path"}, description = "local path" )
+        @Parameter(names = {"-f", "--favored"},
+                description = "datanode uuid of favored nodes")
+        List<String> favoredNodes = new ArrayList<>();
+
+        @Parameter(names = {"-l", "--local-path"}, description = "local path")
         String localPath = "";
 
-        @Parameter(names = {"-b", "--block-size"}, description = "block size" )
-        Integer blockSize = 64000;
+        @Parameter(names = {"-p", "--path"}, description = "path")
+        String path = "";
     }
 }

@@ -125,7 +125,8 @@ public class DFSClient {
         // TODO - handle response
     }
 
-    public void upload(String localPath, String path, int blockSize) throws Exception {
+    public void upload(String localPath, String path, int blockSize,
+            List<String> favoredNodes) throws Exception {
         logger.info("uploading file '" + localPath + "' to '" + path + "'");
 
         // open local file input stream
@@ -169,7 +170,7 @@ public class DFSClient {
                 ClientNamenodeProtocolProtos.AddBlockRequestProto.newBuilder()
                     .setSrc(path)
                     .setClientName(this.clientName)
-                    // TODO - add List<String> favoredNodes
+                    .addAllFavoredNodes(favoredNodes)
                     .build();
 
             ClientNamenodeProtocolProtos.AddBlockResponseProto addBlockResponse =

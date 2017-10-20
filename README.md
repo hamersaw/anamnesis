@@ -22,7 +22,6 @@ An in-memory, location aware, HDFS based file system.
 
 ## TODO
 - fix datanodeManager update handling (cheeky as best)
-- support favoredNodes on 'create' method (decide which node the data is written to)
 - complete implementing creating new file
 - implement datanode heartbeat storage information (integrate into addBlock)
 - support needLocation flag on getListing
