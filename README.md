@@ -15,13 +15,13 @@ An in-memory, location aware, HDFS based file system.
 > gradle execute -PappArgs="['src/main/resources/config2.properties']"
 > gradle execute -PappArgs="['src/main/resources/config3.properties']"
 #### CLIENT
-> ./anamnesis.sh mkdir --path foo/bar
-> ./anamnesis.sh ls --path foo
-> ./anamnesis.sh upload --local-path /tmp/test.txt --path foo/test.txt
-> ./anamnesis.sh download --path foo/test.txt --local-path /tmp/test2.txt
+> ./anamnesis.sh mkdir foo/bar
+> ./anamnesis.sh ls foo
+> ./anamnesis.sh upload /tmp/test.txt foo/test.txt
+> ./anamnesis.sh download foo/test.txt /tmp/test2.txt
 
 ## TODO
-- fix datanodeManager update handling (cheeky as best)
+- refactor datanodeManager update handling (cheeky as best)
 - complete implementing creating new file
 - implement datanode heartbeat storage information (integrate into addBlock)
 - support needLocation flag on getListing
