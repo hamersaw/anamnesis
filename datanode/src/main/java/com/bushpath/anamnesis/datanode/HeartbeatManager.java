@@ -93,6 +93,8 @@ public class HeartbeatManager {
         @Override
         public void run() {
             List<HdfsProtos.StorageReportProto> reports = new ArrayList<>();
+
+            // TODO - construct storage reports
             
             DatanodeProtocolProtos.HeartbeatRequestProto req = 
                 DatanodeProtocolProtos.HeartbeatRequestProto.newBuilder()

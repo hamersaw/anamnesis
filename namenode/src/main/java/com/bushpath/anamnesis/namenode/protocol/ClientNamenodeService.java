@@ -122,25 +122,10 @@ public class ClientNamenodeService
             }
             NSFile file = (NSFile) item;
 
-            // retrieve block information
-            List<HdfsProtos.LocatedBlockProto> blocks = new ArrayList<>();
-            for (Long blockId: file.getBlocks()) {
-                Block block = this.blockManager.getBlock(blockId);
-
-                blocks.add(block.toLocatedBlockProto());
-            }
-
-            HdfsProtos.LocatedBlocksProto locations =
-                HdfsProtos.LocatedBlocksProto.newBuilder()
-                    .setFileLength(file.getLength())
-                    .addAllBlocks(blocks)
-                    .setUnderConstruction(!file.isComplete())
-                    .setIsLastBlockComplete(false) // TODO
-                    .build();
-
+            // return file locations
             ClientNamenodeProtocolProtos.GetBlockLocationsResponseProto response
                 = ClientNamenodeProtocolProtos.GetBlockLocationsResponseProto.newBuilder()
-                    .setLocations(locations)
+                    .setLocations(file.getLocatedBlocksProto())
                     .build();
 
             responseObserver.onNext(response);
@@ -164,7 +149,7 @@ public class ClientNamenodeService
             // convert NSItem to HdfsFileStatusProto
             List<HdfsProtos.HdfsFileStatusProto> list = new ArrayList<>();
             for (NSItem item: items) {
-                list.add(item.toHdfsFileStatusProto());
+                list.add(item.toHdfsFileStatusProto(req.getNeedLocation()));
             }
 
             HdfsProtos.DirectoryListingProto directoryListingProto = 

@@ -22,6 +22,5 @@ An in-memory, location aware, HDFS based file system.
 
 ## TODO
 - refactor datanodeManager update handling (cheeky as best)
-- complete implementing creating new file
 - implement datanode heartbeat storage information (integrate into addBlock)
-- support needLocation flag on getListing
+- write data transfer code for client / datanode

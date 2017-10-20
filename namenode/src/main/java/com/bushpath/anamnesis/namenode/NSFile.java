@@ -9,7 +9,7 @@ import java.util.List;
 public class NSFile extends NSItem {
     private String owner, group;
     private long modificationTime, accessTime, length, blockSize;
-    private List<Long> blocks;
+    private List<Block> blocks;
     private boolean complete;
 
     public NSFile (String name, String owner, String group, int perm, long blockSize) {
@@ -61,7 +61,7 @@ public class NSFile extends NSItem {
         return this.blockSize;
     }
 
-    public List<Long> getBlocks() {
+    public List<Block> getBlocks() {
         return this.blocks;
     }
 
@@ -69,8 +69,8 @@ public class NSFile extends NSItem {
         return this.blocks.size();
     }
 
-    public void addBlock(long blockId) {
-        this.blocks.add(blockId);
+    public void addBlock(Block block) {
+        this.blocks.add(block);
     }
 
     public boolean isComplete() {
@@ -81,23 +81,44 @@ public class NSFile extends NSItem {
         this.complete = true;
     }
 
+    public HdfsProtos.LocatedBlocksProto getLocatedBlocksProto() {
+        List<HdfsProtos.LocatedBlockProto> blocks = new ArrayList<>();
+        for (Block block: this.blocks) {
+            blocks.add(block.toLocatedBlockProto());
+        }
+
+        return HdfsProtos.LocatedBlocksProto.newBuilder()
+            .setFileLength(this.length)
+            .addAllBlocks(blocks)
+            .setUnderConstruction(!this.complete)
+            .setIsLastBlockComplete(false) // TODO
+            .build();
+    }
+
     @Override
-    public HdfsProtos.HdfsFileStatusProto toHdfsFileStatusProto() {
+    public HdfsProtos.HdfsFileStatusProto toHdfsFileStatusProto(boolean needLocation) {
         HdfsProtos.FsPermissionProto permission = 
             HdfsProtos.FsPermissionProto.newBuilder()
                 .setPerm(this.perm)
                 .build();
 
-        return HdfsProtos.HdfsFileStatusProto.newBuilder()
-            .setFileType(HdfsProtos.HdfsFileStatusProto.FileType.IS_FILE)
-            .setPath(ByteString.copyFrom(this.name.getBytes()))
-            .setLength(this.length)
-            .setPermission(permission)
-            .setOwner(this.owner)
-            .setGroup(this.group)
-            .setModificationTime(this.modificationTime)
-            .setAccessTime(this.accessTime)
-            .build();
+        HdfsProtos.HdfsFileStatusProto.Builder builder 
+            = HdfsProtos.HdfsFileStatusProto.newBuilder()
+                .setFileType(HdfsProtos.HdfsFileStatusProto.FileType.IS_FILE)
+                .setPath(ByteString.copyFrom(this.name.getBytes()))
+                .setLength(this.length)
+                .setPermission(permission)
+                .setOwner(this.owner)
+                .setGroup(this.group)
+                .setModificationTime(this.modificationTime)
+                .setAccessTime(this.accessTime)
+                .setBlocksize(this.blockSize);
+
+        if (needLocation) {
+            builder.setLocations(this.getLocatedBlocksProto());
+        }
+
+        return builder.build();
     }
 
     @Override

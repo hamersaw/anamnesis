@@ -33,7 +33,7 @@ public class DFSClient {
             ClientNamenodeProtocolProtos.GetListingRequestProto.newBuilder()
                 .setSrc(path)
                 .setStartAfter(ByteString.copyFrom(new byte[]{}))
-                .setNeedLocation(false) // TODO - support this
+                .setNeedLocation(true)
                 .build();
 
         // send GetListingRequestProto
@@ -50,22 +50,8 @@ public class DFSClient {
 
         HdfsProtos.HdfsFileStatusProto file = list.get(0);
 
-        // construct getBlockLocations protobuf components
-        ClientNamenodeProtocolProtos.GetBlockLocationsRequestProto getBlockLocationsReq =
-            ClientNamenodeProtocolProtos.GetBlockLocationsRequestProto.newBuilder()
-                .setSrc(path)
-                .setOffset(0)
-                .setLength(file.getLength())
-                .build();
-
-        // send GetBlockLocationsRequestProto
-        ClientNamenodeProtocolProtos.GetBlockLocationsResponseProto
-            getBlockLocationsResponse = this.clientNamenodeClient.getBlockLocations(
-                getBlockLocationsReq);
-
-        // TODO - handle block locations
-        HdfsProtos.LocatedBlocksProto locatedBlocks =
-            getBlockLocationsResponse.getLocations();
+        // TODO - download block locations
+        HdfsProtos.LocatedBlocksProto locatedBlocks = file.getLocations();
         for (HdfsProtos.LocatedBlockProto block: locatedBlocks.getBlocksList()) {
             System.out.println("TODO - download block " + block.getB().getBlockId());
 
@@ -91,14 +77,13 @@ public class DFSClient {
         ClientNamenodeProtocolProtos.GetListingResponseProto response =
             this.clientNamenodeClient.getListing(req);
 
-        // TODO - handle response
+        // handle response
         List<HdfsProtos.HdfsFileStatusProto> list = response.getDirList()
             .getPartialListingList();
 
         for (HdfsProtos.HdfsFileStatusProto file: list) {
             System.out.println(new String(file.getPath().toByteArray())
-                    + ":" + file.getFileType() 
-                    + ":" + file.getModificationTime());
+                    + ":" + file.getFileType());
         }
     }
 
@@ -122,7 +107,8 @@ public class DFSClient {
         ClientNamenodeProtocolProtos.MkdirsResponseProto response =
             this.clientNamenodeClient.mkdirs(req);
 
-        // TODO - handle response
+        // handle response
+        System.out.println("Success:" + response.getResult());
     }
 
     public void upload(String localPath, String path, int blockSize,
@@ -176,7 +162,7 @@ public class DFSClient {
             ClientNamenodeProtocolProtos.AddBlockResponseProto addBlockResponse =
                 this.clientNamenodeClient.addBlock(addBlockReq);
 
-            // TODO - handle response
+            // TODO - upload blocks
             System.out.println("writing block to");
             for (HdfsProtos.DatanodeInfoProto loc: 
                     addBlockResponse.getBlock().getLocsList()) {

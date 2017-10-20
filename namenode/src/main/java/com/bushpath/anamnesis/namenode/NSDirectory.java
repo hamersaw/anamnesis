@@ -32,7 +32,7 @@ public class NSDirectory extends NSItem {
     }
 
     @Override
-    public HdfsProtos.HdfsFileStatusProto toHdfsFileStatusProto() {
+    public HdfsProtos.HdfsFileStatusProto toHdfsFileStatusProto(boolean needLocation) {
         HdfsProtos.FsPermissionProto permission = 
             HdfsProtos.FsPermissionProto.newBuilder()
                 .setPerm(this.perm)
@@ -47,6 +47,7 @@ public class NSDirectory extends NSItem {
             .setGroup("")
             .setModificationTime(-1)
             .setAccessTime(-1)
+            .setChildrenNum(this.children.size())
             .build();
     }
 

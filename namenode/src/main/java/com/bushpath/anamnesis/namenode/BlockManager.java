@@ -38,11 +38,11 @@ public class BlockManager {
 
         // find datanodes to store at
         HdfsProtos.DatanodeInfoProto datanodeInfoProto =
-            this.datanodeManager.storeBlock(blockId, file.getBlockSize(), favoredNodes);
+            this.datanodeManager.chooseBlockLocation(file.getBlockSize(), favoredNodes);
 
         block.addLoc(datanodeInfoProto);
 
-        file.addBlock(blockId);
+        file.addBlock(block);
         this.blocks.put(blockId, block);
         return block;
     }

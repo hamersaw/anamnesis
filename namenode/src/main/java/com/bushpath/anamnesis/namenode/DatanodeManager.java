@@ -22,13 +22,11 @@ public class DatanodeManager {
     protected Random random;
 
     protected Map<String, HdfsProtos.DatanodeInfoProto> datanodes;
-    protected Map<String, Long> mostRecentHeartbeatMillis;
 
     public DatanodeManager() {
         this.lock = new ReentrantReadWriteLock();
         this.random = new Random();
         this.datanodes = new HashMap<>();
-        this.mostRecentHeartbeatMillis = new HashMap<>();
     }
 
     public void processRegistration(
@@ -85,7 +83,7 @@ public class DatanodeManager {
         }
     }
 
-    public HdfsProtos.DatanodeInfoProto storeBlock(long blockId, long blockSize,
+    public HdfsProtos.DatanodeInfoProto chooseBlockLocation(long blockSize,
             List<String> favoredNodes) {
 
         // try all favored nodes

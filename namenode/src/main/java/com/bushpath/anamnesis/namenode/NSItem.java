@@ -30,6 +30,7 @@ public abstract class NSItem {
         FILE
     }
 
-    public abstract HdfsProtos.HdfsFileStatusProto toHdfsFileStatusProto();
+    public abstract HdfsProtos.HdfsFileStatusProto
+        toHdfsFileStatusProto(boolean needLocation);
     public abstract void print(int indent);
 }
