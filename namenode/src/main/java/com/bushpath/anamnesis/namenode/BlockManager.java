@@ -37,10 +37,10 @@ public class BlockManager {
             file.getBlockSize() * file.getBlockCount());
 
         // find datanodes to store at
-        HdfsProtos.DatanodeInfoProto datanodeInfoProto =
-            this.datanodeManager.chooseBlockLocation(file.getBlockSize(), favoredNodes);
+        Datanode datanode = this.datanodeManager.chooseBlockLocation(
+            file.getBlockSize(), favoredNodes);
 
-        block.addLoc(datanodeInfoProto);
+        block.addLoc(datanode);
 
         file.addBlock(block);
         this.blocks.put(blockId, block);

@@ -125,7 +125,7 @@ public class ClientNamenodeService
             // return file locations
             ClientNamenodeProtocolProtos.GetBlockLocationsResponseProto response
                 = ClientNamenodeProtocolProtos.GetBlockLocationsResponseProto.newBuilder()
-                    .setLocations(file.getLocatedBlocksProto())
+                    .setLocations(file.toLocatedBlocksProto())
                     .build();
 
             responseObserver.onNext(response);

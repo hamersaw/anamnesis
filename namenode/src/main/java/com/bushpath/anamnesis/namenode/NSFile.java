@@ -81,7 +81,7 @@ public class NSFile extends NSItem {
         this.complete = true;
     }
 
-    public HdfsProtos.LocatedBlocksProto getLocatedBlocksProto() {
+    public HdfsProtos.LocatedBlocksProto toLocatedBlocksProto() {
         List<HdfsProtos.LocatedBlockProto> blocks = new ArrayList<>();
         for (Block block: this.blocks) {
             blocks.add(block.toLocatedBlockProto());
@@ -115,7 +115,7 @@ public class NSFile extends NSItem {
                 .setBlocksize(this.blockSize);
 
         if (needLocation) {
-            builder.setLocations(this.getLocatedBlocksProto());
+            builder.setLocations(this.toLocatedBlocksProto());
         }
 
         return builder.build();

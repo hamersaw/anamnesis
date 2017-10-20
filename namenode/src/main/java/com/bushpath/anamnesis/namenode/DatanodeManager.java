@@ -1,5 +1,7 @@
 package com.bushpath.anamnesis.namenode;
 
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import org.apache.hadoop.hdfs.protocol.proto.DatanodeProtocolProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
@@ -21,7 +23,7 @@ public class DatanodeManager {
     protected ReadWriteLock lock;
     protected Random random;
 
-    protected Map<String, HdfsProtos.DatanodeInfoProto> datanodes;
+    protected Map<String, Datanode> datanodes;
 
     public DatanodeManager() {
         this.lock = new ReentrantReadWriteLock();
@@ -29,62 +31,62 @@ public class DatanodeManager {
         this.datanodes = new HashMap<>();
     }
 
-    public void processRegistration(
-            DatanodeProtocolProtos.RegisterDatanodeRequestProto req) {
-        lock.writeLock().lock();
+    public void registerDatanode(String ipAddr, String hostname, String datanodeUuid, 
+            int xferPort, int infoPort, int ipcPort, long lastUpdate) throws Exception {
+        this.lock.writeLock().lock();
         try {
-            HdfsProtos.DatanodeIDProto datanodeIDProto = 
-                req.getRegistration().getDatanodeID();
-
-            // retrieve datanode uuid
-            String datanodeUuid = datanodeIDProto.getDatanodeUuid();
             logger.info("registering node '" + datanodeUuid + "'");
 
+            // ensure datanodeuuid is not empty
             if (datanodeUuid.isEmpty()) {
-                // TODO - if not datanode uuid provided -> error
+                throw new StatusRuntimeException(Status.INVALID_ARGUMENT
+                    .withDescription("unable to register empty datanode uuid"));
             }
  
-            // store datanodesIDProto and blocks
+            // check if datanode already exists
             if (this.datanodes.containsKey(datanodeUuid)) {
-                // TODO - datanode already registered -> error
-            } else {
-                HdfsProtos.DatanodeInfoProto datanodeInfoProto =
-                    HdfsProtos.DatanodeInfoProto.newBuilder()
-                        .setId(datanodeIDProto)
-                        .setLastUpdate(System.currentTimeMillis())
-                        .build();
-
-                this.datanodes.put(datanodeUuid, datanodeInfoProto);
+                throw new StatusRuntimeException(Status.ALREADY_EXISTS
+                    .withDescription("'" + datanodeUuid + "' already exists"));
             }
+
+            // store new datanode
+            Datanode datanode = new Datanode(ipAddr, hostname, datanodeUuid, 
+                xferPort, infoPort, ipcPort, lastUpdate);
+            this.datanodes.put(datanodeUuid, datanode);
         } finally {
-            lock.writeLock().unlock();
+            this.lock.writeLock().unlock();
         }
     }
 
-    public void processHeartbeat(DatanodeProtocolProtos.HeartbeatRequestProto req) {
-        lock.writeLock().lock();
+    public void updateDatanode(String datanodeUuid, long lastUpdate) throws Exception {
+        this.lock.writeLock().lock();
         try {
-            HdfsProtos.DatanodeIDProto datanodeIDProto =
-                req.getRegistration().getDatanodeID();
+            // ensure datanodeuuid is not empty
+            if (datanodeUuid.isEmpty()) {
+                throw new StatusRuntimeException(Status.INVALID_ARGUMENT
+                    .withDescription("unable to register empty datanode uuid"));
+            }
+ 
+            // enxure datanode exists
+            if (!this.datanodes.containsKey(datanodeUuid)) {
+                throw new StatusRuntimeException(Status.NOT_FOUND
+                    .withDescription("'" + datanodeUuid + "' does not exist"));
+            }
 
-            // retrieve datanode uuid
-            String datanodeUuid = datanodeIDProto.getDatanodeUuid();
-
-            // update last updated
-            HdfsProtos.DatanodeInfoProto datanodeInfoProto =
-                HdfsProtos.DatanodeInfoProto.newBuilder()
-                    .mergeFrom(this.datanodes.get(datanodeUuid))
-                    .setLastUpdate(System.currentTimeMillis())
-                    .build();
-
-            this.datanodes.put(datanodeUuid, datanodeInfoProto);
+            // update datanode
+            Datanode datanode = this.datanodes.get(datanodeUuid);
+            datanode.setLastUpdate(lastUpdate);
         } finally {
-            lock.writeLock().unlock();
+            this.lock.writeLock().unlock();
         }
     }
 
-    public HdfsProtos.DatanodeInfoProto chooseBlockLocation(long blockSize,
-            List<String> favoredNodes) {
+    public Datanode chooseBlockLocation(long blockSize,
+            List<String> favoredNodes) throws Exception {
+        if (this.datanodes.size() == 0) {
+            throw new StatusRuntimeException(Status.UNAVAILABLE
+                .withDescription("no datanodes are registered"));
+        }
 
         // try all favored nodes
         if (favoredNodes != null) {
@@ -97,6 +99,6 @@ public class DatanodeManager {
 
         // return random node
         Object[] array = this.datanodes.values().toArray();
-        return (HdfsProtos.DatanodeInfoProto) array[this.random.nextInt(array.length)];
+        return (Datanode) array[this.random.nextInt(array.length)];
     }
 }

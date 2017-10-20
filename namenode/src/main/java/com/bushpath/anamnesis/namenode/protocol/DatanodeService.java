@@ -3,6 +3,7 @@ package com.bushpath.anamnesis.namenode.protocol;
 import io.grpc.stub.StreamObserver;
 import org.apache.hadoop.hdfs.protocol.proto.DatanodeProtocolProtos;
 import org.apache.hadoop.hdfs.protocol.proto.DatanodeProtocolServiceGrpc;
+import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsServerProtos;
 
 import com.bushpath.anamnesis.namenode.DatanodeManager;
@@ -26,15 +27,23 @@ public class DatanodeService
     public void registerDatanode(DatanodeProtocolProtos.RegisterDatanodeRequestProto req,
             StreamObserver<DatanodeProtocolProtos.RegisterDatanodeResponseProto> 
             responseObserver) {
-        logger.info("TODO - registering datanode");
+        logger.info("recv register datanode");
         
         try {
-            this.datanodeManager.processRegistration(req);
+            // register datanode
+            DatanodeProtocolProtos.DatanodeRegistrationProto registration 
+                = req.getRegistration();
+            HdfsProtos.DatanodeIDProto datanodeID = registration.getDatanodeID();
 
-            // TODO - do some stuff eh
+            this.datanodeManager.registerDatanode(datanodeID.getIpAddr(),
+                datanodeID.getHostName(), datanodeID.getDatanodeUuid(),
+                datanodeID.getXferPort(), datanodeID.getInfoPort(),
+                datanodeID.getIpcPort(), System.currentTimeMillis());
+
+            // send response
             DatanodeProtocolProtos.RegisterDatanodeResponseProto response =
                 DatanodeProtocolProtos.RegisterDatanodeResponseProto.newBuilder()
-                    .setRegistration(req.getRegistration())
+                    .setRegistration(req.getRegistration()) // TODO - change?
                     .build();
 
             responseObserver.onNext(response);
@@ -49,13 +58,18 @@ public class DatanodeService
     public void sendHeartbeat(DatanodeProtocolProtos.HeartbeatRequestProto req,
             StreamObserver<DatanodeProtocolProtos.HeartbeatResponseProto>
             responseObserver) {
-        logger.info("TODO - datanode heartbeat");
+        logger.info("recv send heartbeat");
 
         try {
-            this.datanodeManager.processHeartbeat(req);
+            // update datanode
+            DatanodeProtocolProtos.DatanodeRegistrationProto registration
+                = req.getRegistration();
+            HdfsProtos.DatanodeIDProto datanodeID = registration.getDatanodeID();
 
-            // TODO - do some stuff eh
-            // can be empty
+            this.datanodeManager.updateDatanode(datanodeID.getDatanodeUuid(),
+                System.currentTimeMillis());
+
+            // send response
             List<DatanodeProtocolProtos.DatanodeCommandProto> cmds = new ArrayList<>();
 
             HdfsServerProtos.NNHAStatusHeartbeatProto status = 

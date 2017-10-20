@@ -8,11 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Block {
-    public long blockId, generationStamp, offset;
-    public List<HdfsProtos.DatanodeInfoProto> locs;
-    public List<Boolean> isCached;
-    public List<HdfsProtos.StorageTypeProto> storageTypes;
-    public List<String> storageIds;
+    private long blockId, generationStamp, offset;
+    private List<Datanode> locs;
+    private List<Boolean> isCached;
+    private List<HdfsProtos.StorageTypeProto> storageTypes;
+    private List<String> storageIds;
 
     public Block(long blockId, long generationStamp, long offset) {
         this.blockId = blockId;
@@ -24,7 +24,19 @@ public class Block {
         this.storageIds = new ArrayList<>();
     }
 
-    public void addLoc(HdfsProtos.DatanodeInfoProto loc) {
+    public long getBlockId() {
+        return this.blockId;
+    }
+
+    public long getGenerationStamp() {
+        return this.generationStamp;
+    }
+
+    public long getOffset() {
+        return this.getOffset();
+    }
+
+    public void addLoc(Datanode loc) {
         this.locs.add(loc);
     }
 
@@ -34,6 +46,11 @@ public class Block {
             .setBlockId(this.blockId)
             .setGenerationStamp(this.generationStamp)
             .build();
+
+        List<HdfsProtos.DatanodeInfoProto> locs = new ArrayList<>();
+        for (Datanode datanode: this.locs) {
+            locs.add(datanode.toDatanodeInfoProto());
+        }
 
         SecurityProtos.TokenProto blockToken = SecurityProtos.TokenProto.newBuilder()
             .setIdentifier(ByteString.copyFrom(new byte[]{}))

@@ -21,6 +21,5 @@ An in-memory, location aware, HDFS based file system.
 > ./anamnesis.sh download foo/test.txt /tmp/test2.txt
 
 ## TODO
-- refactor datanodeManager update handling (cheeky as best)
 - implement datanode heartbeat storage information (integrate into addBlock)
 - write data transfer code for client / datanode
