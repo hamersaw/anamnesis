@@ -49,4 +49,16 @@ public class NSDirectory extends NSItem {
             .setAccessTime(-1)
             .build();
     }
+
+    @Override
+    public void print(int indent) {
+        for (int i=0; i<indent; i++) {
+            System.out.print("\t");
+        }
+
+        System.out.println("DIR:" + this.name);
+        for (NSItem child: this.children.values()) {
+            child.print(indent + 1);
+        }
+    }
 }

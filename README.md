@@ -21,7 +21,7 @@ An in-memory, location aware, HDFS based file system.
 > ./anamnesis.sh download --path foo/test.txt --local-path /tmp/test2.txt
 
 ## TODO
-- continue refactoring
+- fix datanodeManager update handling (cheeky as best)
 - support favoredNodes on 'create' method (decide which node the data is written to)
 - complete implementing creating new file
 - implement datanode heartbeat storage information (integrate into addBlock)

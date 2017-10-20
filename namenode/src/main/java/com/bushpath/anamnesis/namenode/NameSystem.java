@@ -1,5 +1,8 @@
 package com.bushpath.anamnesis.namenode;
 
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,11 +30,33 @@ public class NameSystem {
 
         this.lock.writeLock().lock();
         try {
-            // create new file and add as child of parent directory
+            // check if file already exists
             String[] elements = parseElements(path);
+            if (parentDirectory.hasChild(elements[elements.length - 1])) {
+                throw new StatusRuntimeException(Status.ALREADY_EXISTS
+                    .withDescription("'" + path + "' already exists"));
+            }
+ 
+            // create new file and add as child of parent directory
             NSItem file = new NSFile(elements[elements.length - 1], owner,
                     "", perm, blockSize);
             parentDirectory.addChild(file);
+        } finally {
+            this.lock.writeLock().unlock();
+        }
+    }
+
+    public void complete(String path) throws Exception {
+        NSItem file = getFile(path);
+
+        this.lock.writeLock().lock();
+        try {
+            if (file.getType() != NSItem.Type.FILE) {
+                throw new StatusRuntimeException(Status.INVALID_ARGUMENT
+                    .withDescription("'" + path + "' is not a file"));
+            }
+
+            ((NSFile) file).complete();
         } finally {
             this.lock.writeLock().unlock();
         }
@@ -55,7 +80,9 @@ public class NameSystem {
                     files.add(file);
                     return files;
                 default:
-                    throw new Exception("unknown file type for file '" + path + "'");
+                    throw new StatusRuntimeException(Status.UNIMPLEMENTED
+                        .withDescription("file type '" + file.getType() 
+                            + "' unimplemented"));
             }
         } finally {
             this.lock.readLock().unlock();
@@ -68,8 +95,14 @@ public class NameSystem {
 
         this.lock.writeLock().lock();
         try {
-            // create new directory and add as child of parent directory
+            // check if file already exists
             String[] elements = parseElements(path);
+            if (parentDirectory.hasChild(elements[elements.length - 1])) {
+                throw new StatusRuntimeException(Status.ALREADY_EXISTS
+                    .withDescription("'" + path + "' already exists"));
+            }
+ 
+            // create new directory and add as child of parent directory
             NSItem dir = new NSDirectory(elements[elements.length - 1], perm);
             parentDirectory.addChild(dir);
         } finally {
@@ -85,11 +118,18 @@ public class NameSystem {
 
             // iterate over path elements
             for (int i=0; i<elements.length; i++) {
-                if (current.getType() != NSItem.Type.DIRECTORY ||
-                        !((NSDirectory) current).hasChild(elements[i])) {
-                    throw new Exception("file '" + path + "' does not exists");
+                if (current.getType() != NSItem.Type.DIRECTORY) {
+                    throw new StatusRuntimeException(Status.INVALID_ARGUMENT
+                        .withDescription("element '" + elements[i] 
+                            + "' is not a directory"));
+                }
+
+                NSDirectory currentDirectory = (NSDirectory) current;
+                if (!currentDirectory.hasChild(elements[i])) {
+                    throw new StatusRuntimeException(Status.NOT_FOUND
+                        .withDescription("'" + path + "' does not exist"));
                 } else {
-                    current = ((NSDirectory) current).getChild(path);
+                    current = currentDirectory.getChild(elements[i]);
                 }
             }
 
@@ -106,14 +146,20 @@ public class NameSystem {
             NSDirectory current = this.root;
             String[] elements = parseElements(path);
 
+            // parent directory of nothing is root
+            if (elements.length == 0) {
+                return current;
+            }
+
             // iterate over path elements
             for (int i=0; i<elements.length - 1; i++) {
                 if (current.hasChild(elements[i])) {
                     // check if item is a directory
                     NSItem item = current.getChild(elements[i]);
                     if (item.getType() != NSItem.Type.DIRECTORY) {
-                        throw new Exception("path element '" + elements[i]
-                                + "' is not a directory");
+                        throw new StatusRuntimeException(Status.INVALID_ARGUMENT
+                            .withDescription("element '" + elements[i] 
+                                + "' is not a directory"));
                     }
 
                     current = (NSDirectory) item;
@@ -123,8 +169,8 @@ public class NameSystem {
                     current.addChild(newDirectory);
                     current = newDirectory;
                 } else {
-                    throw new Exception("path element '" + elements[i]
-                            + "' does not exist");
+                    throw new StatusRuntimeException(Status.NOT_FOUND
+                        .withDescription("'" + path + "' does not exist"));
                 }
             }
 

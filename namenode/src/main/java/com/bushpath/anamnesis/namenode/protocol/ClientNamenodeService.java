@@ -53,12 +53,11 @@ public class ClientNamenodeService
                     .build();
 
             responseObserver.onNext(response);
+            responseObserver.onCompleted();
         } catch (Exception e) {
             logger.severe(e.toString());
             responseObserver.onError(e);
         }
-
-        responseObserver.onCompleted();
     }
 
     @Override
@@ -69,27 +68,20 @@ public class ClientNamenodeService
 
         try {
             // complete file with name system
-            boolean result = true;
-            try {
-                // TODO - complete file
-            } catch (Exception e) {
-                logger.severe(e.toString());
-                result = false;
-            }
+            this.nameSystem.complete(req.getSrc());
 
             // response to request
             ClientNamenodeProtocolProtos.CompleteResponseProto response =
                 ClientNamenodeProtocolProtos.CompleteResponseProto.newBuilder()
-                    .setResult(result)
+                    .setResult(true)
                     .build();
 
             responseObserver.onNext(response);
+            responseObserver.onCompleted();
         } catch (Exception e) {
             logger.severe(e.toString());
             responseObserver.onError(e);
         }
-
-        responseObserver.onCompleted();
     }
 
     @Override
@@ -109,12 +101,11 @@ public class ClientNamenodeService
                     .build();
 
             responseObserver.onNext(response);
+            responseObserver.onCompleted();
         } catch (Exception e) {
             logger.severe(e.toString());
             responseObserver.onError(e);
         }
-
-        responseObserver.onCompleted();
     }
 
     @Override
@@ -153,12 +144,11 @@ public class ClientNamenodeService
                     .build();
 
             responseObserver.onNext(response);
+            responseObserver.onCompleted();
         } catch (Exception e) {
             logger.severe(e.toString());
             responseObserver.onError(e);
         }
-
-        responseObserver.onCompleted();
     }
 
     @Override
@@ -190,12 +180,11 @@ public class ClientNamenodeService
                     .build();
 
             responseObserver.onNext(response);
+            responseObserver.onCompleted();
         } catch (Exception e) {
             logger.severe(e.toString());
             responseObserver.onError(e);
         }
-
-        responseObserver.onCompleted();
     }
 
     @Override
@@ -206,27 +195,20 @@ public class ClientNamenodeService
 
         try {
             // use name system to make directory
-            boolean result = true;
-            try {
-                this.nameSystem.mkdir(req.getSrc(), req.getMasked().getPerm(),
-                    req.getCreateParent());
-            } catch (Exception e) {
-                logger.severe(e.toString());
-                result = false;
-            }
+            this.nameSystem.mkdir(req.getSrc(), req.getMasked().getPerm(),
+                req.getCreateParent());
 
             // respond to request
             ClientNamenodeProtocolProtos.MkdirsResponseProto response =
                 ClientNamenodeProtocolProtos.MkdirsResponseProto.newBuilder()
-                    .setResult(result)
+                    .setResult(true)
                     .build();
 
             responseObserver.onNext(response);
+            responseObserver.onCompleted();
         } catch (Exception e) {
             logger.severe(e.toString());
             responseObserver.onError(e);
         }
-
-        responseObserver.onCompleted();
     }
 }

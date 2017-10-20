@@ -54,7 +54,7 @@ public class Main {
                 System.exit(0);
             }
         } catch (Exception e) {
-            System.out.println("Unexpected Error:" + e.toString());
+            System.out.println(e.toString());
         }
     }
 
@@ -72,10 +72,10 @@ public class Main {
         String command;
 
         @Parameter(names = {"-p", "--path"}, description = "path" )
-        String path;
+        String path = "";
 
         @Parameter(names = {"-l", "--local-path"}, description = "local path" )
-        String localPath;
+        String localPath = "";
 
         @Parameter(names = {"-b", "--block-size"}, description = "block size" )
         Integer blockSize = 64000;

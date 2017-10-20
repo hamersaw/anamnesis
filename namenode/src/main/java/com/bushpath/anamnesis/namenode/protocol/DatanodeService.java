@@ -38,12 +38,11 @@ public class DatanodeService
                     .build();
 
             responseObserver.onNext(response);
+            responseObserver.onCompleted();
         } catch (Exception e) {
             logger.severe(e.toString());
             responseObserver.onError(e);
         }
-
-        responseObserver.onCompleted();
     }
 
     @Override
@@ -72,11 +71,10 @@ public class DatanodeService
                     .build();
 
             responseObserver.onNext(response);
+            responseObserver.onCompleted();
         } catch (Exception e) {
             logger.severe(e.toString());
             responseObserver.onError(e);
         }
-
-        responseObserver.onCompleted();
     }
 }

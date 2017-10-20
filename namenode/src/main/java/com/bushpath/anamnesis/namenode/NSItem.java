@@ -4,10 +4,10 @@ import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
 public abstract class NSItem {
     protected String name;
-    protected NSItem.Type type;
+    protected Type type;
     protected int perm;
 
-    public NSItem(String name, NSItem.Type type, int perm) {
+    public NSItem(String name, Type type, int perm) {
         this.name = name;
         this.type = type;
         this.perm = perm;
@@ -31,4 +31,5 @@ public abstract class NSItem {
     }
 
     public abstract HdfsProtos.HdfsFileStatusProto toHdfsFileStatusProto();
+    public abstract void print(int indent);
 }
