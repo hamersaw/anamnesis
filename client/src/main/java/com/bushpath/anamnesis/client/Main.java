@@ -3,6 +3,8 @@ package com.bushpath.anamnesis.client;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
+import java.io.FileInputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,9 +34,9 @@ public class Main {
                 .build()
                 .parse(args);
 
-            // create DFSClient
-            DFSClient dfsClient = new DFSClient(arguments.ip, arguments.port, 
-                arguments.client);
+            // create AnamnesisClient
+            AnamnesisClient anamnesisClient = new AnamnesisClient(arguments.ip,
+                arguments.port, arguments.client);
 
             if (arguments.command.size() < 1) {
                 throw new Exception("Command not specified.");
@@ -47,29 +49,49 @@ public class Main {
                     throw new Exception("Invalid arguments for command");
                 }
 
-                dfsClient.download(arguments.command.get(1), arguments.command.get(2));
+                anamnesisClient.download(arguments.command.get(1),
+                    arguments.command.get(2));
                 break;
             case "ls":
                 if (arguments.command.size() != 2) {
                     throw new Exception("Invalid arguments for command");
                 }
                 
-                dfsClient.ls(arguments.command.get(1));
+                anamnesisClient.ls(arguments.command.get(1));
                 break;
             case "mkdir":
                 if (arguments.command.size() != 2) {
                     throw new Exception("Invalid arguments for command");
                 }
                 
-                dfsClient.mkdir(arguments.command.get(1));
+                boolean result = anamnesisClient.mkdir(arguments.command.get(1));
+                System.out.println("Success: " + result);
                 break;
             case "upload":
                 if (arguments.command.size() != 3) {
                     throw new Exception("Invalid arguments for command");
                 }
 
-                dfsClient.upload(arguments.command.get(1), arguments.command.get(2), 
-                    arguments.blockSize, arguments.favoredNodes);
+                // open local file input stream
+                FileInputStream input = new FileInputStream(arguments.command.get(1));
+
+                // open output stream
+                OutputStream output = anamnesisClient.create(arguments.command.get(2),
+                        Integer.MAX_VALUE, arguments.blockSize, arguments.favoredNodes);
+ 
+                // parse file and write to output stream
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+                while ((bytesRead = input.read(buffer)) > 0) {
+                    if (bytesRead != buffer.length) {
+                        output.write(buffer, 0, bytesRead);
+                    } else {
+                        output.write(buffer);
+                    }
+                }
+
+                // close file
+                output.close();
                 break;
             case "help":
             default:
@@ -77,6 +99,7 @@ public class Main {
                 System.exit(0);
             }
         } catch (Exception e) {
+            e.printStackTrace();
             System.out.println(e.toString());
         }
     }

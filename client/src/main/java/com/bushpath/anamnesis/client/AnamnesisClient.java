@@ -8,21 +8,94 @@ import com.bushpath.anamnesis.client.protocol.ClientNamenodeClient;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class DFSClient {
-    private static final Logger logger = Logger.getLogger(DFSClient.class.getName());
+public class AnamnesisClient {
+    private static final Logger logger = Logger.getLogger(AnamnesisClient.class.getName());
     private ClientNamenodeClient clientNamenodeClient;
     private String clientName;
 
-    public DFSClient(String ipAddr, int port, String clientName) {
+    public AnamnesisClient(String ipAddr, int port, String clientName) {
         this.clientNamenodeClient = new ClientNamenodeClient(ipAddr, port);
         this.clientName = clientName;
     }
 
-    public void download(String path, String localPath) throws Exception {
+    public List<Location> addBlock(String path,
+            List<String> favoredNodes) throws IOException {
+        // create protobuf components for add block request
+        ClientNamenodeProtocolProtos.AddBlockRequestProto addBlockReq =
+            ClientNamenodeProtocolProtos.AddBlockRequestProto.newBuilder()
+                .setSrc(path)
+                .setClientName(this.clientName)
+                .addAllFavoredNodes(favoredNodes)
+                .build();
+
+        ClientNamenodeProtocolProtos.AddBlockResponseProto addBlockResponse =
+            this.clientNamenodeClient.addBlock(addBlockReq);
+
+        // return locations specified by namenode
+        List<Location> locations = new ArrayList<>();
+        for (HdfsProtos.DatanodeInfoProto loc: 
+                addBlockResponse.getBlock().getLocsList()) {
+            locations.add(new Location(loc.getId().getIpAddr(),
+                loc.getId().getXferPort()));
+        }
+
+        return locations;
+    }
+
+    public void close(String path) throws IOException {
+        // complete file
+        ClientNamenodeProtocolProtos.CompleteRequestProto req =
+            ClientNamenodeProtocolProtos.CompleteRequestProto.newBuilder()
+                .setSrc(path)
+                .setClientName(this.clientName)
+                .build();
+
+        ClientNamenodeProtocolProtos.CompleteResponseProto response =
+            this.clientNamenodeClient.complete(req);
+
+        // TODO - handle response
+    }
+
+    public AnamnesisOutputStream create(String path, int perm, int blockSize,
+            List<String> favoredNodes) throws IOException {
+        logger.info("creating remote file '" + path + "'");
+
+        // construct protobuf components for creating file
+        HdfsProtos.FsPermissionProto fsPermissionProto = 
+            HdfsProtos.FsPermissionProto.newBuilder()
+                .setPerm(perm)
+                .build();
+
+        List<HdfsProtos.CryptoProtocolVersionProto> cryptoProtocolVersion
+            = new ArrayList<>();
+        cryptoProtocolVersion.add(
+                HdfsProtos.CryptoProtocolVersionProto.UNKNOWN_PROTOCOL_VERSION);
+
+        ClientNamenodeProtocolProtos.CreateRequestProto createReq = 
+            ClientNamenodeProtocolProtos.CreateRequestProto.newBuilder()
+                .setSrc(path)
+                .setMasked(fsPermissionProto)
+                .setClientName(this.clientName)
+                .setCreateFlag(1)
+                .setCreateParent(true)
+                .setReplication(-1)
+                .setBlockSize(blockSize)
+                .addAllCryptoProtocolVersion(cryptoProtocolVersion)
+                .build();
+
+        // send CreateRequestProto
+        ClientNamenodeProtocolProtos.CreateResponseProto createResponse =
+            this.clientNamenodeClient.create(createReq);
+
+        return new AnamnesisOutputStream(this, path, blockSize, favoredNodes);
+    }
+
+    public void download(String path, String localPath) throws IOException {
         logger.info("downloading file '" + path + "' to '" + localPath + "'");
 
         // open file output stream
@@ -45,7 +118,7 @@ public class DFSClient {
             .getPartialListingList();
 
         if (list.size() != 1) {
-            throw new Exception("directory downloads not yet supported");
+            throw new IOException("directory downloads not yet supported");
         }
 
         HdfsProtos.HdfsFileStatusProto file = list.get(0);
@@ -62,7 +135,7 @@ public class DFSClient {
         }
     }
 
-    public void ls(String path) throws Exception {
+    public void ls(String path) throws IOException {
         logger.info("get listings for '" + path + "'");
 
         // construct GetListing protobuf components
@@ -87,7 +160,7 @@ public class DFSClient {
         }
     }
 
-    public void mkdir(String path) throws Exception {
+    public boolean mkdir(String path) throws IOException {
         logger.info("creating directory '" + path + "'");
  
         // construct Mkdir protobuf components
@@ -108,81 +181,6 @@ public class DFSClient {
             this.clientNamenodeClient.mkdirs(req);
 
         // handle response
-        System.out.println("Success:" + response.getResult());
+        return response.getResult();
     }
-
-    public void upload(String localPath, String path, int blockSize,
-            List<String> favoredNodes) throws Exception {
-        logger.info("uploading file '" + localPath + "' to '" + path + "'");
-
-        // open local file input stream
-        FileInputStream input = new FileInputStream(localPath);
-
-        // construct protobuf components for creating file
-        HdfsProtos.FsPermissionProto fsPermissionProto = 
-            HdfsProtos.FsPermissionProto.newBuilder()
-                .setPerm(Integer.MAX_VALUE)
-                .build();
-
-        List<HdfsProtos.CryptoProtocolVersionProto> cryptoProtocolVersion
-            = new ArrayList<>();
-        cryptoProtocolVersion.add(
-                HdfsProtos.CryptoProtocolVersionProto.UNKNOWN_PROTOCOL_VERSION);
-
-        ClientNamenodeProtocolProtos.CreateRequestProto createReq = 
-            ClientNamenodeProtocolProtos.CreateRequestProto.newBuilder()
-                .setSrc(path)
-                .setMasked(fsPermissionProto)
-                .setClientName(this.clientName)
-                .setCreateFlag(1)
-                .setCreateParent(true)
-                .setReplication(-1)
-                .setBlockSize(blockSize)
-                .addAllCryptoProtocolVersion(cryptoProtocolVersion)
-                .build();
-
-        // send CreateRequestProto
-        ClientNamenodeProtocolProtos.CreateResponseProto createResponse =
-            this.clientNamenodeClient.create(createReq);
-
-        // TODO - handle response
-
-        // parse file and handle blocks individually
-        byte[] block = new byte[blockSize];
-        int bytesRead;
-        while ((bytesRead = input.read(block)) > 0) {
-            // create protobuf components for add block request
-            ClientNamenodeProtocolProtos.AddBlockRequestProto addBlockReq =
-                ClientNamenodeProtocolProtos.AddBlockRequestProto.newBuilder()
-                    .setSrc(path)
-                    .setClientName(this.clientName)
-                    .addAllFavoredNodes(favoredNodes)
-                    .build();
-
-            ClientNamenodeProtocolProtos.AddBlockResponseProto addBlockResponse =
-                this.clientNamenodeClient.addBlock(addBlockReq);
-
-            // TODO - upload blocks
-            System.out.println("writing block to");
-            for (HdfsProtos.DatanodeInfoProto loc: 
-                    addBlockResponse.getBlock().getLocsList()) {
-
-                System.out.println("\t" + loc.getId().getIpAddr() + ":" 
-                    + loc.getId().getXferPort());
-            }
-        }
- 
-        // complete file
-        ClientNamenodeProtocolProtos.CompleteRequestProto completeReq =
-            ClientNamenodeProtocolProtos.CompleteRequestProto.newBuilder()
-                .setSrc(path)
-                .setClientName(this.clientName)
-                .build();
-
-        ClientNamenodeProtocolProtos.CompleteResponseProto completeResponse =
-            this.clientNamenodeClient.complete(completeReq);
-
-        // TODO - handle response
-    }
-
 }

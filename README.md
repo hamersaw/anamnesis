@@ -22,4 +22,25 @@ An in-memory, location aware, HDFS based file system.
 
 ## TODO
 - implement datanode heartbeat storage information (integrate into addBlock)
-- write data transfer code for client / datanode
+- store data with datanode transfer
+#### DATANODE TRANSFER
+- saslStream (rfc 2222)?
+- read/write ops to stream
+    hadoop-hdfs
+        org.apache.hadoop.hdfs.protocol.datatransfer.Receiver.java
+        org.apache.hadoop.hdfs.server.datanode.DataXceiver.java (extends Receiver)
+        org.apache.hadoop.hdfs.server.datanode.BlockReceiver.java
+        org.apache.hadoop.hdfs.server.datanode.BlockSender.java (comments on block transfer protocol)
+    hadoop-hdfs-client
+        datatransfer.proto
+        org.apache.hadoop.hdfs.DFSPacket (packets for sending blocks over a link)
+        org.apache.hadoop.hdfs.DFSInputStream (wrapper for receiving file from datanode)
+        
+        org.apache.hadoop.hdfs.DFSOutputStream (wrapper for sending file to datanode)
+        org.apache.hadoop.hdfs.DataStreamer (actually sends data)
+
+    1. send version (short)
+    2. send op (presumably protobuf?)
+    3. begin data transfer (DFSPacket)
+    4. send result (protobuf?)
+
