@@ -1,18 +1,32 @@
 package com.bushpath.anamnesis.client;
 
+import org.apache.hadoop.hdfs.protocol.proto.DataTransferProtos;
+
+import com.bushpath.anamnesis.DataTransferProtocol;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
 
 public class AnamnesisOutputStream extends OutputStream {
+    private static final Logger logger =
+        Logger.getLogger(AnamnesisOutputStream.class.getName());
+
     private AnamnesisClient anamnesisClient;
     private String path;
     private int blockSize;
     private List<String> favoredNodes;
 
     private List<Byte> buffer;
+    private Map<String, Socket> sockets;
 
     public AnamnesisOutputStream(AnamnesisClient anamnesisClient, String path, 
             int blockSize, List<String> favoredNodes) throws IOException {
@@ -22,6 +36,7 @@ public class AnamnesisOutputStream extends OutputStream {
         this.favoredNodes = favoredNodes;
 
         this.buffer = new ArrayList<>();
+        this.sockets = new HashMap<>();
     }
 
     @Override
@@ -84,11 +99,36 @@ public class AnamnesisOutputStream extends OutputStream {
         List<Location> locations = 
             this.anamnesisClient.addBlock(this.path, this.favoredNodes);
 
-        // write block to locations
-        System.out.println("TODO - write block");
+        // write block (stop on a successful write)
         for (Location location: locations) {
-            System.out.println("\t" + location.getIpAddr() + ":" + location.getPort());
+            logger.info("writing block to " + location.getIpAddr() 
+                + ":" + location.getPort());
+
+            Socket socket = this.getSocket(location);
+            DataTransferProtocol.sendWriteOp(
+                new DataOutputStream(socket.getOutputStream()), "POOL_ID", -1l,
+                -1l, "CLIENT");
+
+            DataTransferProtos.BlockOpResponseProto response =
+                DataTransferProtocol.recvBlockOpResponse(
+                    new DataInputStream(socket.getInputStream()));
+
+            logger.info("block write status: " + response.getStatus());
+
+            // TODO - send block chunks
+
+            break; // break on successful write
         }
+    }
+
+    private Socket getSocket(Location location) throws IOException {
+        String socketAddr = location.getIpAddr() + ":" + location.getPort(); 
+        if (!this.sockets.containsKey(socketAddr)) {
+            Socket socket = new Socket(location.getIpAddr(), location.getPort());
+            this.sockets.put(socketAddr, socket);
+        }
+
+        return this.sockets.get(socketAddr);
     }
 
     @Override

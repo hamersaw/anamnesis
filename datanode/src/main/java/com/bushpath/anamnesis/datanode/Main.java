@@ -31,6 +31,9 @@ public class Main {
             GrpcServer server = new GrpcServer(config.ipcPort, services);
             server.start();
             logger.info("server started on port " + config.ipcPort);
+
+            // start xfer service
+            new Thread(new XferService(config.xferPort)).start();            
             
             // start HeartbeatManager
             DatanodeClient client = new DatanodeClient(config.namenodeIpAddr,

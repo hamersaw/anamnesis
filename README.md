@@ -38,9 +38,17 @@ An in-memory, location aware, HDFS based file system.
         
         org.apache.hadoop.hdfs.DFSOutputStream (wrapper for sending file to datanode)
         org.apache.hadoop.hdfs.DataStreamer (actually sends data)
-
-    1. send version (short)
-    2. send op (presumably protobuf?)
-    3. begin data transfer (DFSPacket)
-    4. send result (protobuf?)
-
+#### WRITE BLOCK PROTOCOL
+    1. client -> (WriteOp) -> datanode
+    2. client <- (Success) <- datanode
+    3. client -> chunk -> datanode
+        org.apache.hadoop.hdfs.DFSPacket
+    4. client <- ack <- datanode
+    5. repeat 3, 4 until finsihed
+#### READ BLOCK PROTOCOL
+    1. client -> (ReadOp) -> datanode
+    2. client <- (Success) <- datanode
+    3. client -> chunk -> datanode
+        org.apache.hadoop.hdfs.server.datanode.BlockSender.java
+    4. client <- ack <- datanode
+    5. repeat 3, 4 until finished

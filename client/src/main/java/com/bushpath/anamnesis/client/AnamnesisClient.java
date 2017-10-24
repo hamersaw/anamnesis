@@ -14,7 +14,8 @@ import java.util.List;
 import java.util.logging.Logger;
 
 public class AnamnesisClient {
-    private static final Logger logger = Logger.getLogger(AnamnesisClient.class.getName());
+    private static final Logger logger =
+        Logger.getLogger(AnamnesisClient.class.getName());
     private ClientNamenodeClient clientNamenodeClient;
     private String clientName;
 
