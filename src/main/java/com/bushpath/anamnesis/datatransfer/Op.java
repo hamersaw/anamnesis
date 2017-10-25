@@ -1,4 +1,4 @@
-package com.bushpath.anamnesis;
+package com.bushpath.anamnesis.datatransfer;
 
 import java.io.DataInput;
 import java.io.DataOutput;
