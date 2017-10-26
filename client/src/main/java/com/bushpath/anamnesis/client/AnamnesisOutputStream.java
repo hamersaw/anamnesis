@@ -58,7 +58,6 @@ public class AnamnesisOutputStream extends OutputStream {
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        System.out.println("anamnesis write " + len + " bytes");
         int bytesWrote = 0;
         int bIndex = off;
         while (bytesWrote < len) {
@@ -78,11 +77,10 @@ public class AnamnesisOutputStream extends OutputStream {
 
     private void writeBlock() throws IOException {
         // get locations from namenode
-        List<Location> locations = 
-            this.anamnesisClient.addBlock(this.path, this.favoredNodes);
+        Block block = this.anamnesisClient.addBlock(this.path, this.favoredNodes);
 
         // write block (stop on a successful write)
-        for (Location location: locations) {
+        for (Location location: block.getLocations()) {
             System.out.println("writing block to " + location.getIpAddr() 
                 + ":" + location.getPort());
 
@@ -92,7 +90,7 @@ public class AnamnesisOutputStream extends OutputStream {
 
             DataTransferProtocol.sendWriteOp(out, 
                 DataTransferProtos.OpWriteBlockProto.BlockConstructionStage.PIPELINE_CLOSE,
-                    "POOL_ID", -1l, -1l, "CLIENT");
+                    "POOL_ID", block.getBlockId(), -1l, "CLIENT", 0);
 
             DataTransferProtos.BlockOpResponseProto response =
                 DataTransferProtocol.recvBlockOpResponse(in);

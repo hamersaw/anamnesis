@@ -39,7 +39,7 @@ public class BlockInputStream extends InputStream {
     public int read(byte[] b, int off, int len) throws IOException {
         int bytesRead = 0;
         while (bytesRead < len) {
-            // if no data in current buffer read next block
+            // if no data in buffer read next block
             if (this.endIndex - this.startIndex <= 0) {
                 if (this.lastPacketSeen) {
                     break;

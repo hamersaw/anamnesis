@@ -1,5 +1,7 @@
 package com.bushpath.anamnesis.client;
 
+import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
+
 public class Location {
     private String ipAddr;
     private int port;
@@ -15,5 +17,9 @@ public class Location {
 
     public int getPort() {
         return port;
+    }
+
+    public static Location parseFrom(HdfsProtos.DatanodeIDProto datanodeIDProto) {
+        return new Location(datanodeIDProto.getIpAddr(), datanodeIDProto.getXferPort());
     }
 }

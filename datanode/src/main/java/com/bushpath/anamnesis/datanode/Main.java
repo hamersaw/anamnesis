@@ -7,6 +7,9 @@ import io.grpc.ServerBuilder;
 import com.bushpath.anamnesis.GrpcServer;
 import com.bushpath.anamnesis.datanode.protocol.ClientDatanodeService;
 import com.bushpath.anamnesis.datanode.protocol.DatanodeClient;
+import com.bushpath.anamnesis.datanode.storage.JVMStorage;
+import com.bushpath.anamnesis.datanode.storage.Storage;
+import com.bushpath.anamnesis.datanode.storage.TmpfsStorage;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,6 +28,19 @@ public class Main {
             }
             Configuration config = new Configuration(args[0]);
 
+            // initialize storage
+            Storage storage;
+            switch (config.storage) {
+            case "jvm":
+                storage = new JVMStorage();
+                break;
+            case "tmpfs":
+                storage = new TmpfsStorage();
+                break;
+            default:
+                throw new Exception("Unknown storage type");
+            }
+
             // start server
             List<BindableService> services = new ArrayList<>();
             services.add(new ClientDatanodeService());
@@ -33,7 +49,7 @@ public class Main {
             logger.info("server started on port " + config.ipcPort);
 
             // start xfer service
-            new Thread(new XferService(config.xferPort)).start();            
+            new Thread(new XferService(config.xferPort, storage)).start();            
             
             // start HeartbeatManager
             DatanodeClient client = new DatanodeClient(config.namenodeIpAddr,

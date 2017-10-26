@@ -23,16 +23,40 @@ public class DataTransferProtocol {
         out.flush();
     }
 
-    public static void sendReadOp(DataOutputStream out) throws IOException {
-        // TODO - build read op
+    public static void sendReadOp(DataOutputStream out, String poolId, long blockId,
+            long generationStamp, String client, long offset, long len)
+            throws IOException {
+        HdfsProtos.ExtendedBlockProto extendedBlockProto =
+            HdfsProtos.ExtendedBlockProto.newBuilder()
+                .setPoolId(poolId)
+                .setBlockId(blockId)
+                .setGenerationStamp(generationStamp)
+                .build();
 
-        send(out, Op.READ_BLOCK, null);
+        DataTransferProtos.BaseHeaderProto baseHeaderProto =
+            DataTransferProtos.BaseHeaderProto.newBuilder()
+                .setBlock(extendedBlockProto)
+                .build();
+
+        DataTransferProtos.ClientOperationHeaderProto clientOperationHeaderProto =
+            DataTransferProtos.ClientOperationHeaderProto.newBuilder()
+                .setBaseHeader(baseHeaderProto)
+                .setClientName(client)
+                .build();
+
+        Message proto = DataTransferProtos.OpReadBlockProto.newBuilder()
+            .setHeader(clientOperationHeaderProto)
+            .setOffset(offset)
+            .setLen(len)
+            .build();
+
+        send(out, Op.READ_BLOCK, proto);
     }
 
     public static void sendWriteOp(DataOutputStream out, 
             DataTransferProtos.OpWriteBlockProto.BlockConstructionStage stage, 
-            String poolId, long blockId, long generationStamp, String client) 
-            throws IOException {
+            String poolId, long blockId, long generationStamp, String client,
+            int pipelineSize) throws IOException {
         HdfsProtos.ExtendedBlockProto extendedBlockProto =
             HdfsProtos.ExtendedBlockProto.newBuilder()
                 .setPoolId(poolId)
@@ -61,7 +85,7 @@ public class DataTransferProtocol {
             .setHeader(clientOperationHeaderProto)
             .setStage(stage)
             .setRequestedChecksum(checksumProto)
-            .setPipelineSize(-1) // TODO - all these variables
+            .setPipelineSize(pipelineSize) // TODO - all these variables
             .setMinBytesRcvd(-1l)
             .setMaxBytesRcvd(-1l)
             .setLatestGenerationStamp(-1l)

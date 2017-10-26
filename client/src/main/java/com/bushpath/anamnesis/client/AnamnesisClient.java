@@ -24,7 +24,7 @@ public class AnamnesisClient {
         this.clientName = clientName;
     }
 
-    public List<Location> addBlock(String path,
+    public Block addBlock(String path,
             List<String> favoredNodes) throws IOException {
         // create protobuf components for add block request
         ClientNamenodeProtocolProtos.AddBlockRequestProto addBlockReq =
@@ -37,15 +37,7 @@ public class AnamnesisClient {
         ClientNamenodeProtocolProtos.AddBlockResponseProto addBlockResponse =
             this.clientNamenodeClient.addBlock(addBlockReq);
 
-        // return locations specified by namenode
-        List<Location> locations = new ArrayList<>();
-        for (HdfsProtos.DatanodeInfoProto loc: 
-                addBlockResponse.getBlock().getLocsList()) {
-            locations.add(new Location(loc.getId().getIpAddr(),
-                loc.getId().getXferPort()));
-        }
-
-        return locations;
+        return Block.parseFrom(addBlockResponse.getBlock());
     }
 
     public void close(String path) throws IOException {
@@ -96,46 +88,6 @@ public class AnamnesisClient {
         return new AnamnesisOutputStream(this, path, blockSize, favoredNodes);
     }
 
-    public void download(String path, String localPath) throws IOException {
-        logger.info("downloading file '" + path + "' to '" + localPath + "'");
-
-        // open file output stream
-        FileOutputStream output = new FileOutputStream(localPath);
-
-        // construct getLsting protobuf components
-        ClientNamenodeProtocolProtos.GetListingRequestProto getListingReq =
-            ClientNamenodeProtocolProtos.GetListingRequestProto.newBuilder()
-                .setSrc(path)
-                .setStartAfter(ByteString.copyFrom(new byte[]{}))
-                .setNeedLocation(true)
-                .build();
-
-        // send GetListingRequestProto
-        ClientNamenodeProtocolProtos.GetListingResponseProto getListingResponse =
-            this.clientNamenodeClient.getListing(getListingReq);
-
-        // handle response
-        List<HdfsProtos.HdfsFileStatusProto> list = getListingResponse.getDirList()
-            .getPartialListingList();
-
-        if (list.size() != 1) {
-            throw new IOException("directory downloads not yet supported");
-        }
-
-        HdfsProtos.HdfsFileStatusProto file = list.get(0);
-
-        // TODO - download block locations
-        HdfsProtos.LocatedBlocksProto locatedBlocks = file.getLocations();
-        for (HdfsProtos.LocatedBlockProto block: locatedBlocks.getBlocksList()) {
-            System.out.println("TODO - download block " + block.getB().getBlockId());
-
-            for (HdfsProtos.DatanodeInfoProto loc: block.getLocsList()) {
-                System.out.println("\t" + loc.getId().getIpAddr() + ":" 
-                    + loc.getId().getXferPort());
-            }
-        }
-    }
-
     public void ls(String path) throws IOException {
         logger.info("get listings for '" + path + "'");
 
@@ -183,5 +135,40 @@ public class AnamnesisClient {
 
         // handle response
         return response.getResult();
+    }
+
+    public AnamnesisInputStream open(String path) throws IOException {
+        // construct getLsting protobuf components
+        ClientNamenodeProtocolProtos.GetListingRequestProto getListingReq =
+            ClientNamenodeProtocolProtos.GetListingRequestProto.newBuilder()
+                .setSrc(path)
+                .setStartAfter(ByteString.copyFrom(new byte[]{}))
+                .setNeedLocation(true)
+                .build();
+
+        // send GetListingRequestProto
+        ClientNamenodeProtocolProtos.GetListingResponseProto getListingResponse =
+            this.clientNamenodeClient.getListing(getListingReq);
+
+        // handle response
+        List<HdfsProtos.HdfsFileStatusProto> list = getListingResponse.getDirList()
+            .getPartialListingList();
+
+        if (list.size() != 1) {
+            throw new IOException("directory downloads not yet supported");
+        }
+
+        // parse protobuf file into blocks
+        HdfsProtos.HdfsFileStatusProto hdfsFileStatusProto = list.get(0);
+
+        List<Block> blocks = new ArrayList<>();
+        for (HdfsProtos.LocatedBlockProto locatedBlock:
+                hdfsFileStatusProto.getLocations().getBlocksList()) {
+            blocks.add(Block.parseFrom(locatedBlock));
+
+        }
+
+        return new AnamnesisInputStream(this, blocks,
+            (int) hdfsFileStatusProto.getBlocksize());
     }
 }

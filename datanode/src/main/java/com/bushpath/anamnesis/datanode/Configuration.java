@@ -4,7 +4,7 @@ import java.io.FileInputStream;
 import java.util.Properties;
 
 public class Configuration {
-    public String hostname, ipAddr, datanodeUuid, clusterId, namenodeIpAddr;
+    public String hostname, ipAddr, storage, datanodeUuid, clusterId, namenodeIpAddr;
     public int xferPort, ipcPort, infoPort, namespceId, namenodePort;
 
     public Configuration(String filename) throws Exception {
@@ -26,6 +26,7 @@ public class Configuration {
         ipcPort = Integer.parseInt(properties.getProperty("ipcPort"));
         infoPort = Integer.parseInt(properties.getProperty("infoPort"));
 
+        storage = properties.getProperty("storage");
         datanodeUuid = properties.getProperty("datanodeUuid");
         clusterId = properties.getProperty("clusterId");
         namespceId = Integer.parseInt(properties.getProperty("namespceId"));

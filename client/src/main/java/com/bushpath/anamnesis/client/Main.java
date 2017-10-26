@@ -4,6 +4,8 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,8 +51,21 @@ public class Main {
                     throw new Exception("Invalid arguments for command");
                 }
 
-                anamnesisClient.download(arguments.command.get(1),
-                    arguments.command.get(2));
+                // open streams
+                InputStream dIn = anamnesisClient.open(arguments.command.get(1));
+                FileOutputStream dOut = new FileOutputStream(arguments.command.get(2));
+
+                byte[] dBuffer = new byte[4096];
+                int dBytesRead;
+                while ((dBytesRead = dIn.read(dBuffer)) > 0) {
+                    System.out.println("recv " + dBytesRead + " bytes");
+                    dOut.write(dBuffer, 0, dBytesRead);
+                }
+
+                // close streams
+                dIn.close();
+                dOut.close();
+
                 break;
             case "ls":
                 if (arguments.command.size() != 2) {
@@ -72,26 +87,21 @@ public class Main {
                     throw new Exception("Invalid arguments for command");
                 }
 
-                // open local file input stream
-                FileInputStream input = new FileInputStream(arguments.command.get(1));
-
-                // open output stream
-                OutputStream out = anamnesisClient.create(arguments.command.get(2),
+                // open streams
+                FileInputStream uIn = new FileInputStream(arguments.command.get(1));
+                OutputStream uOut = anamnesisClient.create(arguments.command.get(2),
                         Integer.MAX_VALUE, arguments.blockSize, arguments.favoredNodes);
  
                 // parse file and write to output stream
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = input.read(buffer)) > 0) {
-                    if (bytesRead != buffer.length) {
-                        out.write(buffer, 0, bytesRead);
-                    } else {
-                        out.write(buffer);
-                    }
+                byte[] uBuffer = new byte[4096];
+                int uBytesRead;
+                while ((uBytesRead = uIn.read(uBuffer)) > 0) {
+                    uOut.write(uBuffer, 0, uBytesRead);
                 }
 
                 // close file
-                out.close();
+                uIn.close();
+                uOut.close();
                 break;
             case "help":
             default:
