@@ -76,7 +76,7 @@ public class Main {
                 FileInputStream input = new FileInputStream(arguments.command.get(1));
 
                 // open output stream
-                OutputStream output = anamnesisClient.create(arguments.command.get(2),
+                OutputStream out = anamnesisClient.create(arguments.command.get(2),
                         Integer.MAX_VALUE, arguments.blockSize, arguments.favoredNodes);
  
                 // parse file and write to output stream
@@ -84,14 +84,14 @@ public class Main {
                 int bytesRead;
                 while ((bytesRead = input.read(buffer)) > 0) {
                     if (bytesRead != buffer.length) {
-                        output.write(buffer, 0, bytesRead);
+                        out.write(buffer, 0, bytesRead);
                     } else {
-                        output.write(buffer);
+                        out.write(buffer);
                     }
                 }
 
                 // close file
-                output.close();
+                out.close();
                 break;
             case "help":
             default:

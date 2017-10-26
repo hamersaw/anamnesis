@@ -2,7 +2,8 @@ package com.bushpath.anamnesis.client;
 
 import org.apache.hadoop.hdfs.protocol.proto.DataTransferProtos;
 
-import com.bushpath.anamnesis.DataTransferProtocol;
+import com.bushpath.anamnesis.datatransfer.BlockOutputStream;
+import com.bushpath.anamnesis.datatransfer.DataTransferProtocol;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -25,8 +26,8 @@ public class AnamnesisOutputStream extends OutputStream {
     private int blockSize;
     private List<String> favoredNodes;
 
-    private List<Byte> buffer;
-    private Map<String, Socket> sockets;
+    private byte[] buffer;
+    private int index;
 
     public AnamnesisOutputStream(AnamnesisClient anamnesisClient, String path, 
             int blockSize, List<String> favoredNodes) throws IOException {
@@ -35,109 +36,86 @@ public class AnamnesisOutputStream extends OutputStream {
         this.blockSize = blockSize;
         this.favoredNodes = favoredNodes;
 
-        this.buffer = new ArrayList<>();
-        this.sockets = new HashMap<>();
+        this.buffer = new byte[blockSize];
+        this.index = 0;
+    }
+    
+    @Override
+    public void write(int b) throws IOException {
+        // write block if buffer is full
+        if (this.index == this.buffer.length) {
+            this.writeBlock();
+        }
+
+        this.buffer[this.index] = (byte) b;
+        this.index += 1;
     }
 
     @Override
     public void write(byte[] b) throws IOException {
-        // add bytes to buffer
-        for (byte x: b) {
-            this.buffer.add(x);
-        }
-
-        // write block if necessary
-        while (this.checkWrite()) {
-            this.writeBlock();
-        }
+        this.write(b, 0, b.length);
     }
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        for (int i=off; i<off + len; i++) {
-            this.buffer.add(b[i]);
-        }
- 
-        // write block if necessary
-        while (this.checkWrite()) {
-            this.writeBlock();
-        }
-    }
+        System.out.println("anamnesis write " + len + " bytes");
+        int bytesWrote = 0;
+        int bIndex = off;
+        while (bytesWrote < len) {
+            // write block if buffer is full
+            if (this.index == this.buffer.length) {
+                this.writeBlock();
+            }
 
-    @Override
-    public void write(int b) throws IOException {
-        // add bytes to buffer
-        ByteBuffer byteBuffer = ByteBuffer.allocate(4);
-        byteBuffer.putInt(b);
-
-        for (byte x: byteBuffer.array()) {
-            this.buffer.add(x);
+            // copy bytes from b to buffer
+            int copyLen = Math.min(this.buffer.length - this.index, len - bytesWrote);
+            System.arraycopy(b, bIndex, this.buffer, this.index, copyLen);
+            bytesWrote += copyLen;
+            bIndex += copyLen;
+            this.index += copyLen;
         }
-
-        // write block if necessary
-        while (this.checkWrite()) {
-            this.writeBlock();
-        }
-    }
-
-    private boolean checkWrite() {
-        return this.buffer.size() >= 2 * this.blockSize;
     }
 
     private void writeBlock() throws IOException {
-        List<Byte> block = this.buffer.subList(0,
-            Math.min(this.blockSize, this.buffer.size()));
-
-        // shift buffer
-        if (block.size() != this.blockSize) {
-           this.buffer.clear();
-        } else {
-            this.buffer = this.buffer.subList(block.size(), this.buffer.size());
-        }
-
         // get locations from namenode
         List<Location> locations = 
             this.anamnesisClient.addBlock(this.path, this.favoredNodes);
 
         // write block (stop on a successful write)
         for (Location location: locations) {
-            logger.info("writing block to " + location.getIpAddr() 
+            System.out.println("writing block to " + location.getIpAddr() 
                 + ":" + location.getPort());
 
-            Socket socket = this.getSocket(location);
-            DataTransferProtocol.sendWriteOp(
-                new DataOutputStream(socket.getOutputStream()), "POOL_ID", -1l,
-                -1l, "CLIENT");
+            Socket socket = new Socket(location.getIpAddr(), location.getPort());
+            DataInputStream in = new DataInputStream(socket.getInputStream());
+            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+
+            DataTransferProtocol.sendWriteOp(out, 
+                DataTransferProtos.OpWriteBlockProto.BlockConstructionStage.PIPELINE_CLOSE,
+                    "POOL_ID", -1l, -1l, "CLIENT");
 
             DataTransferProtos.BlockOpResponseProto response =
-                DataTransferProtocol.recvBlockOpResponse(
-                    new DataInputStream(socket.getInputStream()));
+                DataTransferProtocol.recvBlockOpResponse(in);
 
-            logger.info("block write status: " + response.getStatus());
+            System.out.println("\tblock write status: " + response.getStatus());
 
-            // TODO - send block chunks
+            // send block chunks
+            BlockOutputStream blockOut = new BlockOutputStream(out);
+            blockOut.write(this.buffer, 0, this.index);
+            blockOut.close();
 
+            socket.close();
+
+            // reset buffer index
+            this.index = 0;
             break; // break on successful write
         }
     }
 
-    private Socket getSocket(Location location) throws IOException {
-        String socketAddr = location.getIpAddr() + ":" + location.getPort(); 
-        if (!this.sockets.containsKey(socketAddr)) {
-            Socket socket = new Socket(location.getIpAddr(), location.getPort());
-            this.sockets.put(socketAddr, socket);
-        }
-
-        return this.sockets.get(socketAddr);
-    }
-
     @Override
     public void close() throws IOException {
-        // write last block if necessary
-        while (this.buffer.size() != 0) {
-            this.writeBlock();
+        if (this.index != 0) {
+            writeBlock();
         }
-
-        this.anamnesisClient.close(path);
     }
 }

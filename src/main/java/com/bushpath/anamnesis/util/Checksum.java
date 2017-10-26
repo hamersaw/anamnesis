@@ -6,4 +6,8 @@ public class Checksum {
     public Checksum(int bytesInChecksum) {
         this.bytesInChecksum = bytesInChecksum;
     }
+
+    public int getBytesPerChecksum() {
+        return 4;
+    }
 }

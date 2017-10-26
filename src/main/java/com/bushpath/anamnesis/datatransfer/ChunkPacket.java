@@ -7,11 +7,10 @@ import java.nio.BufferOverflowException;
 import java.nio.channels.ClosedChannelException;
 
 public class ChunkPacket {
+    public static final int CHUNKS_PER_PACKET = 9, CHUNK_SIZE = 1024;
     private long sequenceNumber;
     private long offsetInBlock;
     private boolean syncBlock;
-    private int numChunks;
-    private int maxChunks;
     private boolean lastPacketInBlock;
 
     private byte[] buffer;
@@ -20,28 +19,31 @@ public class ChunkPacket {
     private int dataStart;
     private int dataPos;
 
-    public ChunkPacket(long sequenceNumber, long offsetInBlock, int chunksPerPacket,
-            int checksumSize, int chunkSize, boolean lastPacketInBlock) {
-        this(sequenceNumber, offsetInBlock, chunksPerPacket, checksumSize,
-            new byte[ChunkPacketHeader.PKT_MAX_HEADER_LEN 
-                + (chunksPerPacket * checksumSize) + (chunksPerPacket * chunkSize)],
-            lastPacketInBlock);
-    }
-
-    public ChunkPacket(long sequenceNumber, long offsetInBlock, int chunksPerPacket,
-            int checksumSize, byte[] buffer, boolean lastPacketInBlock) {
+    public ChunkPacket(long sequenceNumber, long offsetInBlock, 
+            boolean lastPacketInBlock, int checksumSize) {
         this.sequenceNumber = sequenceNumber;
         this.offsetInBlock = offsetInBlock;
-        this.numChunks = 0;
-        this.maxChunks = chunksPerPacket;
         this.lastPacketInBlock = lastPacketInBlock;
 
-        this.buffer = buffer;
-        this.checksumStart = ChunkPacketHeader.PKT_MAX_HEADER_LEN;
+        this.buffer = new byte[(CHUNKS_PER_PACKET * checksumSize) 
+            + (CHUNKS_PER_PACKET * CHUNK_SIZE)];
+
+        this.checksumStart = 0;
         this.checksumPos = this.checksumStart;
-        this.dataStart = this.checksumStart + (chunksPerPacket * checksumSize);
+        this.dataStart = this.checksumStart + (CHUNKS_PER_PACKET * checksumSize);
         this.dataPos = this.dataStart;
-        this.maxChunks = chunksPerPacket;
+    }
+
+    public long getSequenceNumber() {
+        return this.sequenceNumber;
+    }
+
+    public long getOffsetInBlock() {
+        return this.offsetInBlock;
+    }
+
+    public boolean isLastPacketInBlock() {
+        return this.lastPacketInBlock;
     }
 
     public void writeData(byte[] inArray, int off, int len)
@@ -91,13 +93,26 @@ public class ChunkPacket {
         }
 
         // copy header into buffer immediately preceding the checksum
-        int headerStart = checksumStart - header.getSerializedSize();
-        System.arraycopy(header.getBytes(), 0, this.buffer, headerStart,
-            header.getSerializedSize());
+        header.write(out);
+        out.write(this.buffer, checksumStart, checksumLen + dataLen);
+    }
 
-        // write full packet to data stream
-        out.write(this.buffer, headerStart,
-            header.getSerializedSize() + checksumLen + dataLen);
+    public static ChunkPacket read(DataInputStream in) throws IOException {
+        // read header
+        ChunkPacketHeader header = ChunkPacketHeader.read(in);
+
+        // create packet
+        ChunkPacket packet = new ChunkPacket(header.getSeqNo(), 
+            header.getOffsetInBlock(), header.isLastPacketInBlock(),  0);
+
+        byte[] buffer = new byte[header.getPacketLen() - 4];
+        in.read(buffer);
+
+        packet.writeData(buffer, 0, buffer.length);
+
+        // TODO - validate and write checksums
+
+        return packet;
     }
 
     public int copyData(byte[] buffer, int off, int len) throws IOException {
@@ -110,19 +125,6 @@ public class ChunkPacket {
         int bytesRead = Math.min(len, this.dataPos - this.dataStart);
         System.arraycopy(this.buffer, this.dataStart, buffer, off, bytesRead);
         return bytesRead;
-    }
-
-    public static ChunkPacket read(DataInputStream in) throws IOException {
-        // read header
-        ChunkPacketHeader header = ChunkPacketHeader.read(in);
-        byte[] buffer = new byte[header.getPacketLen() - header.getSerializedSize()];
-        in.read(buffer);
-
-        // TODO - validate checksums
-
-        // create chunk packet
-        return new ChunkPacket(header.getSeqNo(), header.getOffsetInBlock(), -1, -1, 
-            buffer, header.isLastPacketInBlock());
     }
 
     private synchronized void checkBuffer() throws ClosedChannelException {

@@ -27,12 +27,14 @@ public class ChunkPacketHeader {
     private int packetLen;
     private DataTransferProtos.PacketHeaderProto packetHeaderProto;
 
-    public ChunkPacketHeader() {
+    public ChunkPacketHeader(int packetLen,
+            DataTransferProtos.PacketHeaderProto packetHeaderProto) {
+        this.packetLen = packetLen;
+        this.packetHeaderProto = packetHeaderProto;
     }
 
     public ChunkPacketHeader(int packetLen, long offsetInBlock, long seqno,
             boolean lastPacketInBlock, int dataLen, boolean syncBlock) {
-
         this.packetLen = packetLen;
 
         // create packet header protobuf in constructer
@@ -78,23 +80,10 @@ public class ChunkPacketHeader {
         return PKT_LENGTHS_LEN + this.packetHeaderProto.getSerializedSize();
     }
 
-    public byte[] getBytes() {
-        // write packet to byte buffer
-        ByteBuffer buf = ByteBuffer.allocate(this.getSerializedSize());
-        try {
-            buf.putInt(packetLen);
-            buf.putShort((short) this.getSerializedSize());
-            this.packetHeaderProto.writeTo(new ByteBufferOutputStream(buf));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        return buf.array();
-    }
-
     public void write(DataOutputStream out) throws IOException {
         out.writeInt(this.packetLen);
-        out.writeShort(this.packetHeaderProto.getSerializedSize());
+        out.writeShort((short) this.getSerializedSize());
+
         this.packetHeaderProto.writeTo(out);
     }
 
@@ -104,33 +93,11 @@ public class ChunkPacketHeader {
         short packetHeaderLen = in.readShort();
 
         // read header into array and parse into protobuf
-        byte[] headerArray = new byte[packetHeaderLen];
+        byte[] headerArray = new byte[packetHeaderLen - PKT_LENGTHS_LEN];
         in.read(headerArray);
-
         DataTransferProtos.PacketHeaderProto packetHeaderProto =
             DataTransferProtos.PacketHeaderProto.parseFrom(headerArray);
 
-        ChunkPacketHeader header = new ChunkPacketHeader();
-        header.packetLen = packetLen;
-        header.packetHeaderProto = packetHeaderProto;
-        return header;
-    }
-
-    private class ByteBufferOutputStream extends OutputStream {
-        private final ByteBuffer buf;
-
-        public ByteBufferOutputStream(ByteBuffer buf) {
-            this.buf = buf;
-        }
-
-        @Override
-        public void write(int b) throws IOException {
-            buf.put((byte) b);
-        }
-
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException {
-            buf.put(b, off, len);
-        }
+        return new ChunkPacketHeader(packetLen, packetHeaderProto);
     }
 }

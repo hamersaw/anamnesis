@@ -12,6 +12,13 @@ task execute(type: JavaExec, dependsOn: assemble) {
     }
 }
 
+task depsJar(type: Jar) {
+    baseName = project.name + '-deps'
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
 // define repositories
 repositories {
     mavenCentral()

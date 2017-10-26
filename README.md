@@ -21,11 +21,13 @@ An in-memory, location aware, HDFS based file system.
 > ./anamnesis.sh download foo/test.txt /tmp/test2.txt
 
 ## TODO
+- get rid of stupid byte[] buffer in ChunkPacket
+    keep separate for data and checksums (no longer need to put header in it)
+- figure out why we're adding 4 to packet length in ChunkPacket (DFSPacket)
 - implement datanode heartbeat storage information (integrate into addBlock)
 - store data with datanode transfer
 - write checksums DataOutputStream.write()
 - validate checksums in ChunkPacket.read()
-- use System.arraycopy in client AnamnesisOutputStream (change buffer to byte[])
 #### DATANODE TRANSFER
 - saslStream (rfc 2222)?
 - read/write ops to stream
@@ -49,8 +51,3 @@ An in-memory, location aware, HDFS based file system.
     3. client -> chunk -> datanode
     4. client <- ack <- datanode
     5. repeat 3, 4 until finished
-#### ANAMNESIS ARCHITECTURE
-BlockInputStream.java
-BlockOutputStream.java
-ChunkPacket.java
-ChunkPacketHeade.java

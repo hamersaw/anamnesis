@@ -5,23 +5,18 @@ import com.bushpath.anamnesis.util.Checksum;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.Socket;
 
 public class BlockOutputStream extends OutputStream {
-    public static final int CHUNKS_IN_BUFFER = 9;
-    private Socket socket;
-    private int blockSize, chunkSize;
+    private DataOutputStream out;
     private Checksum checksum;
     private byte[] buffer;
     private int index;
     private long sequenceNumber, offsetInBlock;
 
-    public BlockOutputStream(Socket socket, int blockSize, int chunkSize) {
-        this.socket = socket;
-        this.blockSize = blockSize;
-        this.chunkSize = chunkSize;
-        this.checksum = new Checksum(chunkSize);
-        this.buffer = new byte[chunkSize * CHUNKS_IN_BUFFER];
+    public BlockOutputStream(DataOutputStream out) {
+        this.out = out;
+        this.checksum = new Checksum(ChunkPacket.CHUNK_SIZE);
+        this.buffer = new byte[ChunkPacket.CHUNK_SIZE * ChunkPacket.CHUNKS_PER_PACKET];
         this.index = 0;
         this.sequenceNumber = 0;
         this.offsetInBlock = 0;
@@ -29,7 +24,8 @@ public class BlockOutputStream extends OutputStream {
 
     @Override
     public void write(int b) throws IOException {
-        if (this.index + 1 >= this.buffer.length) {
+            // write chunks if buffer is full
+        if (this.index == this.buffer.length) {
             this.writeChunks(false, false);
         }
 
@@ -38,27 +34,41 @@ public class BlockOutputStream extends OutputStream {
     }
 
     @Override
+    public void write(byte[] b) throws IOException {
+        this.write(b, 0, b.length);
+    }
+
+    @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        if (this.index + len >= this.buffer.length) {
-            this.writeChunks(false, false);
+        int bytesWrote = 0;
+        int bIndex = off;
+
+        while (bytesWrote < len) {
+            // write chunks if buffer is full
+            if (this.index == this.buffer.length) {
+                this.writeChunks(false, false);
+            }
+
+            // copy bytes from b to buffer
+            int copyLen = Math.min(this.buffer.length - this.index, len - bytesWrote);
+            System.arraycopy(b, bIndex, this.buffer, this.index, copyLen);
+            bytesWrote += copyLen;
+            bIndex += copyLen;
+            this.index += copyLen;
         }
- 
-        System.arraycopy(this.buffer, this.index, b, off, len);
-        this.index += len;
     }
 
     private void writeChunks(boolean writePartial, boolean lastPacketInBlock)
             throws IOException {
-        int writeLength = writePartial ? this.index : this.index % this.chunkSize;
+        int writeLength = writePartial ? this.index : this.index % ChunkPacket.CHUNK_SIZE;
  
         // write chunk to chunk packet
         ChunkPacket packet = new ChunkPacket(this.sequenceNumber, this.offsetInBlock,
-            CHUNKS_IN_BUFFER, -1, this.chunkSize, lastPacketInBlock);
+            lastPacketInBlock, this.checksum.getBytesPerChecksum());
 
         packet.writeData(this.buffer, 0, writeLength);
         // TODO - write checksums
-        DataOutputStream out = new DataOutputStream(this.socket.getOutputStream());
-        packet.write(out);
+        packet.write(this.out);
 
         // push bytes down buffer if necessary and reset index
         if (writeLength != this.buffer.length) {

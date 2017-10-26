@@ -29,8 +29,10 @@ public class DataTransferProtocol {
         send(out, Op.READ_BLOCK, null);
     }
 
-    public static void sendWriteOp(DataOutputStream out, String poolId, long blockId,
-            long generationStamp, String client) throws IOException {
+    public static void sendWriteOp(DataOutputStream out, 
+            DataTransferProtos.OpWriteBlockProto.BlockConstructionStage stage, 
+            String poolId, long blockId, long generationStamp, String client) 
+            throws IOException {
         HdfsProtos.ExtendedBlockProto extendedBlockProto =
             HdfsProtos.ExtendedBlockProto.newBuilder()
                 .setPoolId(poolId)
@@ -48,9 +50,6 @@ public class DataTransferProtocol {
                 .setBaseHeader(baseHeaderProto)
                 .setClientName(client)
                 .build();
-
-        DataTransferProtos.OpWriteBlockProto.BlockConstructionStage stage =
-            DataTransferProtos.OpWriteBlockProto.BlockConstructionStage.DATA_STREAMING;
 
         DataTransferProtos.ChecksumProto checksumProto =
             DataTransferProtos.ChecksumProto.newBuilder()

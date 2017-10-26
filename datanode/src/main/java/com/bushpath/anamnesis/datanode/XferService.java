@@ -1,9 +1,11 @@
 package com.bushpath.anamnesis.datanode;
 
 import org.apache.hadoop.hdfs.protocol.proto.DataTransferProtos;
+import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
-import com.bushpath.anamnesis.DataTransferProtocol;
-import com.bushpath.anamnesis.Op;
+import com.bushpath.anamnesis.datatransfer.BlockInputStream;
+import com.bushpath.anamnesis.datatransfer.DataTransferProtocol;
+import com.bushpath.anamnesis.datatransfer.Op;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -49,23 +51,46 @@ public class XferService extends Thread {
                 while(true) {
                     // read operation
                     Op op = DataTransferProtocol.readOp(in);
-                    logger.info("recv op " + op);
 
+                    // send op response
                     DataTransferProtos.Status status = DataTransferProtos.Status.SUCCESS;
+                    DataTransferProtocol.sendBlockOpResponse(out, status);
+
                     switch(op) {
                     case WRITE_BLOCK:
-                        DataTransferProtocol.recvWriteOp(in);
+                        DataTransferProtos.OpWriteBlockProto writeBlockProto =
+                            DataTransferProtocol.recvWriteOp(in);
+
+                        HdfsProtos.ExtendedBlockProto extendedBlockProto = 
+                            writeBlockProto.getHeader().getBaseHeader().getBlock();
+
+                        // recv stream block chunks
+                        BlockInputStream blockIn = new BlockInputStream(in);
+                        byte[] buffer = new byte[1024]; 
+                        int bytesRead = 0;
+                        while ((bytesRead = blockIn.read(buffer)) != 0) {
+                            // TODO - send to file system
+                            System.out.println("\trecv " + bytesRead + " bytes");
+                        }
+
+                        blockIn.close();
+
+                        switch (writeBlockProto.getStage()) {
+                        case PIPELINE_CLOSE:
+                            return;
+                        default:
+                            break;
+                        }
+
                         break;
                     case READ_BLOCK:
                         DataTransferProtocol.recvReadOp(in);
+                        // TODO - send stream block chunks
                         break;
                     }
-
-                    DataTransferProtocol.sendBlockOpResponse(out, status);
-
-                    // TODO - recv stream block chunks
                 }
             } catch (Exception e) {
+                e.printStackTrace();
                 logger.severe(e.toString());
             }
         }
