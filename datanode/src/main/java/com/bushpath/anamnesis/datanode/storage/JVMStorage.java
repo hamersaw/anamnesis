@@ -2,8 +2,10 @@ package com.bushpath.anamnesis.datanode.storage;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class JVMStorage extends Storage {
+    private static final Logger logger = Logger.getLogger(JVMStorage.class.getName());
     private Map<Long, byte[]> blocks;
 
     public JVMStorage() {
@@ -12,7 +14,7 @@ public class JVMStorage extends Storage {
 
     @Override
     public void storeBlock(long blockId, byte[] block) {
-        System.out.println("storing block:" + blockId + " with length " + block.length);
+        logger.info("storing block:" + blockId + " with length " + block.length);
         this.blocks.put(blockId, block);
     }
 

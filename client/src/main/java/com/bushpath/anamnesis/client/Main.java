@@ -56,11 +56,14 @@ public class Main {
                 FileOutputStream dOut = new FileOutputStream(arguments.command.get(2));
 
                 byte[] dBuffer = new byte[4096];
-                int dBytesRead;
+                int dBytesRead, dTotalBytesRead = 0;
                 while ((dBytesRead = dIn.read(dBuffer)) > 0) {
-                    System.out.println("recv " + dBytesRead + " bytes");
                     dOut.write(dBuffer, 0, dBytesRead);
+                    dTotalBytesRead += dBytesRead;
                 }
+
+                System.out.println("wrote " + dTotalBytesRead
+                    + " bytes to file '" + arguments.command.get(2));
 
                 // close streams
                 dIn.close();
@@ -94,10 +97,14 @@ public class Main {
  
                 // parse file and write to output stream
                 byte[] uBuffer = new byte[4096];
-                int uBytesRead;
+                int uBytesRead, uTotalBytesRead = 0;
                 while ((uBytesRead = uIn.read(uBuffer)) > 0) {
                     uOut.write(uBuffer, 0, uBytesRead);
+                    uTotalBytesRead += uBytesRead;
                 }
+
+                System.out.println("wrote " + uTotalBytesRead
+                    + " bytes to remote file '" + arguments.command.get(2));
 
                 // close file
                 uIn.close();

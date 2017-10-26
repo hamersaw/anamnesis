@@ -66,11 +66,6 @@ public class BlockOutputStream extends OutputStream {
         ChunkPacket packet = new ChunkPacket(this.sequenceNumber, this.offsetInBlock,
             lastPacketInBlock, this.checksum.getBytesPerChecksum());
 
-        for (int i=0; i<writeLength; i++) {
-            System.out.print(" " + this.buffer[i]);
-        }
-        System.out.println();
-
         packet.writeData(this.buffer, 0, writeLength);
         // TODO - write checksums
         packet.write(this.out);

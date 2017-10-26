@@ -56,8 +56,6 @@ public class AnamnesisClient {
 
     public AnamnesisOutputStream create(String path, int perm, int blockSize,
             List<String> favoredNodes) throws IOException {
-        logger.info("creating remote file '" + path + "'");
-
         // construct protobuf components for creating file
         HdfsProtos.FsPermissionProto fsPermissionProto = 
             HdfsProtos.FsPermissionProto.newBuilder()
@@ -89,8 +87,6 @@ public class AnamnesisClient {
     }
 
     public void ls(String path) throws IOException {
-        logger.info("get listings for '" + path + "'");
-
         // construct GetListing protobuf components
         ClientNamenodeProtocolProtos.GetListingRequestProto req =
             ClientNamenodeProtocolProtos.GetListingRequestProto.newBuilder()
@@ -114,8 +110,6 @@ public class AnamnesisClient {
     }
 
     public boolean mkdir(String path) throws IOException {
-        logger.info("creating directory '" + path + "'");
- 
         // construct Mkdir protobuf components
         HdfsProtos.FsPermissionProto fsPermissionProto =
             HdfsProtos.FsPermissionProto.newBuilder()

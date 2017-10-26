@@ -68,10 +68,8 @@ public class AnamnesisInputStream extends InputStream {
 
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
-        System.out.println("1:anemnesis read " + len + " bytes");
         int bytesRead = 0;
         while (bytesRead < len) {
-            System.out.println("1:bytes read - " + bytesRead);
             // if no data in buffer read next block
             if (this.startIndex >= this.endIndex) {
                 if (this.readBlock() == 0) {
@@ -83,17 +81,6 @@ public class AnamnesisInputStream extends InputStream {
             System.arraycopy(this.buffer, this.startIndex, b, off + bytesRead, copyLen);
             bytesRead += copyLen;
             this.startIndex += copyLen;
-
-            /*// write data to buffer
-            System.out.println("1.1: " + this.startIndex + "," + this.endIndex);
-            int pseudoEndIndex = Math.min(this.endIndex,
-                this.startIndex + (len - bytesRead));
-            System.out.println("1.2: " + pseudoEndIndex);
-            System.arraycopy(this.buffer, this.startIndex, b, off + bytesRead,
-                pseudoEndIndex - this.startIndex);
-            bytesRead += pseudoEndIndex - this.startIndex;
-            this.startIndex += pseudoEndIndex - this.startIndex;
-            System.out.println("1.3: " + this.startIndex + "," + this.endIndex);*/
         }
 
         return bytesRead;
@@ -107,7 +94,6 @@ public class AnamnesisInputStream extends InputStream {
         Block block = this.blocks.get(this.blockIndex);
         this.blockIndex += 1;
 
-        System.out.println("BLOCK: " + block.getBlockId());
         for (Location location: block.getLocations()) {
             Socket socket = new Socket(location.getIpAddr(),
                 location.getPort());
@@ -133,10 +119,6 @@ public class AnamnesisInputStream extends InputStream {
                 this.endIndex += bytesRead;
             }
 
-            for (int i=startIndex; i<endIndex; i++) {
-                System.out.print(" " + this.buffer[i]);
-            }
-            System.out.println();
             // close streams
             blockIn.close();
             in.close();
@@ -144,7 +126,6 @@ public class AnamnesisInputStream extends InputStream {
             socket.close();
 
             // if successful break
-            System.out.println("\tread " + this.endIndex + " total bytes");
             return this.endIndex;
         }
 

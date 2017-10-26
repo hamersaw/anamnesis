@@ -56,6 +56,7 @@ public class XferService extends Thread {
                 while(true) {
                     // read operation
                     Op op = DataTransferProtocol.readOp(in);
+                    logger.info("recv op '" + op + "'");
 
                     // send op response
                     DataTransferProtos.Status status = DataTransferProtos.Status.SUCCESS;
@@ -95,15 +96,12 @@ public class XferService extends Thread {
 
                         break;
                     case READ_BLOCK:
-                        System.out.println("recv read block op");
-
                         DataTransferProtos.OpReadBlockProto readBlockProto =
                             DataTransferProtocol.recvReadOp(in);
 
                         HdfsProtos.ExtendedBlockProto readExtendedBlockProto =
                             readBlockProto.getHeader().getBaseHeader().getBlock();
                         
-                        System.out.println("writing block to stream");
                         // send stream block chunks
                         BlockOutputStream blockOut = new BlockOutputStream(out);
                         byte[] readBlock =
@@ -111,12 +109,10 @@ public class XferService extends Thread {
                         blockOut.write(readBlock);
                         blockOut.close();
 
-                        System.out.println("complete");
                         return;
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
                 logger.severe(e.toString());
             }
         }

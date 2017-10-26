@@ -81,9 +81,6 @@ public class AnamnesisOutputStream extends OutputStream {
 
         // write block (stop on a successful write)
         for (Location location: block.getLocations()) {
-            System.out.println("writing block to " + location.getIpAddr() 
-                + ":" + location.getPort());
-
             Socket socket = new Socket(location.getIpAddr(), location.getPort());
             DataInputStream in = new DataInputStream(socket.getInputStream());
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
@@ -94,8 +91,6 @@ public class AnamnesisOutputStream extends OutputStream {
 
             DataTransferProtos.BlockOpResponseProto response =
                 DataTransferProtocol.recvBlockOpResponse(in);
-
-            System.out.println("\tblock write status: " + response.getStatus());
 
             // send block chunks
             BlockOutputStream blockOut = new BlockOutputStream(out);
