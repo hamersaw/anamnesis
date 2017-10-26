@@ -106,7 +106,7 @@ public class ChunkPacket {
             header.getOffsetInBlock(), header.isLastPacketInBlock(),  0);
 
         byte[] buffer = new byte[header.getPacketLen() - 4];
-        in.read(buffer);
+        in.readFully(buffer);
 
         packet.writeData(buffer, 0, buffer.length);
 

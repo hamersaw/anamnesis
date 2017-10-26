@@ -94,16 +94,7 @@ public class ChunkPacketHeader {
 
         // read header into array and parse into protobuf
         byte[] headerArray = new byte[packetHeaderLen - PKT_LENGTHS_LEN];
-        int bytesRead = 0, totalBytesRead = 0;
-        while (totalBytesRead < headerArray.length) {
-            bytesRead = in.read(headerArray, totalBytesRead,
-                headerArray.length - totalBytesRead);
-            totalBytesRead += bytesRead;
-
-            if (bytesRead == 0) {
-                break;
-            }
-        }
+        in.readFully(headerArray);
 
         // parse packet header protobuf from array
         DataTransferProtos.PacketHeaderProto packetHeaderProto =

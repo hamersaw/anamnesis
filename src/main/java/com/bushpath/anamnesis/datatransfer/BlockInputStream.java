@@ -51,12 +51,10 @@ public class BlockInputStream extends InputStream {
             }
 
             // write data to buffer
-            int pseudoEndIndex = Math.min(this.endIndex,
-                this.startIndex + (len - bytesRead));
-            System.arraycopy(this.buffer, this.startIndex, b, off + bytesRead,
-                pseudoEndIndex - this.startIndex);
-            bytesRead += pseudoEndIndex - this.startIndex;
-            this.startIndex += pseudoEndIndex - this.startIndex;
+            int copyLen = Math.min(this.endIndex - this.startIndex, len - bytesRead);
+            System.arraycopy(this.buffer, this.startIndex, b, off + bytesRead, copyLen);
+            bytesRead += copyLen;
+            this.startIndex += copyLen;
         }
 
         return bytesRead;

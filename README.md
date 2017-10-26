@@ -21,7 +21,6 @@ An in-memory, location aware, HDFS based file system.
 > ./anamnesis.sh download foo/test.txt /tmp/test2.txt
 
 ## TODO
-- change many inputstream.read to datainputstream.readfully
 - get rid of stupid byte[] buffer in ChunkPacket
     keep separate for data and checksums (no longer need to put header in it)
 - figure out why we're adding 4 to packet length in ChunkPacket (DFSPacket)
