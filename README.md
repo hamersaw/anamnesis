@@ -31,3 +31,7 @@ An in-memory, location aware, HDFS based file system.
 - implement datanode heartbeat storage information (integrate into addBlock)
 - write checksums DataOutputStream.write()
 - validate checksums in ChunkPacket.read()
+#### RPC SERVER
+- rpc response error handling (fix up)
+- implement all functionality
+- write client for datanode -> namenode communication

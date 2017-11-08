@@ -4,12 +4,15 @@ import io.grpc.BindableService;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 
-import com.bushpath.anamnesis.GrpcServer;
-import com.bushpath.anamnesis.namenode.protocol.ClientNamenodeService;
-import com.bushpath.anamnesis.namenode.protocol.DatanodeService;
-import com.bushpath.anamnesis.namenode.protocol.NamenodeService;
+//import com.bushpath.anamnesis.GrpcServer;
+import com.bushpath.anamnesis.rpc.RpcServer;
+//import com.bushpath.anamnesis.namenode.protocol.ClientNamenodeService;
+//import com.bushpath.anamnesis.namenode.protocol.DatanodeService;
+//import com.bushpath.anamnesis.namenode.protocol.NamenodeService;
+import com.bushpath.anamnesis.namenode.rpc.ClientNamenodeService;
 
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -32,7 +35,7 @@ public class Main {
             BlockManager blockManager = new BlockManager(datanodeManager, nameSystem);
 
             // start server
-            List<BindableService> services = new ArrayList<>();
+            /*List<BindableService> services = new ArrayList<>();
             services.add(new ClientNamenodeService(blockManager,
                 datanodeManager, nameSystem));
             services.add(new DatanodeService(datanodeManager));
@@ -42,7 +45,18 @@ public class Main {
             logger.info("server started on port " + config.port);
 
             // wait until shutdown command issued
-            server.blockUntilShutdown();
+            server.blockUntilShutdown();*/
+
+            // start rpc server
+            ServerSocket serverSocket = new ServerSocket(config.port);
+            RpcServer rpcServer = new RpcServer(serverSocket);
+            rpcServer.registerRpcHandler(
+                "org.apache.hadoop.hdfs.protocol.ClientProtocol",
+                new ClientNamenodeService(nameSystem));
+            rpcServer.start();
+
+            // wait until rpcServer shuts down
+            rpcServer.join();
         } catch (Exception e) {
             e.printStackTrace();
         }
