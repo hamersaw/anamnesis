@@ -7,6 +7,8 @@ import org.apache.hadoop.hdfs.protocol.proto.ClientNamenodeProtocolProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
 import com.bushpath.anamnesis.rpc.RpcHandler;
+import com.bushpath.anamnesis.namenode.Block;
+import com.bushpath.anamnesis.namenode.BlockManager;
 import com.bushpath.anamnesis.namenode.NameSystem;
 import com.bushpath.anamnesis.namenode.NSItem;
 
@@ -16,14 +18,26 @@ import java.util.List;
 
 public class ClientNamenodeService implements RpcHandler {
     private NameSystem nameSystem;
+    private BlockManager blockManager;
 
-    public ClientNamenodeService(NameSystem nameSystem) {
+    public ClientNamenodeService(NameSystem nameSystem, BlockManager blockManager) {
         this.nameSystem = nameSystem;
+        this.blockManager = blockManager;
     }
 
     @Override
     public Message handle(String method, byte[] message) throws Exception {
         switch (method) {
+        case "addBlock":
+            ClientNamenodeProtocolProtos.AddBlockRequestProto addBlockReq =
+                ClientNamenodeProtocolProtos.AddBlockRequestProto.parseFrom(message);
+
+            return addBlock(null, addBlockReq);
+        case "create":
+            ClientNamenodeProtocolProtos.CreateRequestProto createReq =
+                ClientNamenodeProtocolProtos.CreateRequestProto.parseFrom(message);
+
+            return create(null, createReq);
         case "getFileInfo":
             ClientNamenodeProtocolProtos.GetFileInfoRequestProto getFileInfoReq =
                 ClientNamenodeProtocolProtos.GetFileInfoRequestProto.parseFrom(message);
@@ -49,7 +63,46 @@ public class ClientNamenodeService implements RpcHandler {
     @Override
     public boolean containsMethod(String method) {
         return method.equals("getFileInfo") || method.equals("getListing")
-            || method.equals("mkdirs");
+            || method.equals("mkdirs") || method.equals("create")
+            || method.equals("addBlock");
+    }
+
+    public ClientNamenodeProtocolProtos.AddBlockResponseProto
+        addBlock(RpcController controller,
+            ClientNamenodeProtocolProtos.AddBlockRequestProto req)
+            throws ServiceException {
+
+        try {
+            // create block
+            Block block = this.blockManager.createBlock(req.getSrc(), 
+                req.getFavoredNodesList());
+
+            // respond to request
+            return ClientNamenodeProtocolProtos.AddBlockResponseProto.newBuilder()
+                .setBlock(block.toLocatedBlockProto())
+                .build();
+        } catch(Exception e) {
+            throw new ServiceException(e.getMessage());
+        }
+    }
+
+    public ClientNamenodeProtocolProtos.CreateResponseProto
+        create(RpcController controller,
+            ClientNamenodeProtocolProtos.CreateRequestProto req)
+            throws ServiceException {
+
+        try {
+            // create file with name system
+            NSItem item = this.nameSystem.create(req.getSrc(), req.getMasked().getPerm(),
+                req.getClientName(), req.getCreateParent(), req.getBlockSize());
+
+            // respond to request
+            return ClientNamenodeProtocolProtos.CreateResponseProto.newBuilder()
+                .setFs(item.toHdfsFileStatusProto(false))
+                .build();
+        } catch(Exception e) {
+            throw new ServiceException(e.getMessage());
+        }
     }
 
     public ClientNamenodeProtocolProtos.GetFileInfoResponseProto

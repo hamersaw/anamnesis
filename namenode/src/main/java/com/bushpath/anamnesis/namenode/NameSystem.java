@@ -28,7 +28,7 @@ public class NameSystem {
         } catch(Exception e) {}
     }
 
-    public void create(String path, int perm, String owner, 
+    public NSItem create(String path, int perm, String owner, 
             boolean createParent, long blockSize) throws Exception {
         // retrieve parent directory
         NSDirectory parentDirectory = getParentDirectory(path, createParent, perm);
@@ -46,6 +46,8 @@ public class NameSystem {
             NSItem file = new NSFile(elements[elements.length - 1], owner,
                     "", perm, blockSize, parentDirectory);
             parentDirectory.addChild(file);
+
+            return file;
         } finally {
             this.lock.writeLock().unlock();
         }

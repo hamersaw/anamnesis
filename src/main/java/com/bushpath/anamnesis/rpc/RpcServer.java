@@ -59,7 +59,7 @@ public class RpcServer extends Thread {
         // parse rpc header
         RpcHeaderProtos.RpcRequestHeaderProto rpcRequestHeaderProto =
             RpcHeaderProtos.RpcRequestHeaderProto.parseFrom(readBuffer(in));
-
+            
         // parse request
         switch (rpcRequestHeaderProto.getCallId()) {
         case -3:

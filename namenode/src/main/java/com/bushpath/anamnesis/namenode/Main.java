@@ -52,7 +52,7 @@ public class Main {
             RpcServer rpcServer = new RpcServer(serverSocket);
             rpcServer.registerRpcHandler(
                 "org.apache.hadoop.hdfs.protocol.ClientProtocol",
-                new ClientNamenodeService(nameSystem));
+                new ClientNamenodeService(nameSystem, blockManager));
             rpcServer.start();
 
             // wait until rpcServer shuts down
