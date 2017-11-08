@@ -20,7 +20,12 @@ public class NameSystem {
 
     public NameSystem() {
         this.lock = new ReentrantReadWriteLock();
-        this.root = new NSDirectory("", Integer.MAX_VALUE);
+        this.root = new NSDirectory("", Integer.MAX_VALUE, null);
+
+        // TMP
+        try {
+            this.mkdir("/user", 666, false);
+        } catch(Exception e) {}
     }
 
     public void create(String path, int perm, String owner, 
@@ -39,7 +44,7 @@ public class NameSystem {
  
             // create new file and add as child of parent directory
             NSItem file = new NSFile(elements[elements.length - 1], owner,
-                    "", perm, blockSize);
+                    "", perm, blockSize, parentDirectory);
             parentDirectory.addChild(file);
         } finally {
             this.lock.writeLock().unlock();
@@ -48,6 +53,9 @@ public class NameSystem {
 
     public void complete(String path) throws Exception {
         NSItem file = getFile(path);
+        if (file == null) {
+            throw new Exception("file '" + path + "' does not exist");
+        }
 
         this.lock.writeLock().lock();
         try {
@@ -69,6 +77,9 @@ public class NameSystem {
         }
 
         NSItem file = getFile(path);
+        if (file == null) {
+            throw new Exception("file '" + path + "' does not exist");
+        }
 
         this.lock.readLock().lock();
         try {
@@ -103,7 +114,8 @@ public class NameSystem {
             }
  
             // create new directory and add as child of parent directory
-            NSItem dir = new NSDirectory(elements[elements.length - 1], perm);
+            NSItem dir = new NSDirectory(elements[elements.length - 1],
+                perm, parentDirectory);
             parentDirectory.addChild(dir);
         } finally {
             this.lock.writeLock().unlock();
@@ -126,8 +138,7 @@ public class NameSystem {
 
                 NSDirectory currentDirectory = (NSDirectory) current;
                 if (!currentDirectory.hasChild(elements[i])) {
-                    throw new StatusRuntimeException(Status.NOT_FOUND
-                        .withDescription("'" + path + "' does not exist"));
+                    return null;
                 } else {
                     current = currentDirectory.getChild(elements[i]);
                 }
@@ -165,7 +176,8 @@ public class NameSystem {
                     current = (NSDirectory) item;
                 } else if (createParent) {
                     // create directory
-                    NSDirectory newDirectory = new NSDirectory(elements[i], perm);
+                    NSDirectory newDirectory = new NSDirectory(elements[i],
+                        perm, current);
                     current.addChild(newDirectory);
                     current = newDirectory;
                 } else {

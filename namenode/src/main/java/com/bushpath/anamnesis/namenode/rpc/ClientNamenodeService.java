@@ -4,10 +4,15 @@ import com.google.protobuf.Message;
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
 import org.apache.hadoop.hdfs.protocol.proto.ClientNamenodeProtocolProtos;
+import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
 import com.bushpath.anamnesis.rpc.RpcHandler;
 import com.bushpath.anamnesis.namenode.NameSystem;
 import com.bushpath.anamnesis.namenode.NSItem;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 public class ClientNamenodeService implements RpcHandler {
     private NameSystem nameSystem;
@@ -18,18 +23,33 @@ public class ClientNamenodeService implements RpcHandler {
 
     @Override
     public Message handle(String method, byte[] message) throws Exception {
-
         switch (method) {
         case "getFileInfo":
-            ClientNamenodeProtocolProtos.GetFileInfoRequestProto req =
+            ClientNamenodeProtocolProtos.GetFileInfoRequestProto getFileInfoReq =
                 ClientNamenodeProtocolProtos.GetFileInfoRequestProto.parseFrom(message);
 
-            return getFileInfo(null, req);
+            return getFileInfo(null, getFileInfoReq);
+        case "getListing":
+            ClientNamenodeProtocolProtos.GetListingRequestProto getListingReq =
+                ClientNamenodeProtocolProtos.GetListingRequestProto.parseFrom(message);
+
+            return getListing(null, getListingReq);
+        case "mkdirs":
+            ClientNamenodeProtocolProtos.MkdirsRequestProto mkdirsReq =
+                ClientNamenodeProtocolProtos.MkdirsRequestProto.parseFrom(message);
+
+            return mkdirs(null, mkdirsReq);
         default:
             System.out.println("TODO - Handle '" + method + "'");
         }
 
         return null;
+    }
+
+    @Override
+    public boolean containsMethod(String method) {
+        return method.equals("getFileInfo") || method.equals("getListing")
+            || method.equals("mkdirs");
     }
 
     public ClientNamenodeProtocolProtos.GetFileInfoResponseProto
@@ -39,8 +59,103 @@ public class ClientNamenodeService implements RpcHandler {
 
         try {
             NSItem item = this.nameSystem.getFile(req.getSrc());
-            return ClientNamenodeProtocolProtos.GetFileInfoResponseProto.newBuilder()
-                .setFs(item.toHdfsFileStatusProto(false))
+            ClientNamenodeProtocolProtos.GetFileInfoResponseProto.Builder respBuilder =
+                ClientNamenodeProtocolProtos.GetFileInfoResponseProto.newBuilder();
+
+            if (item != null) {
+                respBuilder.setFs(item.toHdfsFileStatusProto(false));
+            }
+            return respBuilder.build();
+        } catch(Exception e) {
+            throw new ServiceException(e.getMessage());
+        }
+    }
+
+    private String toHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b: bytes) {
+            sb.append(String.format("%02X ", b));
+        }
+
+        return sb.toString();
+    }
+
+    public ClientNamenodeProtocolProtos.GetListingResponseProto
+        getListing(RpcController controller,
+            ClientNamenodeProtocolProtos.GetListingRequestProto req)
+            throws ServiceException {
+
+        try {
+            String startAfter = new String(req.getStartAfter().toByteArray());
+            Collection<NSItem> items = this.nameSystem.getListing(req.getSrc());
+
+            // get start index
+            int startIndex = 0;
+            if (!startAfter.isEmpty()) {
+                for (NSItem item: items) {
+                    startIndex += 1;
+
+                    if (item.getPath().equals(startAfter)) {
+                        break;
+                    }
+                }
+            }
+
+            HdfsProtos.DirectoryListingProto.Builder directoryListingProtoBuilder = 
+                HdfsProtos.DirectoryListingProto.newBuilder();
+
+            int totalSize = 0, index = 0;
+            for (NSItem item: items) {
+                if (index < startIndex) {
+                    index += 1;
+                    continue;
+                }
+
+                // convert NSItem to HdfsFileStatusProto
+                HdfsProtos.HdfsFileStatusProto hdfsFileStatusProto =
+                    item.toHdfsFileStatusProto(false);
+
+                totalSize += hdfsFileStatusProto.getSerializedSize();
+                if (totalSize > 110) {
+                    // if this will make proto larger than 127 (max 1 byte value)
+                    // TODO - figure out ideal value for this parameter
+                    //  using 110 to give 17 bytes for dir listings proto metadata
+                    directoryListingProtoBuilder
+                        .setRemainingEntries(items.size() - index);
+                    break;
+                } else {
+                    directoryListingProtoBuilder.addPartialListing(hdfsFileStatusProto);
+                }
+
+                index += 1;
+            }
+
+            if (index >= items.size()) {
+                directoryListingProtoBuilder.setRemainingEntries(0);
+            }
+
+            // respond to request
+            return ClientNamenodeProtocolProtos.GetListingResponseProto.newBuilder()
+                .setDirList(directoryListingProtoBuilder.build())
+                .build();
+        } catch(Exception e) {
+            throw new ServiceException(e.getMessage());
+        }
+    }
+
+    public ClientNamenodeProtocolProtos.MkdirsResponseProto
+        mkdirs(RpcController controller,
+            ClientNamenodeProtocolProtos.MkdirsRequestProto req)
+            throws ServiceException {
+
+        try {
+            // use name system to make directory
+            this.nameSystem.mkdir(req.getSrc(), req.getMasked().getPerm(),
+                req.getCreateParent());
+
+            // respond to request
+            return ClientNamenodeProtocolProtos.MkdirsResponseProto.newBuilder()
+                .setResult(true)
                 .build();
         } catch(Exception e) {
             throw new ServiceException(e.getMessage());

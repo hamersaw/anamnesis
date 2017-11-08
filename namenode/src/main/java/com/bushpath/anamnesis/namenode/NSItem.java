@@ -6,15 +6,25 @@ public abstract class NSItem {
     protected String name;
     protected Type type;
     protected int perm;
+    protected NSItem parent;
 
-    public NSItem(String name, Type type, int perm) {
+    public NSItem(String name, Type type, int perm, NSItem parent) {
         this.name = name;
         this.type = type;
         this.perm = perm;
+        this.parent = parent;
     }
 
     public String getName() {
         return this.name;
+    }
+
+    public String getPath() {
+        if (this.parent == null) {
+            return "";
+        } else {
+            return this.parent.getPath() + "/" + this.name;
+        }
     }
 
     public NSItem.Type getType() {

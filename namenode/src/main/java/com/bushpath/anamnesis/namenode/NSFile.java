@@ -12,8 +12,9 @@ public class NSFile extends NSItem {
     private List<Block> blocks;
     private boolean complete;
 
-    public NSFile (String name, String owner, String group, int perm, long blockSize) {
-        super(name, NSItem.Type.FILE, perm);
+    public NSFile (String name, String owner, String group, int perm,
+            long blockSize, NSItem parent) {
+        super(name, NSItem.Type.FILE, perm, parent);
 
         this.owner = owner;
         this.group = group;
@@ -105,7 +106,7 @@ public class NSFile extends NSItem {
         HdfsProtos.HdfsFileStatusProto.Builder builder 
             = HdfsProtos.HdfsFileStatusProto.newBuilder()
                 .setFileType(HdfsProtos.HdfsFileStatusProto.FileType.IS_FILE)
-                .setPath(ByteString.copyFrom(this.name.getBytes()))
+                .setPath(ByteString.copyFrom(this.getPath().getBytes()))
                 .setLength(this.length)
                 .setPermission(permission)
                 .setOwner(this.owner)

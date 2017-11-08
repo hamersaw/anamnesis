@@ -3,16 +3,18 @@ package com.bushpath.anamnesis.namenode;
 import com.google.protobuf.ByteString;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 public class NSDirectory extends NSItem {
     private Map<String, NSItem> children;
 
-    public NSDirectory(String name, int perm) {
-        super(name, NSItem.Type.DIRECTORY, perm);
-        this.children = new HashMap<>();
+    public NSDirectory(String name, int perm, NSItem parent) {
+        super(name, NSItem.Type.DIRECTORY, perm, parent);
+        this.children = new TreeMap<>();
     }
 
     public boolean hasChild(String name) {
@@ -28,7 +30,12 @@ public class NSDirectory extends NSItem {
     }
 
     public Collection<NSItem> getChildren() {
-        return this.children.values();
+        List<NSItem> list = new ArrayList<>();
+        for (Map.Entry<String, NSItem> entry : this.children.entrySet()) {
+            list.add(entry.getValue());
+        }
+
+        return list;
     }
 
     @Override
@@ -40,7 +47,7 @@ public class NSDirectory extends NSItem {
 
         return HdfsProtos.HdfsFileStatusProto.newBuilder()
             .setFileType(HdfsProtos.HdfsFileStatusProto.FileType.IS_DIR)
-            .setPath(ByteString.copyFrom(this.name.getBytes()))
+            .setPath(ByteString.copyFrom(this.getPath().getBytes()))
             .setLength(-1)
             .setPermission(permission)
             .setOwner("")

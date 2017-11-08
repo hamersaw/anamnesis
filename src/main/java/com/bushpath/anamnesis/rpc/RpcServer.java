@@ -9,6 +9,8 @@ import org.apache.hadoop.ipc.protobuf.ProtobufRpcEngineProtos;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
@@ -58,8 +60,6 @@ public class RpcServer extends Thread {
         RpcHeaderProtos.RpcRequestHeaderProto rpcRequestHeaderProto =
             RpcHeaderProtos.RpcRequestHeaderProto.parseFrom(readBuffer(in));
 
-        System.out.println("RPC_OP: " + rpcRequestHeaderProto.getRpcOp());
-
         // parse request
         switch (rpcRequestHeaderProto.getCallId()) {
         case -3:
@@ -86,21 +86,32 @@ public class RpcServer extends Thread {
             String declaringClassProtocolName =
                 requestHeaderProto.getDeclaringClassProtocolName();
 
+            System.out.println(declaringClassProtocolName + " : " + methodName);
+
             Message message = null;
             if (!rpcHandlers.containsKey(declaringClassProtocolName)) {
                 // error -> protocol does not exist
                 respBuilder.setStatus(RpcStatusProto.ERROR);
+                respBuilder.setErrorMsg("protocol '" + declaringClassProtocolName 
+                    + "' does not exist");
                 respBuilder.setErrorDetail(RpcErrorCodeProto.ERROR_NO_SUCH_PROTOCOL);
             } else {
-                // use rpc handler to execute method
                 RpcHandler handler = rpcHandlers.get(declaringClassProtocolName);
-                try {
-                    message = handler.handle(methodName, readBuffer(in));
-                } catch(Exception e) {
+                if (!handler.containsMethod(methodName)) {
+                    // error -> method does not exist
                     respBuilder.setStatus(RpcStatusProto.ERROR);
-                    respBuilder.setExceptionClassName(e.getClass().toString());
-                    respBuilder.setErrorMsg(e.getMessage());
-                    respBuilder.setErrorDetail(RpcErrorCodeProto.ERROR_RPC_SERVER);
+                    respBuilder.setErrorMsg("method '" + methodName + "' does not exist");
+                    respBuilder.setErrorDetail(RpcErrorCodeProto.ERROR_NO_SUCH_PROTOCOL);
+                } else {
+                    // use rpc handler to execute method
+                    try {
+                        message = handler.handle(methodName, readBuffer(in));
+                    } catch(Exception e) {
+                        respBuilder.setStatus(RpcStatusProto.ERROR);
+                        respBuilder.setExceptionClassName(e.getClass().toString());
+                        respBuilder.setErrorMsg(e.getMessage());
+                        respBuilder.setErrorDetail(RpcErrorCodeProto.ERROR_RPC_SERVER);
+                    }
                 }
             }
 
@@ -112,7 +123,7 @@ public class RpcServer extends Thread {
             out.writeByte((byte) resp.getSerializedSize());
             resp.writeTo(out);
             if (message != null) {
-                out.writeByte((byte) message.getSerializedSize());
+                out.writeByte((byte)message.getSerializedSize());
                 message.writeTo(out);
             }
 
@@ -144,8 +155,15 @@ public class RpcServer extends Thread {
                 while (true) {
                     handlePacket(in, out);
                 }
+            } catch(EOFException e) {
             } catch(Exception e) {
                 System.err.println("failed to read rpc request: " + e);
+            } finally {
+                try {
+                    this.socket.close();
+                } catch(IOException e) {
+                    System.err.println("failed to close socket: " + e);
+                }
             }
         }
     }
