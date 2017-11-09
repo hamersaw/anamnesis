@@ -33,5 +33,4 @@ An in-memory, location aware, HDFS based file system.
 - validate checksums in ChunkPacket.read()
 #### RPC SERVER
 - rpc response error handling (fix up)
-- implement all functionality
-- write client for datanode -> namenode communication
+- add client to anamnesis client
