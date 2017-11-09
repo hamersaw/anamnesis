@@ -23,6 +23,10 @@ public abstract class NSItem {
         return this.name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getPath() {
         if (this.parent == null) {
             return "";
@@ -53,6 +57,10 @@ public abstract class NSItem {
 
     public void setAccessTime(long accessTime) {
         this.accessTime = accessTime;
+    }
+
+    public void setParent(NSItem parent) {
+        this.parent = parent;
     }
 
     public enum Type {

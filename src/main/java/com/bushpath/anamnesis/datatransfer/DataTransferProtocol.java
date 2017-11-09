@@ -94,6 +94,16 @@ public class DataTransferProtocol {
         send(out, Op.WRITE_BLOCK, proto);
     }
 
+    public static void sendPipelineAck(DataOutputStream out, long seqno)
+            throws IOException {
+
+        Message proto = DataTransferProtos.PipelineAckProto.newBuilder()
+            .setSeqno(seqno)
+            .build();
+
+        proto.writeDelimitedTo(out);
+    }
+
     private static void send(DataOutputStream out, Op op, Message proto)
             throws IOException {
         out.writeShort(PROTOCOL_VERSION);

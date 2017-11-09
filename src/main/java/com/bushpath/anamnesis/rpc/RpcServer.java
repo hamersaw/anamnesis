@@ -16,13 +16,17 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 
 public class RpcServer extends Thread {
     private ServerSocket serverSocket;
+    private ExecutorService executorService;
     private Map<String, Object> rpcHandlers;
 
     public RpcServer(ServerSocket serverSocket) {
         this.serverSocket = serverSocket;
+        this.executorService = Executors.newFixedThreadPool(4);
         this.rpcHandlers = new HashMap<>();
     }
 
@@ -36,9 +40,9 @@ public class RpcServer extends Thread {
             try {
                 Socket socket = this.serverSocket.accept();
 
-                // TODO add SocketHandler to threadpool
-                SocketHandler socketHandler = new SocketHandler(socket);
-                socketHandler.run();
+                // add SocketHandler to threadpool
+                Runnable socketHandler = new SocketHandler(socket);
+                this.executorService.execute(socketHandler);
             } catch(Exception e) {
                 System.err.println("failed to accept server connection: " + e);
             }
@@ -168,6 +172,7 @@ public class RpcServer extends Thread {
                 }
             } catch(EOFException e) {
             } catch(Exception e) {
+                e.printStackTrace();
                 System.err.println("failed to read rpc request: " + e);
             } finally {
                 try {

@@ -36,7 +36,7 @@ public class Main {
             RpcServer rpcServer = new RpcServer(serverSocket);
             rpcServer.registerRpcHandler(
                 "org.apache.hadoop.hdfs.protocol.ClientProtocol",
-                new ClientNamenodeService(nameSystem, blockManager));
+                new ClientNamenodeService(nameSystem, blockManager, config));
             rpcServer.registerRpcHandler(
                 "org.apache.hadoop.hdfs.server.protocol.DatanodeProtocol",
                 new DatanodeService(datanodeManager));

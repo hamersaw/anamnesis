@@ -6,8 +6,11 @@ import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
 import com.bushpath.anamnesis.namenode.Block;
 import com.bushpath.anamnesis.namenode.BlockManager;
+import com.bushpath.anamnesis.namenode.Configuration;
 import com.bushpath.anamnesis.namenode.NameSystem;
+import com.bushpath.anamnesis.namenode.NSFile;
 import com.bushpath.anamnesis.namenode.NSItem;
+import com.bushpath.anamnesis.util.Checksum;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,10 +19,13 @@ import java.util.List;
 public class ClientNamenodeService {
     private NameSystem nameSystem;
     private BlockManager blockManager;
+    private Configuration config;
 
-    public ClientNamenodeService(NameSystem nameSystem, BlockManager blockManager) {
+    public ClientNamenodeService(NameSystem nameSystem,
+            BlockManager blockManager, Configuration config) {
         this.nameSystem = nameSystem;
         this.blockManager = blockManager;
+        this.config = config;
     }
 
     public Message addBlock(byte[] message) throws Exception {
@@ -36,6 +42,19 @@ public class ClientNamenodeService {
             .build();
     }
 
+    public Message complete(byte[] message) throws Exception {
+        ClientNamenodeProtocolProtos.CompleteRequestProto req =
+            ClientNamenodeProtocolProtos.CompleteRequestProto.parseFrom(message);
+
+        // complete file with name system
+        this.nameSystem.complete(req.getSrc());
+
+        // response to request
+        return ClientNamenodeProtocolProtos.CompleteResponseProto.newBuilder()
+            .setResult(true)
+            .build();
+    }
+
     public Message create(byte[] message) throws Exception {
         ClientNamenodeProtocolProtos.CreateRequestProto req =
             ClientNamenodeProtocolProtos.CreateRequestProto.parseFrom(message);
@@ -47,6 +66,23 @@ public class ClientNamenodeService {
         // respond to request
         return ClientNamenodeProtocolProtos.CreateResponseProto.newBuilder()
             .setFs(item.toHdfsFileStatusProto(false))
+            .build();
+    }
+
+    public Message getBlockLocations(byte[] message) throws Exception {
+        ClientNamenodeProtocolProtos.GetBlockLocationsRequestProto req =
+            ClientNamenodeProtocolProtos.GetBlockLocationsRequestProto.parseFrom(message);
+
+        // look up file
+        NSItem item = this.nameSystem.getFile(req.getSrc());
+        if (item.getType() != NSItem.Type.FILE) {
+            throw new Exception("file is not of type 'FILE'");
+        }
+        NSFile file = (NSFile) item;
+
+        // return file locations
+        return ClientNamenodeProtocolProtos.GetBlockLocationsResponseProto.newBuilder()
+            .setLocations(file.toLocatedBlocksProto())
             .build();
     }
 
@@ -123,6 +159,25 @@ public class ClientNamenodeService {
             .build();
     }
 
+    public Message getServerDefaults(byte[] message) throws Exception {
+        ClientNamenodeProtocolProtos.GetServerDefaultsRequestProto req =
+            ClientNamenodeProtocolProtos.GetServerDefaultsRequestProto.parseFrom(message);
+
+        // retrieve server defaults
+        HdfsProtos.FsServerDefaultsProto fsServerDefaultsProto =
+            HdfsProtos.FsServerDefaultsProto.newBuilder()
+                .setBlockSize(this.config.blockSize)
+                .setBytesPerChecksum(Checksum.getBytesPerChecksum())
+                .setWritePacketSize(this.config.writePacketSize)
+                .setReplication(this.config.replication)
+                .setFileBufferSize(this.config.fileBufferSize)
+                .build();
+
+        return ClientNamenodeProtocolProtos.GetServerDefaultsResponseProto.newBuilder()
+            .setServerDefaults(fsServerDefaultsProto)
+            .build();
+    }
+
     public Message mkdirs(byte[] message) throws Exception {
         ClientNamenodeProtocolProtos.MkdirsRequestProto req =
             ClientNamenodeProtocolProtos.MkdirsRequestProto.parseFrom(message);
@@ -133,6 +188,19 @@ public class ClientNamenodeService {
 
         // respond to request
         return ClientNamenodeProtocolProtos.MkdirsResponseProto.newBuilder()
+            .setResult(true)
+            .build();
+    }
+
+    public Message rename(byte[] message) throws Exception {
+        ClientNamenodeProtocolProtos.RenameRequestProto req =
+            ClientNamenodeProtocolProtos.RenameRequestProto.parseFrom(message);
+
+        // use name system to make directory
+        this.nameSystem.rename(req.getSrc(), req.getDst());
+
+        // respond to request
+        return ClientNamenodeProtocolProtos.RenameResponseProto.newBuilder()
             .setResult(true)
             .build();
     }

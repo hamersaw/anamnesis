@@ -93,7 +93,7 @@ public class ChunkPacketHeader {
         short packetHeaderLen = in.readShort();
 
         // read header into array and parse into protobuf
-        byte[] headerArray = new byte[packetHeaderLen - PKT_LENGTHS_LEN];
+        byte[] headerArray = new byte[packetHeaderLen];
         in.readFully(headerArray);
 
         // parse packet header protobuf from array

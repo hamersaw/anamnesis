@@ -103,12 +103,14 @@ public class ChunkPacket {
 
         // create packet
         ChunkPacket packet = new ChunkPacket(header.getSeqNo(), 
-            header.getOffsetInBlock(), header.isLastPacketInBlock(),  0);
+            header.getOffsetInBlock(), header.isLastPacketInBlock(), 4);
 
         byte[] buffer = new byte[header.getPacketLen() - 4];
         in.readFully(buffer);
 
-        packet.writeData(buffer, 0, buffer.length);
+        packet.writeChecksum(buffer, 0, buffer.length - header.getDataLen());
+        packet.writeData(buffer, buffer.length - header.getDataLen(),
+            header.getDataLen());
 
         // TODO - validate and write checksums
 

@@ -5,6 +5,8 @@ import java.util.Properties;
 
 public class Configuration {
     public int port;
+    public long blockSize;
+    public int writePacketSize, replication, fileBufferSize;
 
     public Configuration(String filename) throws Exception {
         // read file into properties
@@ -20,5 +22,9 @@ public class Configuration {
 
         // parse properties
         port = Integer.parseInt(properties.getProperty("port"));
+        blockSize = Long.parseLong(properties.getProperty("blockSize"));
+        writePacketSize = Integer.parseInt(properties.getProperty("writePacketSize"));
+        replication = Integer.parseInt(properties.getProperty("replication"));
+        fileBufferSize = Integer.parseInt(properties.getProperty("fileBufferSize"));
     }
 }

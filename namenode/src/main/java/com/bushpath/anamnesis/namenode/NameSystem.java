@@ -124,6 +124,32 @@ public class NameSystem {
         }
     }
 
+    public void rename(String srcPath, String dstPath) throws Exception {
+        NSItem file = getFile(srcPath);
+        if (file == null) {
+            throw new Exception("file '" + srcPath + "' does not exist");
+        }
+
+        this.lock.writeLock().lock();
+        try {
+            NSDirectory oldParent = getParentDirectory(srcPath, false, 0);
+            NSDirectory newParent = getParentDirectory(dstPath, false, 0);
+
+            // remove from parents children
+            oldParent.removeChild(file);
+
+            // change file name
+            String[] elements = parseElements(dstPath);
+            file.setName(elements[elements.length - 1]);
+     
+            // add to new parents children
+            newParent.addChild(file);
+            file.setParent(newParent);
+        } finally {
+            this.lock.writeLock().unlock();
+        }
+    }
+
     public NSItem getFile(String path) throws Exception {
         this.lock.readLock().lock();
         try {

@@ -36,6 +36,7 @@ public class XferService extends Thread {
                 new Thread(new XferWorker(socket)).start();
             }
         } catch (Exception e) {
+            e.printStackTrace();
             logger.severe(e.toString());
         }
     }
@@ -71,7 +72,7 @@ public class XferService extends Thread {
                             writeBlockProto.getHeader().getBaseHeader().getBlock();
 
                         // recv stream block chunks
-                        BlockInputStream blockIn = new BlockInputStream(in);
+                        BlockInputStream blockIn = new BlockInputStream(in, out);
                         byte[] buffer = new byte[1024]; 
                         int bytesRead = 0;
 
@@ -87,12 +88,13 @@ public class XferService extends Thread {
 
                         blockIn.close();
 
-                        switch (writeBlockProto.getStage()) {
+                        // TODO - fix this
+                        /*switch (writeBlockProto.getStage()) {
                         case PIPELINE_CLOSE:
                             return;
                         default:
                             break;
-                        }
+                        }*/
 
                         break;
                     case READ_BLOCK:
@@ -109,10 +111,11 @@ public class XferService extends Thread {
                         blockOut.write(readBlock);
                         blockOut.close();
 
-                        return;
+                        break;
                     }
                 }
             } catch (Exception e) {
+                e.printStackTrace();
                 logger.severe(e.toString());
             }
         }

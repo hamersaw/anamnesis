@@ -26,7 +26,11 @@ public class NSDirectory extends NSItem {
     }
 
     public void addChild(NSItem child) {
-        children.put(child.getName(), child);
+        this.children.put(child.getName(), child);
+    }
+
+    public void removeChild(NSItem child) {
+        this.children.remove(child.getName());
     }
 
     public Collection<NSItem> getChildren() {
