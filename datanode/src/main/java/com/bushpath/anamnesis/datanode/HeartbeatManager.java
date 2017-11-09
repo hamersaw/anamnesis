@@ -29,7 +29,6 @@ public class HeartbeatManager {
             .build();
 
         // send initial register message
-
         DatanodeProtocolProtos.RegisterDatanodeRequestProto req =
             DatanodeProtocolProtos.RegisterDatanodeRequestProto.newBuilder()
                 .setRegistration(buildDatanodeRegistrationProto())
