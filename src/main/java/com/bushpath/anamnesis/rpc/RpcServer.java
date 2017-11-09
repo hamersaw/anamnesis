@@ -11,6 +11,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
@@ -18,14 +19,14 @@ import java.util.Map;
 
 public class RpcServer extends Thread {
     private ServerSocket serverSocket;
-    private Map<String,RpcHandler> rpcHandlers;
+    private Map<String, Object> rpcHandlers;
 
     public RpcServer(ServerSocket serverSocket) {
         this.serverSocket = serverSocket;
         this.rpcHandlers = new HashMap<>();
     }
 
-    public void registerRpcHandler(String className, RpcHandler rpcHandler) {
+    public void registerRpcHandler(String className, Object rpcHandler) {
         this.rpcHandlers.put(className, rpcHandler);
     }
 
@@ -96,8 +97,18 @@ public class RpcServer extends Thread {
                     + "' does not exist");
                 respBuilder.setErrorDetail(RpcErrorCodeProto.ERROR_NO_SUCH_PROTOCOL);
             } else {
-                RpcHandler handler = rpcHandlers.get(declaringClassProtocolName);
-                if (!handler.containsMethod(methodName)) {
+                Object rpcHandler = rpcHandlers.get(declaringClassProtocolName);
+
+                // check if handler contains method
+                Method method = null;
+                for (Method m: rpcHandler.getClass().getMethods()) {
+                    if (m.getName().equals(methodName)) {
+                        method = m;
+                        break;
+                    }
+                }
+
+                if (method == null) {
                     // error -> method does not exist
                     respBuilder.setStatus(RpcStatusProto.ERROR);
                     respBuilder.setErrorMsg("method '" + methodName + "' does not exist");
@@ -105,7 +116,7 @@ public class RpcServer extends Thread {
                 } else {
                     // use rpc handler to execute method
                     try {
-                        message = handler.handle(methodName, readBuffer(in));
+                        message = (Message) method.invoke(rpcHandler, readBuffer(in));
                     } catch(Exception e) {
                         respBuilder.setStatus(RpcStatusProto.ERROR);
                         respBuilder.setExceptionClassName(e.getClass().toString());

@@ -1,12 +1,9 @@
 package com.bushpath.anamnesis.namenode.rpc;
 
 import com.google.protobuf.Message;
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
 import org.apache.hadoop.hdfs.protocol.proto.ClientNamenodeProtocolProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
-import com.bushpath.anamnesis.rpc.RpcHandler;
 import com.bushpath.anamnesis.namenode.Block;
 import com.bushpath.anamnesis.namenode.BlockManager;
 import com.bushpath.anamnesis.namenode.NameSystem;
@@ -16,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class ClientNamenodeService implements RpcHandler {
+public class ClientNamenodeService {
     private NameSystem nameSystem;
     private BlockManager blockManager;
 
@@ -25,194 +22,119 @@ public class ClientNamenodeService implements RpcHandler {
         this.blockManager = blockManager;
     }
 
-    @Override
-    public Message handle(String method, byte[] message) throws Exception {
-        switch (method) {
-        case "addBlock":
-            ClientNamenodeProtocolProtos.AddBlockRequestProto addBlockReq =
-                ClientNamenodeProtocolProtos.AddBlockRequestProto.parseFrom(message);
+    public Message addBlock(byte[] message) throws Exception {
+        ClientNamenodeProtocolProtos.AddBlockRequestProto req =
+            ClientNamenodeProtocolProtos.AddBlockRequestProto.parseFrom(message);
 
-            return addBlock(null, addBlockReq);
-        case "create":
-            ClientNamenodeProtocolProtos.CreateRequestProto createReq =
-                ClientNamenodeProtocolProtos.CreateRequestProto.parseFrom(message);
+        // create block
+        Block block = this.blockManager.createBlock(req.getSrc(), 
+            req.getFavoredNodesList());
 
-            return create(null, createReq);
-        case "getFileInfo":
-            ClientNamenodeProtocolProtos.GetFileInfoRequestProto getFileInfoReq =
-                ClientNamenodeProtocolProtos.GetFileInfoRequestProto.parseFrom(message);
+        // respond to request
+        return ClientNamenodeProtocolProtos.AddBlockResponseProto.newBuilder()
+            .setBlock(block.toLocatedBlockProto())
+            .build();
+    }
 
-            return getFileInfo(null, getFileInfoReq);
-        case "getListing":
-            ClientNamenodeProtocolProtos.GetListingRequestProto getListingReq =
-                ClientNamenodeProtocolProtos.GetListingRequestProto.parseFrom(message);
+    public Message create(byte[] message) throws Exception {
+        ClientNamenodeProtocolProtos.CreateRequestProto req =
+            ClientNamenodeProtocolProtos.CreateRequestProto.parseFrom(message);
 
-            return getListing(null, getListingReq);
-        case "mkdirs":
-            ClientNamenodeProtocolProtos.MkdirsRequestProto mkdirsReq =
-                ClientNamenodeProtocolProtos.MkdirsRequestProto.parseFrom(message);
+        // create file with name system
+        NSItem item = this.nameSystem.create(req.getSrc(), req.getMasked().getPerm(),
+            req.getClientName(), req.getCreateParent(), req.getBlockSize());
 
-            return mkdirs(null, mkdirsReq);
-        default:
-            System.out.println("TODO - Handle '" + method + "'");
+        // respond to request
+        return ClientNamenodeProtocolProtos.CreateResponseProto.newBuilder()
+            .setFs(item.toHdfsFileStatusProto(false))
+            .build();
+    }
+
+    public Message getFileInfo(byte[] message) throws Exception {
+        ClientNamenodeProtocolProtos.GetFileInfoRequestProto req =
+            ClientNamenodeProtocolProtos.GetFileInfoRequestProto.parseFrom(message);
+
+        // query namesystem for file
+        NSItem item = this.nameSystem.getFile(req.getSrc());
+        ClientNamenodeProtocolProtos.GetFileInfoResponseProto.Builder respBuilder =
+            ClientNamenodeProtocolProtos.GetFileInfoResponseProto.newBuilder();
+
+        if (item != null) {
+            respBuilder.setFs(item.toHdfsFileStatusProto(false));
         }
-
-        return null;
+        return respBuilder.build();
     }
 
-    @Override
-    public boolean containsMethod(String method) {
-        return method.equals("getFileInfo") || method.equals("getListing")
-            || method.equals("mkdirs") || method.equals("create")
-            || method.equals("addBlock");
-    }
+    public Message getListing(byte[] message) throws Exception {
+        ClientNamenodeProtocolProtos.GetListingRequestProto req =
+            ClientNamenodeProtocolProtos.GetListingRequestProto.parseFrom(message);
 
-    public ClientNamenodeProtocolProtos.AddBlockResponseProto
-        addBlock(RpcController controller,
-            ClientNamenodeProtocolProtos.AddBlockRequestProto req)
-            throws ServiceException {
+        String startAfter = new String(req.getStartAfter().toByteArray());
+        Collection<NSItem> items = this.nameSystem.getListing(req.getSrc());
 
-        try {
-            // create block
-            Block block = this.blockManager.createBlock(req.getSrc(), 
-                req.getFavoredNodesList());
-
-            // respond to request
-            return ClientNamenodeProtocolProtos.AddBlockResponseProto.newBuilder()
-                .setBlock(block.toLocatedBlockProto())
-                .build();
-        } catch(Exception e) {
-            throw new ServiceException(e.getMessage());
-        }
-    }
-
-    public ClientNamenodeProtocolProtos.CreateResponseProto
-        create(RpcController controller,
-            ClientNamenodeProtocolProtos.CreateRequestProto req)
-            throws ServiceException {
-
-        try {
-            // create file with name system
-            NSItem item = this.nameSystem.create(req.getSrc(), req.getMasked().getPerm(),
-                req.getClientName(), req.getCreateParent(), req.getBlockSize());
-
-            // respond to request
-            return ClientNamenodeProtocolProtos.CreateResponseProto.newBuilder()
-                .setFs(item.toHdfsFileStatusProto(false))
-                .build();
-        } catch(Exception e) {
-            throw new ServiceException(e.getMessage());
-        }
-    }
-
-    public ClientNamenodeProtocolProtos.GetFileInfoResponseProto
-        getFileInfo(RpcController controller, 
-            ClientNamenodeProtocolProtos.GetFileInfoRequestProto req)
-            throws ServiceException {
-
-        try {
-            NSItem item = this.nameSystem.getFile(req.getSrc());
-            ClientNamenodeProtocolProtos.GetFileInfoResponseProto.Builder respBuilder =
-                ClientNamenodeProtocolProtos.GetFileInfoResponseProto.newBuilder();
-
-            if (item != null) {
-                respBuilder.setFs(item.toHdfsFileStatusProto(false));
-            }
-            return respBuilder.build();
-        } catch(Exception e) {
-            throw new ServiceException(e.getMessage());
-        }
-    }
-
-    private String toHex(byte[] bytes) {
-        StringBuilder sb = new StringBuilder();
-        for (byte b: bytes) {
-            sb.append(String.format("%02X ", b));
-        }
-
-        return sb.toString();
-    }
-
-    public ClientNamenodeProtocolProtos.GetListingResponseProto
-        getListing(RpcController controller,
-            ClientNamenodeProtocolProtos.GetListingRequestProto req)
-            throws ServiceException {
-
-        try {
-            String startAfter = new String(req.getStartAfter().toByteArray());
-            Collection<NSItem> items = this.nameSystem.getListing(req.getSrc());
-
-            // get start index
-            int startIndex = 0;
-            if (!startAfter.isEmpty()) {
-                for (NSItem item: items) {
-                    startIndex += 1;
-
-                    if (item.getPath().equals(startAfter)) {
-                        break;
-                    }
-                }
-            }
-
-            HdfsProtos.DirectoryListingProto.Builder directoryListingProtoBuilder = 
-                HdfsProtos.DirectoryListingProto.newBuilder();
-
-            int totalSize = 0, index = 0;
+        // get start index
+        int startIndex = 0;
+        if (!startAfter.isEmpty()) {
             for (NSItem item: items) {
-                if (index < startIndex) {
-                    index += 1;
-                    continue;
-                }
+                startIndex += 1;
 
-                // convert NSItem to HdfsFileStatusProto
-                HdfsProtos.HdfsFileStatusProto hdfsFileStatusProto =
-                    item.toHdfsFileStatusProto(false);
-
-                totalSize += hdfsFileStatusProto.getSerializedSize();
-                if (totalSize > 110) {
-                    // if this will make proto larger than 127 (max 1 byte value)
-                    // TODO - figure out ideal value for this parameter
-                    //  using 110 to give 17 bytes for dir listings proto metadata
-                    directoryListingProtoBuilder
-                        .setRemainingEntries(items.size() - index);
+                if (item.getPath().equals(startAfter)) {
                     break;
-                } else {
-                    directoryListingProtoBuilder.addPartialListing(hdfsFileStatusProto);
                 }
-
-                index += 1;
             }
-
-            if (index >= items.size()) {
-                directoryListingProtoBuilder.setRemainingEntries(0);
-            }
-
-            // respond to request
-            return ClientNamenodeProtocolProtos.GetListingResponseProto.newBuilder()
-                .setDirList(directoryListingProtoBuilder.build())
-                .build();
-        } catch(Exception e) {
-            throw new ServiceException(e.getMessage());
         }
+
+        HdfsProtos.DirectoryListingProto.Builder directoryListingProtoBuilder = 
+            HdfsProtos.DirectoryListingProto.newBuilder();
+
+        int totalSize = 0, index = 0;
+        for (NSItem item: items) {
+            if (index < startIndex) {
+                index += 1;
+                continue;
+            }
+
+            // convert NSItem to HdfsFileStatusProto
+            HdfsProtos.HdfsFileStatusProto hdfsFileStatusProto =
+                item.toHdfsFileStatusProto(false);
+
+            totalSize += hdfsFileStatusProto.getSerializedSize();
+            if (totalSize > 110) {
+                // if this will make proto larger than 127 (max 1 byte value)
+                // TODO - figure out ideal value for this parameter
+                //  using 110 to give 17 bytes for dir listings proto metadata
+                directoryListingProtoBuilder
+                    .setRemainingEntries(items.size() - index);
+                break;
+            } else {
+                directoryListingProtoBuilder.addPartialListing(hdfsFileStatusProto);
+            }
+
+            index += 1;
+        }
+
+        if (index >= items.size()) {
+            directoryListingProtoBuilder.setRemainingEntries(0);
+        }
+
+        // respond to request
+        return ClientNamenodeProtocolProtos.GetListingResponseProto.newBuilder()
+            .setDirList(directoryListingProtoBuilder.build())
+            .build();
     }
 
-    public ClientNamenodeProtocolProtos.MkdirsResponseProto
-        mkdirs(RpcController controller,
-            ClientNamenodeProtocolProtos.MkdirsRequestProto req)
-            throws ServiceException {
+    public Message mkdirs(byte[] message) throws Exception {
+        ClientNamenodeProtocolProtos.MkdirsRequestProto req =
+            ClientNamenodeProtocolProtos.MkdirsRequestProto.parseFrom(message);
 
-        try {
-            // use name system to make directory
-            this.nameSystem.mkdir(req.getSrc(), req.getMasked().getPerm(),
-                req.getCreateParent());
+        // use name system to make directory
+        this.nameSystem.mkdir(req.getSrc(), req.getMasked().getPerm(),
+            req.getCreateParent());
 
-            // respond to request
-            return ClientNamenodeProtocolProtos.MkdirsResponseProto.newBuilder()
-                .setResult(true)
-                .build();
-        } catch(Exception e) {
-            throw new ServiceException(e.getMessage());
-        }
+        // respond to request
+        return ClientNamenodeProtocolProtos.MkdirsResponseProto.newBuilder()
+            .setResult(true)
+            .build();
     }
 }
     /*implements ClientNamenodeProtocolProtos.ClientNamenodeProtocol.BlockingInterface {
