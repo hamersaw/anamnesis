@@ -4,7 +4,7 @@ import org.apache.hadoop.hdfs.protocol.proto.DatanodeProtocolProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsServerProtos;
 
-import com.bushpath.anamnesis.datanode.protocol.DatanodeClient;
+import com.bushpath.anamnesis.rpc.RpcClient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,12 +12,11 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class HeartbeatManager {
-    private DatanodeClient client;
+    private RpcClient rpcClient;
     private Configuration config;
     private HdfsProtos.DatanodeIDProto datanodeIdProto;
 
-    public HeartbeatManager(DatanodeClient client, Configuration config) {
-        this.client = client;
+    public HeartbeatManager(Configuration config) {
         this.config = config;
         this.datanodeIdProto = HdfsProtos.DatanodeIDProto.newBuilder()
             .setIpAddr(config.ipAddr)
@@ -34,14 +33,23 @@ public class HeartbeatManager {
                 .setRegistration(buildDatanodeRegistrationProto())
                 .build();
 
-        DatanodeProtocolProtos.RegisterDatanodeResponseProto response =
-            this.client.registerDatanode(req);
+        // send rpc request
+        try {
+            this.rpcClient = new RpcClient(config.namenodeIpAddr,
+                config.namenodePort, "datanode",
+                "org.apache.hadoop.hdfs.server.protocol.DatanodeProtocol");
+            byte[] respBuf = rpcClient.send("registerDatanode", req);
 
-        // TODO - handle response
+            // TODO - handle response
+            DatanodeProtocolProtos.RegisterDatanodeResponseProto response =
+                DatanodeProtocolProtos.RegisterDatanodeResponseProto.parseFrom(respBuf);
+        } catch(Exception e) {
+            System.err.println("failed to register datanode: " + e);
+        }
 
         // start heartbeat timer
         Timer timer = new Timer(true);
-        timer.scheduleAtFixedRate(new HeartbeatTask(client, config), 0, 5 * 1000);
+        timer.scheduleAtFixedRate(new HeartbeatTask(config), 0, 5 * 1000);
     }
 
     private DatanodeProtocolProtos.DatanodeRegistrationProto 
@@ -81,11 +89,9 @@ public class HeartbeatManager {
     }
 
     private class HeartbeatTask extends TimerTask {
-        private DatanodeClient client;
         private Configuration config;
 
-        public HeartbeatTask(DatanodeClient client, Configuration config) {
-            this.client = client;
+        public HeartbeatTask(Configuration config) {
             this.config = config;
         }
 
@@ -101,11 +107,17 @@ public class HeartbeatManager {
                     .addAllReports(reports)
                     .build();
 
-            // send HeartbeatRequest
-            DatanodeProtocolProtos.HeartbeatResponseProto response =
-                this.client.sendHeartbeat(req);
+            // send rpc request
+            try {
+                byte[] respBuf = rpcClient.send("sendHeartbeat", req);
 
-            // TODO - handle response
+                // TODO - handle response
+                DatanodeProtocolProtos.HeartbeatResponseProto response =
+                    DatanodeProtocolProtos.HeartbeatResponseProto.parseFrom(respBuf);
+            } catch(Exception e) {
+                e.printStackTrace();
+                System.err.println("failed to send datanode heartbeat: " + e);
+            }
         }
     }
 }

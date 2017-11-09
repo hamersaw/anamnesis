@@ -1,17 +1,12 @@
 package com.bushpath.anamnesis.datanode;
 
-import io.grpc.BindableService;
-import io.grpc.Server;
-import io.grpc.ServerBuilder;
-
-import com.bushpath.anamnesis.GrpcServer;
-import com.bushpath.anamnesis.datanode.protocol.ClientDatanodeService;
-import com.bushpath.anamnesis.datanode.protocol.DatanodeClient;
+import com.bushpath.anamnesis.rpc.RpcServer;
 import com.bushpath.anamnesis.datanode.storage.JVMStorage;
 import com.bushpath.anamnesis.datanode.storage.Storage;
 import com.bushpath.anamnesis.datanode.storage.TmpfsStorage;
 
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -41,24 +36,20 @@ public class Main {
                 throw new Exception("Unknown storage type");
             }
 
-            // start server
-            List<BindableService> services = new ArrayList<>();
-            services.add(new ClientDatanodeService());
-            GrpcServer server = new GrpcServer(config.ipcPort, services);
-            server.start();
-            logger.info("server started on port " + config.ipcPort);
+            // initialize rpc server
+            ServerSocket serverSocket = new ServerSocket(config.ipcPort);
+            RpcServer rpcServer = new RpcServer(serverSocket);
+            // TODO - register client datanode service
+            rpcServer.start();
 
             // start xfer service
             new Thread(new XferService(config.xferPort, storage)).start();            
             
             // start HeartbeatManager
-            DatanodeClient client = new DatanodeClient(config.namenodeIpAddr,
-                config.namenodePort);
+            HeartbeatManager heartbeatManager = new HeartbeatManager(config);
 
-            HeartbeatManager heartbeatManager = new HeartbeatManager(client, config);
-
-            // wait until shutdown command issued
-            server.blockUntilShutdown();
+            // wait until rpc server shuts down
+            rpcServer.join();
         } catch (Exception e) {
             e.printStackTrace();
         }
