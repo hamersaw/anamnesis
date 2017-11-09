@@ -18,8 +18,6 @@ public class NSFile extends NSItem {
 
         this.owner = owner;
         this.group = group;
-        this.modificationTime = System.currentTimeMillis();
-        this.accessTime = this.modificationTime;
         this.length = 0;
         this.blockSize = blockSize;
         this.blocks = new ArrayList<>();
@@ -32,22 +30,6 @@ public class NSFile extends NSItem {
 
     public String getGroup() {
         return this.group;
-    }
-
-    public long getModificationTime() {
-        return this.modificationTime;
-    }
-
-    public void setModificationTime(long modificationTime) {
-        this.modificationTime = modificationTime;
-    }
-
-    public long getAccessTime() {
-        return this.accessTime;
-    }
-
-    public void setAccessTime(long accessTime) {
-        this.accessTime = accessTime;
     }
 
     public long getLength() {

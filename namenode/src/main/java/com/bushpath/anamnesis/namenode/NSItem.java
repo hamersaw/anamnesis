@@ -6,6 +6,7 @@ public abstract class NSItem {
     protected String name;
     protected Type type;
     protected int perm;
+    protected long modificationTime, accessTime;
     protected NSItem parent;
 
     public NSItem(String name, Type type, int perm, NSItem parent) {
@@ -13,6 +14,9 @@ public abstract class NSItem {
         this.type = type;
         this.perm = perm;
         this.parent = parent;
+
+        this.modificationTime = System.currentTimeMillis();
+        this.accessTime = this.modificationTime;
     }
 
     public String getName() {
@@ -33,6 +37,22 @@ public abstract class NSItem {
 
     public int getPerm() {
         return this.perm;
+    }
+
+    public long getModificationTime() {
+        return this.modificationTime;
+    }
+
+    public void setModificationTime(long modificationTime) {
+        this.modificationTime = modificationTime;
+    }
+
+    public long getAccessTime() {
+        return this.accessTime;
+    }
+
+    public void setAccessTime(long accessTime) {
+        this.accessTime = accessTime;
     }
 
     public enum Type {

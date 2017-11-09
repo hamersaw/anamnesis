@@ -52,8 +52,8 @@ public class NSDirectory extends NSItem {
             .setPermission(permission)
             .setOwner("")
             .setGroup("")
-            .setModificationTime(-1)
-            .setAccessTime(-1)
+            .setModificationTime(this.modificationTime)
+            .setAccessTime(this.accessTime)
             .setChildrenNum(this.children.size())
             .build();
     }
