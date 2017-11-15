@@ -45,6 +45,7 @@ public class Block {
             .setPoolId("")
             .setBlockId(this.blockId)
             .setGenerationStamp(this.generationStamp)
+            .setNumBytes(13l) // TODO - remove
             .build();
 
         List<HdfsProtos.DatanodeInfoProto> locs = new ArrayList<>();

@@ -32,5 +32,8 @@ An in-memory, location aware, HDFS based file system.
 - write checksums DataOutputStream.write()
 - validate checksums in ChunkPacket.read()
 #### RPC SERVER
+- **implement checksums for BlockOpResponseProto**
+- **set length of file when adding blocks**
+- fix datanode EOFException on reading blocks
 - rpc response error handling (fix up)
 - add client to anamnesis client

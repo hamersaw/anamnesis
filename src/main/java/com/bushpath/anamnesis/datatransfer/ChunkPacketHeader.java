@@ -82,9 +82,7 @@ public class ChunkPacketHeader {
 
     public void write(DataOutputStream out) throws IOException {
         out.writeInt(this.packetLen);
-        out.writeShort((short) this.getSerializedSize());
-
-        this.packetHeaderProto.writeTo(out);
+        this.packetHeaderProto.writeDelimitedTo(out);
     }
 
     public static ChunkPacketHeader read(DataInputStream in) throws IOException {

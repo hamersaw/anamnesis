@@ -23,6 +23,32 @@ public class DataTransferProtocol {
         out.flush();
     }
 
+    public static void sendBlockOpResponse(DataOutputStream out,
+            DataTransferProtos.Status status, HdfsProtos.ChecksumTypeProto checksumType,
+            int bytesPerChecksum, long chunkOffset) throws IOException {
+
+        DataTransferProtos.ChecksumProto checksumProto =
+            DataTransferProtos.ChecksumProto.newBuilder()
+                .setType(checksumType)
+                .setBytesPerChecksum(bytesPerChecksum)
+                .build();
+
+        DataTransferProtos.ReadOpChecksumInfoProto readOpChecksumInfoProto =
+            DataTransferProtos.ReadOpChecksumInfoProto.newBuilder()
+                .setChecksum(checksumProto)
+                .setChunkOffset(chunkOffset)
+                .build();
+
+        DataTransferProtos.BlockOpResponseProto blockOpResponseProto =
+            DataTransferProtos.BlockOpResponseProto.newBuilder()
+                .setStatus(status)
+                .setReadOpChecksumInfo(readOpChecksumInfoProto)
+                .build();
+
+        blockOpResponseProto.writeDelimitedTo(out);
+        out.flush();
+    }
+
     public static void sendReadOp(DataOutputStream out, String poolId, long blockId,
             long generationStamp, String client, long offset, long len)
             throws IOException {
@@ -123,19 +149,26 @@ public class DataTransferProtocol {
 
     public static DataTransferProtos.BlockOpResponseProto
             recvBlockOpResponse(DataInputStream in) throws IOException {
-
         return DataTransferProtos.BlockOpResponseProto.parseDelimitedFrom(in);
+    }
+
+    public static DataTransferProtos.ClientReadStatusProto
+            recvClientReadStatus(DataInputStream in) throws IOException {
+        return DataTransferProtos.ClientReadStatusProto.parseDelimitedFrom(in);
     }
 
     public static DataTransferProtos.OpReadBlockProto
             recvReadOp(DataInputStream in) throws IOException {
-
         return DataTransferProtos.OpReadBlockProto.parseDelimitedFrom(in);
     }
 
     public static DataTransferProtos.OpWriteBlockProto
             recvWriteOp(DataInputStream in) throws IOException {
-
         return DataTransferProtos.OpWriteBlockProto.parseDelimitedFrom(in);
+    }
+
+    public static DataTransferProtos.PipelineAckProto
+            recvPipelineAck(DataInputStream in) throws IOException {
+        return DataTransferProtos.PipelineAckProto.parseDelimitedFrom(in);
     }
 }

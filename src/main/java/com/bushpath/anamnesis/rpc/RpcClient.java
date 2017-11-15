@@ -93,6 +93,7 @@ public class RpcClient {
                 .build();
 
         // write to output stream
+        // TODO - actually set correct lengths (coded output stream .getuva...)
         out.writeInt(1 + rpcRequestHeaderProto.getSerializedSize()
             + 1 + requestHeaderProto.getSerializedSize()
             + 1 + req.getSerializedSize());

@@ -1,6 +1,7 @@
 package com.bushpath.anamnesis.rpc;
 
 import com.google.protobuf.Message;
+import com.google.protobuf.CodedOutputStream;
 import org.apache.hadoop.ipc.protobuf.IpcConnectionContextProtos;
 import org.apache.hadoop.ipc.protobuf.RpcHeaderProtos;
 import org.apache.hadoop.ipc.protobuf.RpcHeaderProtos.RpcResponseHeaderProto.RpcErrorCodeProto;
@@ -63,21 +64,59 @@ public class RpcServer extends Thread {
 
         // parse rpc header
         RpcHeaderProtos.RpcRequestHeaderProto rpcRequestHeaderProto =
-            RpcHeaderProtos.RpcRequestHeaderProto.parseFrom(readBuffer(in));
-            
+            RpcHeaderProtos.RpcRequestHeaderProto.parseDelimitedFrom(in);
+
         // parse request
         switch (rpcRequestHeaderProto.getCallId()) {
         case -3:
             IpcConnectionContextProtos.IpcConnectionContextProto context =
                 IpcConnectionContextProtos.IpcConnectionContextProto
-                    .parseFrom(readBuffer(in));
+                    .parseDelimitedFrom(in);
 
             // TODO - update i.getUserInfo().getEffectiveUser()
             // and i.getProtocol()
             break;
+        case -33:
+            // handle SASL RPC request
+            RpcHeaderProtos.RpcSaslProto rpcSaslProto =
+                RpcHeaderProtos.RpcSaslProto.parseDelimitedFrom(in);
+
+            switch (rpcSaslProto.getState()) {
+            case NEGOTIATE:
+                // send automatic SUCCESS - mean simple server on HDFS side
+                RpcHeaderProtos.RpcResponseHeaderProto rpcResponse =
+                    RpcHeaderProtos.RpcResponseHeaderProto.newBuilder()
+                        .setStatus(RpcStatusProto.SUCCESS)
+                        .setCallId(rpcRequestHeaderProto.getCallId())
+                        .setClientId(rpcRequestHeaderProto.getClientId())
+                        .build();
+
+                RpcHeaderProtos.RpcSaslProto message =
+                    RpcHeaderProtos.RpcSaslProto.newBuilder()
+                        .setState(RpcHeaderProtos.RpcSaslProto.SaslState.SUCCESS)
+                        .build();
+
+                // TODO - fix this with sending response to general rpc request
+                int respSize = rpcResponse.getSerializedSize();
+                int messageSize = message.getSerializedSize();
+
+                int length = CodedOutputStream.computeRawVarint32Size(respSize) + respSize
+                    + CodedOutputStream.computeRawVarint32Size(messageSize) + messageSize;
+                out.writeInt(length);
+                rpcResponse.writeDelimitedTo(out);
+                message.writeDelimitedTo(out);
+
+                out.flush();
+                break;
+            default:
+                System.out.println("TODO - handle sasl " + rpcSaslProto.getState());
+                break;
+            }
+
+            break;
         default:
             ProtobufRpcEngineProtos.RequestHeaderProto requestHeaderProto =
-                ProtobufRpcEngineProtos.RequestHeaderProto.parseFrom(readBuffer(in));
+                ProtobufRpcEngineProtos.RequestHeaderProto.parseDelimitedFrom(in);
 
             // build response - set to 'SUCCESS' and change on failure
             RpcHeaderProtos.RpcResponseHeaderProto.Builder respBuilder =
@@ -130,16 +169,19 @@ public class RpcServer extends Thread {
                 }
             }
 
-            // send response
             RpcHeaderProtos.RpcResponseHeaderProto resp = respBuilder.build();
-            int length = (1 + resp.getSerializedSize()) +
-                (message == null ? 0 : 1 + message.getSerializedSize());
+
+            // send response
+            // TODO - fix if message == null
+            int respSize = resp.getSerializedSize();
+            int messageSize = message.getSerializedSize();
+
+            int length = CodedOutputStream.computeRawVarint32Size(respSize) + respSize
+                + CodedOutputStream.computeRawVarint32Size(messageSize) + messageSize;
             out.writeInt(length);
-            out.writeByte((byte) resp.getSerializedSize());
-            resp.writeTo(out);
+            resp.writeDelimitedTo(out);
             if (message != null) {
-                out.writeByte((byte)message.getSerializedSize());
-                message.writeTo(out);
+                message.writeDelimitedTo(out);
             }
 
             out.flush();
@@ -157,9 +199,9 @@ public class RpcServer extends Thread {
         @Override
         public void run() {
             try {
-                DataInputStream in = new DataInputStream(this.socket.getInputStream());
                 DataOutputStream out =
                     new DataOutputStream(this.socket.getOutputStream());
+                DataInputStream in = new DataInputStream(this.socket.getInputStream());
  
                 // read connection header
                 byte[] connectionHeaderBuf = new byte[7];

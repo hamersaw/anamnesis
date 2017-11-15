@@ -1,5 +1,7 @@
 package com.bushpath.anamnesis.datatransfer;
 
+import com.bushpath.anamnesis.util.Checksum;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -13,7 +15,8 @@ public class BlockInputStream extends InputStream {
     private int startIndex, endIndex;
     private boolean lastPacketSeen;
 
-    public BlockInputStream(DataInputStream in, DataOutputStream out) {
+    public BlockInputStream(DataInputStream in, DataOutputStream out,
+            Checksum checksum) {
         this.in = in;
         this.out = out;
         this.buffer = new byte[ChunkPacket.CHUNKS_PER_PACKET * ChunkPacket.CHUNK_SIZE];

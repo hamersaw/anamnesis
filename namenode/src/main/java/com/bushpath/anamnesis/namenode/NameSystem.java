@@ -44,7 +44,7 @@ public class NameSystem {
  
             // create new file and add as child of parent directory
             NSItem file = new NSFile(elements[elements.length - 1], owner,
-                    "", perm, blockSize, parentDirectory);
+                    owner, perm, blockSize, parentDirectory);
             parentDirectory.addChild(file);
 
             return file;

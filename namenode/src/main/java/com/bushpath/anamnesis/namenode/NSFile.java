@@ -71,10 +71,12 @@ public class NSFile extends NSItem {
         }
 
         return HdfsProtos.LocatedBlocksProto.newBuilder()
-            .setFileLength(this.length)
+            //.setFileLength(this.length)
+            .setFileLength(13) // TODO - fix
             .addAllBlocks(blocks)
             .setUnderConstruction(!this.complete)
-            .setIsLastBlockComplete(false) // TODO
+            .setLastBlock(blocks.get(blocks.size() - 1))
+            .setIsLastBlockComplete(false) // TODO - set correctly
             .build();
     }
 

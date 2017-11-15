@@ -2,20 +2,24 @@ package com.bushpath.anamnesis.datatransfer;
 
 import com.bushpath.anamnesis.util.Checksum;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
 public class BlockOutputStream extends OutputStream {
+    private DataInputStream in;
     private DataOutputStream out;
     private Checksum checksum;
     private byte[] buffer;
     private int index;
     private long sequenceNumber, offsetInBlock;
 
-    public BlockOutputStream(DataOutputStream out) {
+    public BlockOutputStream(DataInputStream in, DataOutputStream out,
+            Checksum checksum) {
+        this.in = in;
         this.out = out;
-        this.checksum = new Checksum(ChunkPacket.CHUNK_SIZE);
+        this.checksum = checksum;
         this.buffer = new byte[ChunkPacket.CHUNK_SIZE * ChunkPacket.CHUNKS_PER_PACKET];
         this.index = 0;
         this.sequenceNumber = 0;
@@ -61,14 +65,23 @@ public class BlockOutputStream extends OutputStream {
     private void writeChunks(boolean writePartial, boolean lastPacketInBlock)
             throws IOException {
         int writeLength = writePartial ? this.index : this.index % ChunkPacket.CHUNK_SIZE;
+        System.out.println("WRITING CHUNK");
+        System.out.println("\tLAST_PACKET:" + lastPacketInBlock);
  
         // write chunk to chunk packet
         ChunkPacket packet = new ChunkPacket(this.sequenceNumber, this.offsetInBlock,
             lastPacketInBlock, this.checksum.getBytesPerChecksum());
 
         packet.writeData(this.buffer, 0, writeLength);
-        // TODO - write checksums
+        if (this.index != 0) { // write checksum if there was any data written
+            byte[] checksumBytes = this.checksum.compute(this.buffer, 0, writeLength);
+            packet.writeChecksum(checksumBytes,
+                this.checksum.getBytesPerChecksum(), 4); // TODO - fix hardcoding of 4
+        }
         packet.write(this.out);
+        
+        // read ack (don't need!)
+        //DataTransferProtocol.recvPipelineAck(this.in);
 
         // push bytes down buffer if necessary and reset index
         if (writeLength != this.buffer.length) {
@@ -81,6 +94,13 @@ public class BlockOutputStream extends OutputStream {
 
     @Override
     public void close() throws IOException {
+        System.out.println("\t\tCLOSE:0");
+        if (this.index != 0) {
+            System.out.println("\t\tCLOSE:1");
+            writeChunks(true, false);
+        }
+
+        System.out.println("\t\tCLOSE:2");
         writeChunks(true, true);
         this.out.flush();
     }

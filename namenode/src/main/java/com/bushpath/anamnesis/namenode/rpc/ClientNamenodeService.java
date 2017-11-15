@@ -167,7 +167,8 @@ public class ClientNamenodeService {
         HdfsProtos.FsServerDefaultsProto fsServerDefaultsProto =
             HdfsProtos.FsServerDefaultsProto.newBuilder()
                 .setBlockSize(this.config.blockSize)
-                .setBytesPerChecksum(Checksum.getBytesPerChecksum())
+                //.setBytesPerChecksum(Checksum.getBytesPerChecksum())
+                .setBytesPerChecksum(4) // TODO -fix this!
                 .setWritePacketSize(this.config.writePacketSize)
                 .setReplication(this.config.replication)
                 .setFileBufferSize(this.config.fileBufferSize)

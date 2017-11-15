@@ -8,6 +8,8 @@ import com.bushpath.anamnesis.datatransfer.BlockInputStream;
 import com.bushpath.anamnesis.datatransfer.BlockOutputStream;
 import com.bushpath.anamnesis.datatransfer.DataTransferProtocol;
 import com.bushpath.anamnesis.datatransfer.Op;
+import com.bushpath.anamnesis.util.Checksum;
+import com.bushpath.anamnesis.util.ChecksumFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -59,20 +61,28 @@ public class XferService extends Thread {
                     Op op = DataTransferProtocol.readOp(in);
                     logger.info("recv op '" + op + "'");
 
-                    // send op response
-                    DataTransferProtos.Status status = DataTransferProtos.Status.SUCCESS;
-                    DataTransferProtocol.sendBlockOpResponse(out, status);
-
                     switch(op) {
                     case WRITE_BLOCK:
+                        // send op response
+                        DataTransferProtocol.sendBlockOpResponse(out,
+                                DataTransferProtos.Status.SUCCESS);
+
+                        // recv write op
                         DataTransferProtos.OpWriteBlockProto writeBlockProto =
                             DataTransferProtocol.recvWriteOp(in);
 
                         HdfsProtos.ExtendedBlockProto extendedBlockProto = 
                             writeBlockProto.getHeader().getBaseHeader().getBlock();
 
+                        DataTransferProtos.ChecksumProto writeChecksumProto =
+                            writeBlockProto.getRequestedChecksum();
+
+                        Checksum writeChecksum =
+                            ChecksumFactory.buildChecksum(writeChecksumProto.getType());
+
                         // recv stream block chunks
-                        BlockInputStream blockIn = new BlockInputStream(in, out);
+                        BlockInputStream blockIn = new BlockInputStream(in, out,
+                            writeChecksum);
                         byte[] buffer = new byte[1024]; 
                         int bytesRead = 0;
 
@@ -98,18 +108,44 @@ public class XferService extends Thread {
 
                         break;
                     case READ_BLOCK:
+                        // create checksum
+                        Checksum readChecksum = ChecksumFactory.buildDefaultChecksum();
+
+                        // send op response
+                        DataTransferProtocol.sendBlockOpResponse(out,
+                                DataTransferProtos.Status.SUCCESS,
+                                HdfsProtos.ChecksumTypeProto.CHECKSUM_CRC32, 4, 0l);
+
+                        // recv read op
                         DataTransferProtos.OpReadBlockProto readBlockProto =
                             DataTransferProtocol.recvReadOp(in);
+                        System.out.println("RECV READ_BLOCK OP");
+                        System.out.println("offset:" + readBlockProto.getOffset());
+                        System.out.println("len:" + readBlockProto.getLen());
 
                         HdfsProtos.ExtendedBlockProto readExtendedBlockProto =
                             readBlockProto.getHeader().getBaseHeader().getBlock();
+
+                        System.out.println("BLOCK_ID: "
+                            + readExtendedBlockProto.getBlockId());
                         
                         // send stream block chunks
-                        BlockOutputStream blockOut = new BlockOutputStream(out);
+                        BlockOutputStream blockOut = new BlockOutputStream(in, out,
+                            readChecksum);
                         byte[] readBlock =
                             storage.getBlock(readExtendedBlockProto.getBlockId());
+                        System.out.println("WRITING BLOCK");
                         blockOut.write(readBlock);
+                        System.out.println("CLOSING OUTPUT STREAM");
                         blockOut.close();
+                        System.out.println("COMPLETE");
+
+
+                        // TODO - read client read status proto
+                        System.out.println("\t\tREADING CLIENT READ STATUS PROTO");
+                        DataTransferProtos.ClientReadStatusProto readProto =
+                            DataTransferProtocol.recvClientReadStatus(in);
+                        System.out.println("\t\tSTATUS:" + readProto.getStatus());
 
                         break;
                     }
