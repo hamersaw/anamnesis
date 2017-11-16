@@ -12,6 +12,7 @@ import com.bushpath.anamnesis.namenode.NSFile;
 import com.bushpath.anamnesis.namenode.NSItem;
 import com.bushpath.anamnesis.util.Checksum;
 
+import java.io.DataInputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -28,9 +29,9 @@ public class ClientNamenodeService {
         this.config = config;
     }
 
-    public Message addBlock(byte[] message) throws Exception {
+    public Message addBlock(DataInputStream in) throws Exception {
         ClientNamenodeProtocolProtos.AddBlockRequestProto req =
-            ClientNamenodeProtocolProtos.AddBlockRequestProto.parseFrom(message);
+            ClientNamenodeProtocolProtos.AddBlockRequestProto.parseDelimitedFrom(in);
 
         // create block
         Block block = this.blockManager.createBlock(req.getSrc(), 
@@ -42,9 +43,9 @@ public class ClientNamenodeService {
             .build();
     }
 
-    public Message complete(byte[] message) throws Exception {
+    public Message complete(DataInputStream in) throws Exception {
         ClientNamenodeProtocolProtos.CompleteRequestProto req =
-            ClientNamenodeProtocolProtos.CompleteRequestProto.parseFrom(message);
+            ClientNamenodeProtocolProtos.CompleteRequestProto.parseDelimitedFrom(in);
 
         // complete file with name system
         this.nameSystem.complete(req.getSrc());
@@ -55,9 +56,9 @@ public class ClientNamenodeService {
             .build();
     }
 
-    public Message create(byte[] message) throws Exception {
+    public Message create(DataInputStream in) throws Exception {
         ClientNamenodeProtocolProtos.CreateRequestProto req =
-            ClientNamenodeProtocolProtos.CreateRequestProto.parseFrom(message);
+            ClientNamenodeProtocolProtos.CreateRequestProto.parseDelimitedFrom(in);
 
         // create file with name system
         NSItem item = this.nameSystem.create(req.getSrc(), req.getMasked().getPerm(),
@@ -69,9 +70,9 @@ public class ClientNamenodeService {
             .build();
     }
 
-    public Message getBlockLocations(byte[] message) throws Exception {
+    public Message getBlockLocations(DataInputStream in) throws Exception {
         ClientNamenodeProtocolProtos.GetBlockLocationsRequestProto req =
-            ClientNamenodeProtocolProtos.GetBlockLocationsRequestProto.parseFrom(message);
+            ClientNamenodeProtocolProtos.GetBlockLocationsRequestProto.parseDelimitedFrom(in);
 
         // look up file
         NSItem item = this.nameSystem.getFile(req.getSrc());
@@ -86,9 +87,9 @@ public class ClientNamenodeService {
             .build();
     }
 
-    public Message getFileInfo(byte[] message) throws Exception {
+    public Message getFileInfo(DataInputStream in) throws Exception {
         ClientNamenodeProtocolProtos.GetFileInfoRequestProto req =
-            ClientNamenodeProtocolProtos.GetFileInfoRequestProto.parseFrom(message);
+            ClientNamenodeProtocolProtos.GetFileInfoRequestProto.parseDelimitedFrom(in);
 
         // query namesystem for file
         NSItem item = this.nameSystem.getFile(req.getSrc());
@@ -101,9 +102,9 @@ public class ClientNamenodeService {
         return respBuilder.build();
     }
 
-    public Message getListing(byte[] message) throws Exception {
+    public Message getListing(DataInputStream in) throws Exception {
         ClientNamenodeProtocolProtos.GetListingRequestProto req =
-            ClientNamenodeProtocolProtos.GetListingRequestProto.parseFrom(message);
+            ClientNamenodeProtocolProtos.GetListingRequestProto.parseDelimitedFrom(in);
 
         String startAfter = new String(req.getStartAfter().toByteArray());
         Collection<NSItem> items = this.nameSystem.getListing(req.getSrc());
@@ -159,19 +160,20 @@ public class ClientNamenodeService {
             .build();
     }
 
-    public Message getServerDefaults(byte[] message) throws Exception {
+    public Message getServerDefaults(DataInputStream in) throws Exception {
         ClientNamenodeProtocolProtos.GetServerDefaultsRequestProto req =
-            ClientNamenodeProtocolProtos.GetServerDefaultsRequestProto.parseFrom(message);
+            ClientNamenodeProtocolProtos.GetServerDefaultsRequestProto.parseDelimitedFrom(in);
 
         // retrieve server defaults
         HdfsProtos.FsServerDefaultsProto fsServerDefaultsProto =
             HdfsProtos.FsServerDefaultsProto.newBuilder()
                 .setBlockSize(this.config.blockSize)
                 //.setBytesPerChecksum(Checksum.getBytesPerChecksum())
-                .setBytesPerChecksum(4) // TODO -fix this!
+                .setBytesPerChecksum(512) // TODO -fix this!
                 .setWritePacketSize(this.config.writePacketSize)
                 .setReplication(this.config.replication)
                 .setFileBufferSize(this.config.fileBufferSize)
+                .setChecksumType(HdfsProtos.ChecksumTypeProto.CHECKSUM_CRC32C)
                 .build();
 
         return ClientNamenodeProtocolProtos.GetServerDefaultsResponseProto.newBuilder()
@@ -179,9 +181,9 @@ public class ClientNamenodeService {
             .build();
     }
 
-    public Message mkdirs(byte[] message) throws Exception {
+    public Message mkdirs(DataInputStream in) throws Exception {
         ClientNamenodeProtocolProtos.MkdirsRequestProto req =
-            ClientNamenodeProtocolProtos.MkdirsRequestProto.parseFrom(message);
+            ClientNamenodeProtocolProtos.MkdirsRequestProto.parseDelimitedFrom(in);
 
         // use name system to make directory
         this.nameSystem.mkdir(req.getSrc(), req.getMasked().getPerm(),
@@ -193,9 +195,9 @@ public class ClientNamenodeService {
             .build();
     }
 
-    public Message rename(byte[] message) throws Exception {
+    public Message rename(DataInputStream in) throws Exception {
         ClientNamenodeProtocolProtos.RenameRequestProto req =
-            ClientNamenodeProtocolProtos.RenameRequestProto.parseFrom(message);
+            ClientNamenodeProtocolProtos.RenameRequestProto.parseDelimitedFrom(in);
 
         // use name system to make directory
         this.nameSystem.rename(req.getSrc(), req.getDst());

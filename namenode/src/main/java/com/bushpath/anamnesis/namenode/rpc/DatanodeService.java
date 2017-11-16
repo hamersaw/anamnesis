@@ -7,6 +7,7 @@ import org.apache.hadoop.hdfs.protocol.proto.HdfsServerProtos;
 
 import com.bushpath.anamnesis.namenode.DatanodeManager;
 
+import java.io.DataInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,9 +18,9 @@ public class DatanodeService {
         this.datanodeManager = datanodeManager;
     }
 
-    public Message registerDatanode(byte[] message) throws Exception {
+    public Message registerDatanode(DataInputStream in) throws Exception {
         DatanodeProtocolProtos.RegisterDatanodeRequestProto req =
-            DatanodeProtocolProtos.RegisterDatanodeRequestProto.parseFrom(message);
+            DatanodeProtocolProtos.RegisterDatanodeRequestProto.parseDelimitedFrom(in);
         
         // register datanode
         DatanodeProtocolProtos.DatanodeRegistrationProto registration 
@@ -37,9 +38,9 @@ public class DatanodeService {
             .build();
     }
 
-    public Message sendHeartbeat(byte[] message) throws Exception {
+    public Message sendHeartbeat(DataInputStream in) throws Exception {
         DatanodeProtocolProtos.HeartbeatRequestProto req =
-            DatanodeProtocolProtos.HeartbeatRequestProto.parseFrom(message);
+            DatanodeProtocolProtos.HeartbeatRequestProto.parseDelimitedFrom(in);
 
         // update datanode
         DatanodeProtocolProtos.DatanodeRegistrationProto registration

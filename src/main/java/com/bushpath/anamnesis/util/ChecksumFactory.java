@@ -10,7 +10,7 @@ public class ChecksumFactory {
     public static Checksum buildChecksum(HdfsProtos.ChecksumTypeProto type) {
         switch (type) {
         case CHECKSUM_CRC32:
-            return new ChecksumCRC32();
+            return new ChecksumJavaCRC32C();
         default:
             System.out.println("CHECKSUM TYPE DOES NOT EXIST");
             return null;

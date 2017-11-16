@@ -159,7 +159,8 @@ public class RpcServer extends Thread {
                 } else {
                     // use rpc handler to execute method
                     try {
-                        message = (Message) method.invoke(rpcHandler, readBuffer(in));
+                        //message = (Message) method.invoke(rpcHandler, readBuffer(in));
+                        message = (Message) method.invoke(rpcHandler, in);
                     } catch(Exception e) {
                         respBuilder.setStatus(RpcStatusProto.ERROR);
                         respBuilder.setExceptionClassName(e.getClass().toString());

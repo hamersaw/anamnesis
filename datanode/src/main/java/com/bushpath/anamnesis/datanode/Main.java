@@ -1,6 +1,7 @@
 package com.bushpath.anamnesis.datanode;
 
 import com.bushpath.anamnesis.rpc.RpcServer;
+import com.bushpath.anamnesis.datanode.rpc.ClientDatanodeService;
 import com.bushpath.anamnesis.datanode.storage.JVMStorage;
 import com.bushpath.anamnesis.datanode.storage.Storage;
 import com.bushpath.anamnesis.datanode.storage.TmpfsStorage;
@@ -39,6 +40,9 @@ public class Main {
             // initialize rpc server
             ServerSocket serverSocket = new ServerSocket(config.ipcPort);
             RpcServer rpcServer = new RpcServer(serverSocket);
+            rpcServer.registerRpcHandler(
+                "org.apache.hadoop.hdfs.protocol.ClientDatanodeProtocol",
+                new ClientDatanodeService());
             // TODO - register client datanode service
             rpcServer.start();
 
