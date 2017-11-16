@@ -136,7 +136,7 @@ public class ClientNamenodeService {
                 item.toHdfsFileStatusProto(false);
 
             totalSize += hdfsFileStatusProto.getSerializedSize();
-            if (totalSize > 110) {
+            if (totalSize > 110) { // TODO - remove (unecessary!)
                 // if this will make proto larger than 127 (max 1 byte value)
                 // TODO - figure out ideal value for this parameter
                 //  using 110 to give 17 bytes for dir listings proto metadata

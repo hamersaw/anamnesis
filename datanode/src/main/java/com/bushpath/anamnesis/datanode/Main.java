@@ -42,8 +42,7 @@ public class Main {
             RpcServer rpcServer = new RpcServer(serverSocket);
             rpcServer.registerRpcHandler(
                 "org.apache.hadoop.hdfs.protocol.ClientDatanodeProtocol",
-                new ClientDatanodeService());
-            // TODO - register client datanode service
+                new ClientDatanodeService(storage));
             rpcServer.start();
 
             // start xfer service

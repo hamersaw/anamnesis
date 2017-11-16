@@ -11,4 +11,10 @@ public class TmpfsStorage extends Storage {
         // TODO
         return null;
     }
+
+    @Override
+    public long getBlockLength(long blockId) {
+        // TODO
+        return 0l;
+    }
 }

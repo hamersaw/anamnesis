@@ -22,4 +22,13 @@ public class JVMStorage extends Storage {
     public byte[] getBlock(long blockId) {
         return this.blocks.get(blockId);
     }
+
+    @Override
+    public long getBlockLength(long blockId) {
+        if (!this.blocks.containsKey(blockId)) {
+            return 0l;
+        }
+
+        return this.blocks.get(blockId).length;
+    }
 }
