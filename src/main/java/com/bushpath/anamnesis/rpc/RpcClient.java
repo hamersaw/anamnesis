@@ -1,6 +1,7 @@
 package com.bushpath.anamnesis.rpc;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.Message;
 import org.apache.hadoop.ipc.protobuf.IpcConnectionContextProtos;
 import org.apache.hadoop.ipc.protobuf.ProtobufRpcEngineProtos;
@@ -93,25 +94,27 @@ public class RpcClient {
                 .build();
 
         // write to output stream
-        // TODO - actually set correct lengths (coded output stream .getuva...)
-        out.writeInt(1 + rpcRequestHeaderProto.getSerializedSize()
-            + 1 + requestHeaderProto.getSerializedSize()
-            + 1 + req.getSerializedSize());
-        out.writeByte((byte) rpcRequestHeaderProto.getSerializedSize());
-        rpcRequestHeaderProto.writeTo(out);
-        out.writeByte((byte) requestHeaderProto.getSerializedSize());
-        requestHeaderProto.writeTo(out);
-        out.writeByte((byte) req.getSerializedSize());
-        req.writeTo(out);
-        out.flush();
+        int rpcRequestHeaderSize = rpcRequestHeaderProto.getSerializedSize();
+        int requestHeaderSize = requestHeaderProto.getSerializedSize();
+        int reqSize = req.getSerializedSize();
+        int length = CodedOutputStream.computeRawVarint32Size(rpcRequestHeaderSize)
+            + rpcRequestHeaderSize 
+            + CodedOutputStream.computeRawVarint32Size(requestHeaderSize) 
+            + requestHeaderSize 
+            + CodedOutputStream.computeRawVarint32Size(reqSize) + reqSize;
+
+        out.writeInt(length);
+        rpcRequestHeaderProto.writeDelimitedTo(out);
+        requestHeaderProto.writeDelimitedTo(out);
+        req.writeDelimitedTo(out);
 
         // read response
         int packetLength = in.readInt();
-        int rpcResponseHeaderLength = (int) in.readByte();
-        byte[] rpcResponseHeaderBuf = new byte[rpcResponseHeaderLength];
-        in.readFully(rpcResponseHeaderBuf);
-        // TODO - parse response header
+        RpcHeaderProtos.RpcResponseHeaderProto rpcResponseHeaderProto =
+            RpcHeaderProtos.RpcResponseHeaderProto.parseDelimitedFrom(in);
+        // TODO - handle response
 
+        // TODO - return the data input stream (could fix size issues)
         int respLength = (int) in.readByte();
         byte[] respBuf = new byte[respLength];
         in.readFully(respBuf);

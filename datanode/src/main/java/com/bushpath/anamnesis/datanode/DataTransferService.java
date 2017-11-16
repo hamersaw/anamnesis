@@ -95,7 +95,8 @@ public class DataTransferService extends Thread {
 
                     // store block in storage
                     storage.storeBlock(extendedBlockProto.getBlockId(),
-                        blockStream.toByteArray());
+                        blockStream.toByteArray(),
+                        extendedBlockProto.getGenerationStamp());
 
                     blockIn.close();
 

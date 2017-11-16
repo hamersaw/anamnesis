@@ -81,24 +81,24 @@ public class DatanodeManager {
         }
     }
 
-    public Datanode chooseBlockLocation(long blockSize,
-            List<String> favoredNodes) throws Exception {
-        if (this.datanodes.size() == 0) {
-            throw new StatusRuntimeException(Status.UNAVAILABLE
-                .withDescription("no datanodes are registered"));
-        }
+    public boolean contains(String datanodeUuid) {
+        return this.datanodes.containsKey(datanodeUuid);
+    }
 
-        // try all favored nodes
-        if (favoredNodes != null) {
-            for (String favoredNode: favoredNodes) {
-                if (this.datanodes.containsKey(favoredNode)) {
-                    return this.datanodes.get(favoredNode);
-                }
+    public Datanode get(String datanodeUuid) {
+        return this.datanodes.get(datanodeUuid);
+    }
+
+    public Datanode getRandom() {
+        int rand = this.random.nextInt(this.datanodes.size());
+        for (Datanode datanode: this.datanodes.values()) {
+            if (rand == 0) {
+                return datanode;
             }
+
+            rand -= 1;
         }
 
-        // return random node
-        Object[] array = this.datanodes.values().toArray();
-        return (Datanode) array[this.random.nextInt(array.length)];
+        return null;
     }
 }

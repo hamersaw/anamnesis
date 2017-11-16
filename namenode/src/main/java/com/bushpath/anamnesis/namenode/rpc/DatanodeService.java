@@ -5,6 +5,9 @@ import org.apache.hadoop.hdfs.protocol.proto.DatanodeProtocolProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsServerProtos;
 
+import com.bushpath.anamnesis.namenode.Block;
+import com.bushpath.anamnesis.namenode.BlockManager;
+import com.bushpath.anamnesis.namenode.Datanode;
 import com.bushpath.anamnesis.namenode.DatanodeManager;
 
 import java.io.DataInputStream;
@@ -12,9 +15,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DatanodeService {
+    private BlockManager blockManager;
     private DatanodeManager datanodeManager;    
 
-    public DatanodeService(DatanodeManager datanodeManager) {
+    public DatanodeService(BlockManager blockManager, DatanodeManager datanodeManager) {
+        this.blockManager = blockManager;
         this.datanodeManager = datanodeManager;
     }
 
@@ -69,9 +74,35 @@ public class DatanodeService {
         DatanodeProtocolProtos.BlockReportRequestProto req =
             DatanodeProtocolProtos.BlockReportRequestProto.parseDelimitedFrom(in);
 
-        // TODO handle block reports
+        // retreive DatanodeId
+        HdfsProtos.DatanodeIDProto datanodeIdProto =
+            req.getRegistration().getDatanodeID();
+        
+        // iterate over storage block reports
+        List<DatanodeProtocolProtos.StorageBlockReportProto> storageReports = 
+            req.getReportsList();
+        for (DatanodeProtocolProtos.StorageBlockReportProto storageReport:
+                storageReports) {
 
-        return DatanodeProtocolProtos.BlockReportResonseProto.newBuilder()
+            // iterate over blocks in report
+            List<Long> blockList = storageReport.getBlocksList();
+            for (int i=0; i<blockList.size(); i += 4) {
+                // update block
+                Block block = blockManager.get(blockList.get(i));
+                block.setLength(blockList.get(i + 1));
+
+                // add block location
+                HdfsProtos.DatanodeStorageProto datanodeStorage =
+                    storageReport.getStorage();
+                Datanode datanode = 
+                    this.datanodeManager.get(datanodeIdProto.getDatanodeUuid());
+                block.addLoc(datanode, true, datanodeStorage.getStorageType(),
+                    datanodeStorage.getStorageUuid());
+            }
+
+        }
+        
+        return DatanodeProtocolProtos.BlockReportResponseProto.newBuilder()
             .build();
     }
 }

@@ -5,6 +5,7 @@ import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
 import com.bushpath.anamnesis.rpc.RpcClient;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TimerTask;
@@ -18,6 +19,7 @@ public class HeartbeatTask extends TimerTask {
 
     @Override
     public void run() {
+        RpcClient rpcClient = null;
         try {
             List<HdfsProtos.StorageReportProto> reports = new ArrayList<>();
 
@@ -29,7 +31,7 @@ public class HeartbeatTask extends TimerTask {
                     .addAllReports(reports)
                     .build();
 
-            RpcClient rpcClient = new RpcClient(config.namenodeIpAddr,
+            rpcClient = new RpcClient(config.namenodeIpAddr,
                 config.namenodePort, "datanode",
                 "org.apache.hadoop.hdfs.server.protocol.DatanodeProtocol");
 
@@ -41,6 +43,14 @@ public class HeartbeatTask extends TimerTask {
         } catch(Exception e) {
             e.printStackTrace();
             System.err.println("failed to send datanode heartbeat: " + e);
+        } finally {
+            if (rpcClient != null) {
+                try {
+                    rpcClient.close();
+                } catch(IOException e) {
+                    System.err.println("failed to close rpc client: " + e);
+                }
+            }
         }
     }
 }

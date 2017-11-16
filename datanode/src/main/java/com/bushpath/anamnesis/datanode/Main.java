@@ -35,10 +35,10 @@ public class Main {
             Storage storage;
             switch (config.storage) {
             case "jvm":
-                storage = new JVMStorage();
+                storage = new JVMStorage(config.storageUuid);
                 break;
             case "tmpfs":
-                storage = new TmpfsStorage();
+                storage = new TmpfsStorage(config.storageUuid);
                 break;
             default:
                 throw new Exception("Unknown storage type");
@@ -80,7 +80,7 @@ public class Main {
             Timer timer = new Timer(true);
             long blockReportIntervalMs = config.blockReportInterval * 1000;
             long heartbeatIntervalMs = config.heartbeatInterval * 1000;
-            timer.scheduleAtFixedRate(new BlockReportTask(config),
+            timer.scheduleAtFixedRate(new BlockReportTask(config, storage),
                 blockReportIntervalMs, blockReportIntervalMs);
             timer.scheduleAtFixedRate(new HeartbeatTask(config),
                 heartbeatIntervalMs, heartbeatIntervalMs);

@@ -164,7 +164,7 @@ public class RpcServer extends Thread {
                     } catch(Exception e) {
                         respBuilder.setStatus(RpcStatusProto.ERROR);
                         respBuilder.setExceptionClassName(e.getClass().toString());
-                        respBuilder.setErrorMsg(e.getMessage());
+                        respBuilder.setErrorMsg(e.toString());
                         respBuilder.setErrorDetail(RpcErrorCodeProto.ERROR_RPC_SERVER);
                     }
                 }
@@ -173,12 +173,13 @@ public class RpcServer extends Thread {
             RpcHeaderProtos.RpcResponseHeaderProto resp = respBuilder.build();
 
             // send response
-            // TODO - fix if message == null
             int respSize = resp.getSerializedSize();
-            int messageSize = message.getSerializedSize();
+            int messageSize = message == null ? 0 : message.getSerializedSize();
 
             int length = CodedOutputStream.computeRawVarint32Size(respSize) + respSize
-                + CodedOutputStream.computeRawVarint32Size(messageSize) + messageSize;
+                + (message == null ? 0 :
+                (CodedOutputStream.computeRawVarint32Size(messageSize) + messageSize));
+
             out.writeInt(length);
             resp.writeDelimitedTo(out);
             if (message != null) {

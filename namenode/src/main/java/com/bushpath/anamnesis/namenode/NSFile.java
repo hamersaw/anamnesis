@@ -8,7 +8,7 @@ import java.util.List;
 
 public class NSFile extends NSItem {
     private String owner, group;
-    private long modificationTime, accessTime, length, blockSize;
+    private long modificationTime, accessTime, blockSize;
     private List<Block> blocks;
     private boolean complete;
 
@@ -18,7 +18,6 @@ public class NSFile extends NSItem {
 
         this.owner = owner;
         this.group = group;
-        this.length = 0;
         this.blockSize = blockSize;
         this.blocks = new ArrayList<>();
         this.complete = false;
@@ -33,11 +32,12 @@ public class NSFile extends NSItem {
     }
 
     public long getLength() {
-        return this.length;
-    }
+        long length = 0;
+        for (Block block: this.blocks) {
+            length += block.getLength();
+        }
 
-    public void incLength(long delta) {
-        this.length += delta;
+        return length;
     }
 
     public long getBlockSize() {
@@ -71,12 +71,10 @@ public class NSFile extends NSItem {
         }
 
         return HdfsProtos.LocatedBlocksProto.newBuilder()
-            //.setFileLength(this.length)
-            .setFileLength(13) // TODO - fix the hardcode
+            .setFileLength(this.getLength())
             .addAllBlocks(blocks)
             .setUnderConstruction(!this.complete)
-            //.setLastBlock(blocks.get(blocks.size() - 1)) //when set it looks for more blocks?
-            .setIsLastBlockComplete(false) // TODO - set correctly
+            .setIsLastBlockComplete(true) // TODO - set correctly
             .build();
     }
 
@@ -91,7 +89,7 @@ public class NSFile extends NSItem {
             = HdfsProtos.HdfsFileStatusProto.newBuilder()
                 .setFileType(HdfsProtos.HdfsFileStatusProto.FileType.IS_FILE)
                 .setPath(ByteString.copyFrom(this.getPath().getBytes()))
-                .setLength(this.length)
+                .setLength(this.getLength())
                 .setPermission(permission)
                 .setOwner(this.owner)
                 .setGroup(this.group)

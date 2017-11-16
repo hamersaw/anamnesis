@@ -10,10 +10,12 @@ public class Configuration {
     public int ipcPort;
     public int infoPort;
 
-    public String storage;
     public String datanodeUuid;
     public String clusterId;
     public int namespceId;
+    public String poolId;
+    public String storage;
+    public String storageUuid;
 
     public String namenodeIpAddr;
     public int namenodePort;
@@ -40,10 +42,12 @@ public class Configuration {
         ipcPort = Integer.parseInt(properties.getProperty("ipcPort"));
         infoPort = Integer.parseInt(properties.getProperty("infoPort"));
 
-        storage = properties.getProperty("storage");
         datanodeUuid = properties.getProperty("datanodeUuid");
         clusterId = properties.getProperty("clusterId");
         namespceId = Integer.parseInt(properties.getProperty("namespceId"));
+        poolId = properties.getProperty("poolId");
+        storage = properties.getProperty("storage");
+        storageUuid = properties.getProperty("storageUuid");
 
         namenodeIpAddr = properties.getProperty("namenodeIpAddr");
         namenodePort = Integer.parseInt(properties.getProperty("namenodePort"));

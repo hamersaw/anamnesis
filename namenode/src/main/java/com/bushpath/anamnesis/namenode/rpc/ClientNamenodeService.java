@@ -7,6 +7,8 @@ import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 import com.bushpath.anamnesis.namenode.Block;
 import com.bushpath.anamnesis.namenode.BlockManager;
 import com.bushpath.anamnesis.namenode.Configuration;
+import com.bushpath.anamnesis.namenode.Datanode;
+import com.bushpath.anamnesis.namenode.DatanodeManager;
 import com.bushpath.anamnesis.namenode.NameSystem;
 import com.bushpath.anamnesis.namenode.NSFile;
 import com.bushpath.anamnesis.namenode.NSItem;
@@ -16,16 +18,20 @@ import java.io.DataInputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Random;
 
 public class ClientNamenodeService {
     private NameSystem nameSystem;
     private BlockManager blockManager;
+    private DatanodeManager datanodeManager;
     private Configuration config;
 
     public ClientNamenodeService(NameSystem nameSystem,
-            BlockManager blockManager, Configuration config) {
+            BlockManager blockManager, DatanodeManager datanodeManager,
+            Configuration config) {
         this.nameSystem = nameSystem;
         this.blockManager = blockManager;
+        this.datanodeManager = datanodeManager;
         this.config = config;
     }
 
@@ -33,13 +39,51 @@ public class ClientNamenodeService {
         ClientNamenodeProtocolProtos.AddBlockRequestProto req =
             ClientNamenodeProtocolProtos.AddBlockRequestProto.parseDelimitedFrom(in);
 
+        // retrieve file for block
+        NSItem item = nameSystem.getFile(req.getSrc());
+        if (item.getType() != NSItem.Type.FILE) {
+            throw new Exception("file '" + req.getSrc() + "' is not of type 'FILE'");
+        }
+        NSFile file = (NSFile) item;
+
+        // get location for block
+        Datanode datanode = null;
+        List<String> favoredNodes = req.getFavoredNodesList();
+        if (favoredNodes != null && favoredNodes.size() != 0) {
+            for (String favoredNode: favoredNodes) {
+                if (datanodeManager.contains(favoredNode)) {
+                    datanode = datanodeManager.get(favoredNode);
+                    break;
+                }
+            }
+        }
+
+        if (datanode == null) {
+            datanode = this.datanodeManager.getRandom();
+        }
+
         // create block
-        Block block = this.blockManager.createBlock(req.getSrc(), 
-            req.getFavoredNodesList());
+        Random random = new Random();
+        Block block = new Block(random.nextLong(), System.currentTimeMillis(),
+            file.getBlockSize() * file.getBlockCount());
+        file.addBlock(block);
+        this.blockManager.add(block);
+
+        HdfsProtos.LocatedBlockProto locatedBlockProto =
+            HdfsProtos.LocatedBlockProto.newBuilder()
+                .setB(block.toExtendedBlockProto())
+                .setOffset(block.getOffset())
+                .addLocs(datanode.toDatanodeInfoProto())
+                .setCorrupt(false)
+                .setBlockToken(block.toTokenProto())
+                .addIsCached(true)
+                .addStorageTypes(HdfsProtos.StorageTypeProto.RAM_DISK)
+                .addStorageIDs("")
+                .build();
 
         // respond to request
         return ClientNamenodeProtocolProtos.AddBlockResponseProto.newBuilder()
-            .setBlock(block.toLocatedBlockProto())
+            .setBlock(locatedBlockProto)
             .build();
     }
 
@@ -136,10 +180,8 @@ public class ClientNamenodeService {
                 item.toHdfsFileStatusProto(false);
 
             totalSize += hdfsFileStatusProto.getSerializedSize();
-            if (totalSize > 110) { // TODO - remove (unecessary!)
-                // if this will make proto larger than 127 (max 1 byte value)
-                // TODO - figure out ideal value for this parameter
-                //  using 110 to give 17 bytes for dir listings proto metadata
+            if (totalSize > 60000) {
+                // TODO - find the ideal size for this
                 directoryListingProtoBuilder
                     .setRemainingEntries(items.size() - index);
                 break;

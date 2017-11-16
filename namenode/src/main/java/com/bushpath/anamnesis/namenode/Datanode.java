@@ -3,8 +3,12 @@ package com.bushpath.anamnesis.namenode;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
 public class Datanode {
-    private String ipAddr, hostname, datanodeUuid;
-    private int xferPort, infoPort, ipcPort;
+    private String ipAddr;
+    private String hostname;
+    private String datanodeUuid;
+    private int xferPort;
+    private int infoPort;
+    private int ipcPort;
     private long lastUpdate;
 
     public Datanode(String ipAddr, String hostname, String datanodeUuid, 

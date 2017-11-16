@@ -9,6 +9,8 @@ import java.util.List;
 
 public class Block {
     private long blockId, generationStamp, offset;
+
+    private long length;
     private List<Datanode> locs;
     private List<Boolean> isCached;
     private List<HdfsProtos.StorageTypeProto> storageTypes;
@@ -18,6 +20,8 @@ public class Block {
         this.blockId = blockId;
         this.generationStamp = generationStamp;
         this.offset = offset;
+
+        this.length = 0;
         this.locs = new ArrayList<>();
         this.isCached = new ArrayList<>();
         this.storageTypes = new ArrayList<>();
@@ -33,39 +37,62 @@ public class Block {
     }
 
     public long getOffset() {
-        return this.getOffset();
+        return this.offset;
     }
 
-    public void addLoc(Datanode loc) {
+    public long getLength() {
+        return this.length;
+    }
+
+    public void setLength(long length) {
+        this.length = length;
+    }
+
+    public void addLoc(Datanode loc, boolean isCached,
+            HdfsProtos.StorageTypeProto storageType, String storageId) {
+        // check if location already exists
+        for (Datanode datanode: this.locs) {
+            if (datanode.getDatanodeUuid().equals(loc.getDatanodeUuid())) {
+                return;
+            }
+        }
+
         this.locs.add(loc);
+        this.isCached.add(isCached);
+        this.storageTypes.add(storageType);
+        this.storageIds.add(storageId);
     }
 
-    public HdfsProtos.LocatedBlockProto toLocatedBlockProto() {
-        HdfsProtos.ExtendedBlockProto b = HdfsProtos.ExtendedBlockProto.newBuilder()
+    public HdfsProtos.ExtendedBlockProto toExtendedBlockProto() {
+        return HdfsProtos.ExtendedBlockProto.newBuilder()
             .setPoolId("")
             .setBlockId(this.blockId)
             .setGenerationStamp(this.generationStamp)
-            .setNumBytes(13l) // TODO - remove
+            .setNumBytes(this.length)
             .build();
+    }
 
-        List<HdfsProtos.DatanodeInfoProto> locs = new ArrayList<>();
-        for (Datanode datanode: this.locs) {
-            locs.add(datanode.toDatanodeInfoProto());
-        }
-
-        SecurityProtos.TokenProto blockToken = SecurityProtos.TokenProto.newBuilder()
+    public SecurityProtos.TokenProto toTokenProto() {
+        return SecurityProtos.TokenProto.newBuilder()
             .setIdentifier(ByteString.copyFrom(new byte[]{}))
             .setPassword(ByteString.copyFrom(new byte[]{}))
             .setKind("")
             .setService("")
             .build();
+    }
+
+    public HdfsProtos.LocatedBlockProto toLocatedBlockProto() {
+        List<HdfsProtos.DatanodeInfoProto> locs = new ArrayList<>();
+        for (Datanode datanode: this.locs) {
+            locs.add(datanode.toDatanodeInfoProto());
+        }
 
         return HdfsProtos.LocatedBlockProto.newBuilder()
-            .setB(b)
+            .setB(this.toExtendedBlockProto())
             .setOffset(this.offset)
             .addAllLocs(locs)
             .setCorrupt(false)
-            .setBlockToken(blockToken)
+            .setBlockToken(this.toTokenProto())
             .addAllIsCached(this.isCached)
             .addAllStorageTypes(this.storageTypes)
             .addAllStorageIDs(this.storageIds)
