@@ -25,15 +25,17 @@ An in-memory, location aware, HDFS based file system.
 > ./sbin/start-slave.sh localhost:7077
 
 ## TODO
+- **begin sending block reporst to namenode (don't register on AddBlock)**
+- setup some rock solid logging
 - get rid of stupid byte[] buffer in ChunkPacket
     keep separate for data and checksums (no longer need to put header in it)
 - figure out why we're adding 4 to packet length in ChunkPacket (DFSPacket)
 - implement datanode heartbeat storage information (integrate into addBlock)
-- write checksums DataOutputStream.write()
 - validate checksums in ChunkPacket.read()
 #### RPC SERVER
 - **implement checksums for BlockOpResponseProto**
 - **set length of file when adding blocks**
-- fix datanode EOFException on reading blocks
 - rpc response error handling (fix up)
 - add client to anamnesis client
+#### CLIENT
+- fix everything (works with hdfs native client)

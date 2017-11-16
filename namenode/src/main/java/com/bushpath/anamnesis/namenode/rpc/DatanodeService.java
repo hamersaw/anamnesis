@@ -64,4 +64,14 @@ public class DatanodeService {
             .setHaStatus(status)
             .build();
     }
+
+    public Message blockReport(DataInputStream in) throws Exception {
+        DatanodeProtocolProtos.BlockReportRequestProto req =
+            DatanodeProtocolProtos.BlockReportRequestProto.parseDelimitedFrom(in);
+
+        // TODO handle block reports
+
+        return DatanodeProtocolProtos.BlockReportResonseProto.newBuilder()
+            .build();
+    }
 }

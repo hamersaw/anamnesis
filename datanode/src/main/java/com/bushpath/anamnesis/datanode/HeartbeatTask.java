@@ -1,0 +1,46 @@
+package com.bushpath.anamnesis.datanode;
+
+import org.apache.hadoop.hdfs.protocol.proto.DatanodeProtocolProtos;
+import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
+
+import com.bushpath.anamnesis.rpc.RpcClient;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.TimerTask;
+
+public class HeartbeatTask extends TimerTask {
+    private Configuration config;
+
+    public HeartbeatTask(Configuration config) {
+        this.config = config;
+    }
+
+    @Override
+    public void run() {
+        try {
+            List<HdfsProtos.StorageReportProto> reports = new ArrayList<>();
+
+            // TODO - construct storage reports
+            
+            DatanodeProtocolProtos.HeartbeatRequestProto req = 
+                DatanodeProtocolProtos.HeartbeatRequestProto.newBuilder()
+                    .setRegistration(Main.buildDatanodeRegistrationProto(this.config))
+                    .addAllReports(reports)
+                    .build();
+
+            RpcClient rpcClient = new RpcClient(config.namenodeIpAddr,
+                config.namenodePort, "datanode",
+                "org.apache.hadoop.hdfs.server.protocol.DatanodeProtocol");
+
+            byte[] respBuf = rpcClient.send("sendHeartbeat", req);
+
+            // TODO - handle response
+            DatanodeProtocolProtos.HeartbeatResponseProto response =
+                DatanodeProtocolProtos.HeartbeatResponseProto.parseFrom(respBuf);
+        } catch(Exception e) {
+            e.printStackTrace();
+            System.err.println("failed to send datanode heartbeat: " + e);
+        }
+    }
+}

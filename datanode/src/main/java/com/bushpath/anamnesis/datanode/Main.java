@@ -1,5 +1,10 @@
 package com.bushpath.anamnesis.datanode;
 
+import org.apache.hadoop.hdfs.protocol.proto.DatanodeProtocolProtos;
+import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
+import org.apache.hadoop.hdfs.protocol.proto.HdfsServerProtos;
+
+import com.bushpath.anamnesis.rpc.RpcClient;
 import com.bushpath.anamnesis.rpc.RpcServer;
 import com.bushpath.anamnesis.datanode.rpc.ClientDatanodeService;
 import com.bushpath.anamnesis.datanode.storage.JVMStorage;
@@ -10,10 +15,12 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
 import java.util.logging.Logger;
 
 public class Main {
     private static final Logger logger = Logger.getLogger(Main.class.getName());
+    public static final String softwareVersion = "2.8.0";
 
     public static void main(String[] args) {
         try {
@@ -45,16 +52,91 @@ public class Main {
                 new ClientDatanodeService(storage));
             rpcServer.start();
 
-            // start xfer service
-            new Thread(new XferService(config.xferPort, storage)).start();            
+            // start data transfer service
+            new Thread(new DataTransferService(config.xferPort, storage)).start();
+
+            // send registration
+            try {
+                DatanodeProtocolProtos.RegisterDatanodeRequestProto req =
+                    DatanodeProtocolProtos.RegisterDatanodeRequestProto.newBuilder()
+                        .setRegistration(buildDatanodeRegistrationProto(config))
+                        .build();
+
+                RpcClient rpcClient = new RpcClient(config.namenodeIpAddr,
+                    config.namenodePort, "datanode",
+                    "org.apache.hadoop.hdfs.server.protocol.DatanodeProtocol");
+                byte[] respBuf = rpcClient.send("registerDatanode", req);
+
+                // TODO - handle response
+                DatanodeProtocolProtos.RegisterDatanodeResponseProto response =
+                    DatanodeProtocolProtos.RegisterDatanodeResponseProto
+                        .parseFrom(respBuf);
+            } catch(Exception e) {
+                logger.severe("failed to register datanode: " + e);
+                System.exit(1);
+            }
             
-            // start HeartbeatManager
-            HeartbeatManager heartbeatManager = new HeartbeatManager(config);
+            // start  timer tasks
+            Timer timer = new Timer(true);
+            long blockReportIntervalMs = config.blockReportInterval * 1000;
+            long heartbeatIntervalMs = config.heartbeatInterval * 1000;
+            timer.scheduleAtFixedRate(new BlockReportTask(config),
+                blockReportIntervalMs, blockReportIntervalMs);
+            timer.scheduleAtFixedRate(new HeartbeatTask(config),
+                heartbeatIntervalMs, heartbeatIntervalMs);
 
             // wait until rpc server shuts down
             rpcServer.join();
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static DatanodeProtocolProtos.DatanodeRegistrationProto 
+        buildDatanodeRegistrationProto(Configuration config) {
+
+        HdfsProtos.DatanodeIDProto datanodeIdProto = 
+            HdfsProtos.DatanodeIDProto.newBuilder()
+                .setIpAddr(config.ipAddr)
+                .setHostName(config.hostname)
+                .setDatanodeUuid(config.datanodeUuid)
+                .setXferPort(config.xferPort)
+                .setInfoPort(config.infoPort)
+                .setIpcPort(config.ipcPort)
+                .build();
+
+        HdfsServerProtos.StorageInfoProto storageInfoProto = 
+            HdfsServerProtos.StorageInfoProto.newBuilder()
+                .setLayoutVersion(0)
+                .setNamespceID(config.namespceId)
+                .setClusterID(config.clusterId)
+                .setCTime(System.currentTimeMillis())
+                .build();
+
+        // TODO - build with storage (get key information)
+        HdfsServerProtos.BlockKeyProto currentKey =
+            HdfsServerProtos.BlockKeyProto.newBuilder()
+                .setKeyId(0)
+                .setExpiryDate(-1)
+                .build();
+
+        // storage is not persistent - will never have any keys
+        List<HdfsServerProtos.BlockKeyProto> allKeys = new ArrayList<>();
+
+        HdfsServerProtos.ExportedBlockKeysProto exportedBlockKeysProto =
+            HdfsServerProtos.ExportedBlockKeysProto.newBuilder()
+                .setIsBlockTokenEnabled(false)
+                .setKeyUpdateInterval(-1)
+                .setTokenLifeTime(-1)
+                .setCurrentKey(currentKey)
+                .addAllAllKeys(allKeys)
+                .build();
+
+        return DatanodeProtocolProtos.DatanodeRegistrationProto.newBuilder()
+                .setDatanodeID(datanodeIdProto)
+                .setStorageInfo(storageInfoProto)
+                .setKeys(exportedBlockKeysProto)
+                .setSoftwareVersion(softwareVersion)
+                .build();
     }
 }

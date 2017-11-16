@@ -18,12 +18,13 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.logging.Logger;
 
-public class XferService extends Thread {
-    private static final Logger logger = Logger.getLogger(XferService.class.getName());
+public class DataTransferService extends Thread {
+    private static final Logger logger =
+        Logger.getLogger(DataTransferService.class.getName());
     private int port;
     private Storage storage;
 
-    public XferService(int port, Storage storage) {
+    public DataTransferService(int port, Storage storage) {
         this.port = port;
         this.storage = storage;
     }
@@ -35,7 +36,7 @@ public class XferService extends Thread {
             ServerSocket serverSocket = new ServerSocket(port);
             while(true) {
                 Socket socket = serverSocket.accept();
-                new Thread(new XferWorker(socket)).start();
+                new Thread(new DataTransferWorker(socket)).start();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -43,10 +44,10 @@ public class XferService extends Thread {
         }
     }
 
-    private class XferWorker extends Thread {
+    private class DataTransferWorker extends Thread {
         private Socket socket;
 
-        public XferWorker(Socket socket) {
+        public DataTransferWorker(Socket socket) {
             this.socket  = socket;
         }
 
@@ -79,8 +80,6 @@ public class XferService extends Thread {
 
                     Checksum writeChecksum =
                         ChecksumFactory.buildChecksum(writeChecksumProto.getType());
-
-                    System.out.println("WRITE CHECKSUM TYPE:" + writeChecksumProto.getType() + ":" + writeChecksumProto.getBytesPerChecksum());
 
                     // recv stream block chunks
                     BlockInputStream blockIn = new BlockInputStream(in, out,
@@ -121,18 +120,10 @@ public class XferService extends Thread {
                     // recv read op
                     DataTransferProtos.OpReadBlockProto readBlockProto =
                         DataTransferProtocol.recvReadOp(in);
-                    System.out.println("RECV READ_BLOCK OP");
-                    System.out.println("\toffset:" + readBlockProto.getOffset());
-                    System.out.println("\tlen:" + readBlockProto.getLen());
-                    System.out.println("\tsendChecksums:"
-                        + readBlockProto.getSendChecksums());
 
                     HdfsProtos.ExtendedBlockProto readExtendedBlockProto =
                         readBlockProto.getHeader().getBaseHeader().getBlock();
 
-                    System.out.println("\tblock id: "
-                        + readExtendedBlockProto.getBlockId());
-                    
                     // send stream block chunks
                     BlockOutputStream blockOut = new BlockOutputStream(in, out,
                         readChecksum);
@@ -142,19 +133,11 @@ public class XferService extends Thread {
                     blockOut.close();
 
                     // TODO - read client read status proto
-                    System.out.println("READING CLIENT READ STATUS PROTO");
                     DataTransferProtos.ClientReadStatusProto readProto =
                         DataTransferProtocol.recvClientReadStatus(in);
                     System.out.println("\tSTATUS:" + readProto.getStatus());
 
-                    // send op response
-                    //DataTransferProtocol.sendBlockOpResponse(out,
-                    //        DataTransferProtos.Status.SUCCESS);
-                    //in.close();
-                    out.close();
-                    //this.socket.close();
-                    return;
-                    //break;
+                    break;
                 }
             } catch (Exception e) {
                 e.printStackTrace();

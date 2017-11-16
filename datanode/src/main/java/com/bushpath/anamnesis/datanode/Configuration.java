@@ -4,8 +4,22 @@ import java.io.FileInputStream;
 import java.util.Properties;
 
 public class Configuration {
-    public String hostname, ipAddr, storage, datanodeUuid, clusterId, namenodeIpAddr;
-    public int xferPort, ipcPort, infoPort, namespceId, namenodePort;
+    public String hostname;
+    public String ipAddr;
+    public int xferPort;
+    public int ipcPort;
+    public int infoPort;
+
+    public String storage;
+    public String datanodeUuid;
+    public String clusterId;
+    public int namespceId;
+
+    public String namenodeIpAddr;
+    public int namenodePort;
+
+    public int blockReportInterval;
+    public int heartbeatInterval;
 
     public Configuration(String filename) throws Exception {
         // read file into properties
@@ -33,5 +47,10 @@ public class Configuration {
 
         namenodeIpAddr = properties.getProperty("namenodeIpAddr");
         namenodePort = Integer.parseInt(properties.getProperty("namenodePort"));
+
+        blockReportInterval =
+            Integer.parseInt(properties.getProperty("blockReportInterval"));
+        heartbeatInterval =
+            Integer.parseInt(properties.getProperty("heartbeatInterval"));
     }
 }
