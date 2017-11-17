@@ -28,9 +28,9 @@ public class BlockOutputStream extends OutputStream {
 
     @Override
     public void write(int b) throws IOException {
-            // write chunks if buffer is full
+        // write chunks if buffer is full
         if (this.index == this.buffer.length) {
-            this.writeChunks(false, false);
+            this.writeChunks(false);
         }
 
         this.buffer[this.index] = (byte) b;
@@ -39,7 +39,13 @@ public class BlockOutputStream extends OutputStream {
 
     @Override
     public void write(byte[] b) throws IOException {
+        // write chunks if buffer is full
+        if (this.index == this.buffer.length) {
+            this.writeChunks(false);
+        }
+
         this.write(b, 0, b.length);
+        this.index += 1;
     }
 
     @Override
@@ -50,7 +56,7 @@ public class BlockOutputStream extends OutputStream {
         while (bytesWrote < len) {
             // write chunks if buffer is full
             if (this.index == this.buffer.length) {
-                this.writeChunks(false, false);
+                this.writeChunks(false);
             }
 
             // copy bytes from b to buffer
@@ -62,43 +68,50 @@ public class BlockOutputStream extends OutputStream {
         }
     }
 
-    private void writeChunks(boolean writePartial, boolean lastPacketInBlock)
-            throws IOException {
-        int writeLength = writePartial ? this.index : this.index % ChunkPacket.CHUNK_SIZE;
-        System.out.println("WRITING CHUNK");
-        System.out.println("\tLAST_PACKET:" + lastPacketInBlock);
-        System.out.println("\tSEQUENCE_NUMBER:" + this.sequenceNumber);
- 
-        // write chunk to chunk packet
+    private void writeChunks(boolean lastPacketInBlock) throws IOException {
+        System.out.println("WRITING CHUNK PACKET");
+        // creeate chunk packet
         ChunkPacket packet = new ChunkPacket(this.sequenceNumber, this.offsetInBlock,
             lastPacketInBlock, this.checksum.getBytesPerChecksum());
 
-        packet.writeData(this.buffer, 0, writeLength);
-        if (this.index != 0) { // write checksum if there was any data written
-            System.out.println("WRITING " + writeLength + " bytes as checksum");
-            byte[] checksumBytes = this.checksum.compute(this.buffer, 0, writeLength);
+        // write data to packet
+        int writeIndex = 0;
+        while (writeIndex < this.index - 1) {
+            // get length of next chunk
+            int writeLength = Math.min(this.index - writeIndex - 1,
+                ChunkPacket.CHUNK_SIZE);
+
+            // write chunk to packet with checksum
+            packet.writeData(this.buffer, writeIndex, writeLength);
+            byte[] checksumBytes =
+                this.checksum.compute(this.buffer, writeIndex, writeLength);
             packet.writeChecksum(checksumBytes, 0, checksumBytes.length);
-        }
-        packet.write(this.out);
-        
-        // push bytes down buffer if necessary and reset index
-        if (writeLength != this.buffer.length) {
-            System.arraycopy(this.buffer, writeLength, this.buffer, 0, 
-                this.index - writeLength);
+            System.out.println("\twrote chunk of size " + writeLength);
+
+            writeIndex += writeLength;
         }
 
+        System.out.println("writing chunk packet (" + this.sequenceNumber + ") with "
+            + writeIndex + " bytes");
+        System.out.println("\tlast packet in block: " + lastPacketInBlock);
+
+        // write packet
+        packet.write(this.out);
+
         this.sequenceNumber += 1;
-        this.offsetInBlock += writeLength;
+        this.offsetInBlock += this.index;
         this.index = 0;
     }
 
     @Override
     public void close() throws IOException {
+        // if buffer is not empty write packet
         if (this.index != 0) {
-            writeChunks(true, false);
+            writeChunks(false);
         }
 
-        writeChunks(true, true);
+        // write empty last packet
+        writeChunks(true);
         this.out.flush();
     }
 }
