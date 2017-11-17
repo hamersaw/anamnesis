@@ -47,9 +47,11 @@ public class Main {
             // initialize rpc server
             ServerSocket serverSocket = new ServerSocket(config.ipcPort);
             RpcServer rpcServer = new RpcServer(serverSocket);
-            rpcServer.registerRpcHandler(
+
+            rpcServer.addRpcProtocol(
                 "org.apache.hadoop.hdfs.protocol.ClientDatanodeProtocol",
                 new ClientDatanodeService(storage));
+
             rpcServer.start();
 
             // start data transfer service

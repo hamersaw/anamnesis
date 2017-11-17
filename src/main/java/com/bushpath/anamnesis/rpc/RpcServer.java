@@ -1,18 +1,14 @@
 package com.bushpath.anamnesis.rpc;
 
-import com.google.protobuf.Message;
-import com.google.protobuf.CodedOutputStream;
-import org.apache.hadoop.ipc.protobuf.IpcConnectionContextProtos;
 import org.apache.hadoop.ipc.protobuf.RpcHeaderProtos;
-import org.apache.hadoop.ipc.protobuf.RpcHeaderProtos.RpcResponseHeaderProto.RpcErrorCodeProto;
-import org.apache.hadoop.ipc.protobuf.RpcHeaderProtos.RpcResponseHeaderProto.RpcStatusProto;
-import org.apache.hadoop.ipc.protobuf.ProtobufRpcEngineProtos;
+
+import com.bushpath.anamnesis.rpc.packet_handler.PacketHandler;
+import com.bushpath.anamnesis.rpc.packet_handler.RpcPacketHandler;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
@@ -23,16 +19,22 @@ import java.util.concurrent.ExecutorService;
 public class RpcServer extends Thread {
     private ServerSocket serverSocket;
     private ExecutorService executorService;
-    private Map<String, Object> rpcHandlers;
+    private RpcPacketHandler rpcPacketHandler;
+    private Map<Integer, PacketHandler> packetHandlers;
 
     public RpcServer(ServerSocket serverSocket) {
         this.serverSocket = serverSocket;
         this.executorService = Executors.newFixedThreadPool(4);
-        this.rpcHandlers = new HashMap<>();
+        this.rpcPacketHandler = new RpcPacketHandler();
+        this.packetHandlers = new HashMap<>();
     }
 
-    public void registerRpcHandler(String className, Object rpcHandler) {
-        this.rpcHandlers.put(className, rpcHandler);
+    public void addRpcProtocol(String className, Object protocol) {
+        this.rpcPacketHandler.addProtocol(className, protocol);
+    }
+
+    public void addPacketHandler(PacketHandler packetHandler) {
+        this.packetHandlers.put(packetHandler.getCallId(), packetHandler);
     }
 
     @Override
@@ -49,14 +51,7 @@ public class RpcServer extends Thread {
             }
         }
     }
-
-    private byte[] readBuffer(DataInputStream in) throws Exception {
-        int length = (int) in.readByte();
-        byte[] buffer = new byte[length];
-        in.readFully(buffer);
-        return buffer;
-    }
-
+    
     private void handlePacket(DataInputStream in, DataOutputStream out)
             throws Exception {
         // read total packet length
@@ -66,128 +61,16 @@ public class RpcServer extends Thread {
         RpcHeaderProtos.RpcRequestHeaderProto rpcRequestHeaderProto =
             RpcHeaderProtos.RpcRequestHeaderProto.parseDelimitedFrom(in);
 
-        // parse request
-        switch (rpcRequestHeaderProto.getCallId()) {
-        case -3:
-            IpcConnectionContextProtos.IpcConnectionContextProto context =
-                IpcConnectionContextProtos.IpcConnectionContextProto
-                    .parseDelimitedFrom(in);
-
-            // TODO - update i.getUserInfo().getEffectiveUser()
-            // and i.getProtocol()
-            break;
-        case -33:
-            // handle SASL RPC request
-            RpcHeaderProtos.RpcSaslProto rpcSaslProto =
-                RpcHeaderProtos.RpcSaslProto.parseDelimitedFrom(in);
-
-            switch (rpcSaslProto.getState()) {
-            case NEGOTIATE:
-                // send automatic SUCCESS - mean simple server on HDFS side
-                RpcHeaderProtos.RpcResponseHeaderProto rpcResponse =
-                    RpcHeaderProtos.RpcResponseHeaderProto.newBuilder()
-                        .setStatus(RpcStatusProto.SUCCESS)
-                        .setCallId(rpcRequestHeaderProto.getCallId())
-                        .setClientId(rpcRequestHeaderProto.getClientId())
-                        .build();
-
-                RpcHeaderProtos.RpcSaslProto message =
-                    RpcHeaderProtos.RpcSaslProto.newBuilder()
-                        .setState(RpcHeaderProtos.RpcSaslProto.SaslState.SUCCESS)
-                        .build();
-
-                // TODO - fix this with sending response to general rpc request
-                int respSize = rpcResponse.getSerializedSize();
-                int messageSize = message.getSerializedSize();
-
-                int length = CodedOutputStream.computeRawVarint32Size(respSize) + respSize
-                    + CodedOutputStream.computeRawVarint32Size(messageSize) + messageSize;
-                out.writeInt(length);
-                rpcResponse.writeDelimitedTo(out);
-                message.writeDelimitedTo(out);
-
-                out.flush();
-                break;
-            default:
-                System.out.println("TODO - handle sasl " + rpcSaslProto.getState());
-                break;
+        int callId = rpcRequestHeaderProto.getCallId();
+        if (callId >= 0) { // rpc request
+            this.rpcPacketHandler.handle(in, out, rpcRequestHeaderProto);
+        } else { // should be handled by a registered packet handler
+            if (!this.packetHandlers.containsKey(callId)) {
+                throw new Exception("packet type with callId '" + callId 
+                    + "' not supported");
             }
 
-            break;
-        default:
-            ProtobufRpcEngineProtos.RequestHeaderProto requestHeaderProto =
-                ProtobufRpcEngineProtos.RequestHeaderProto.parseDelimitedFrom(in);
-
-            // build response - set to 'SUCCESS' and change on failure
-            RpcHeaderProtos.RpcResponseHeaderProto.Builder respBuilder =
-                RpcHeaderProtos.RpcResponseHeaderProto.newBuilder()
-                    .setStatus(RpcStatusProto.SUCCESS)
-                    .setCallId(rpcRequestHeaderProto.getCallId())
-                    .setClientId(rpcRequestHeaderProto.getClientId());
-
-            // retreive rpc arguments
-            String methodName = requestHeaderProto.getMethodName();
-            String declaringClassProtocolName =
-                requestHeaderProto.getDeclaringClassProtocolName();
-
-            System.out.println(declaringClassProtocolName + " : " + methodName);
-
-            Message message = null;
-            if (!rpcHandlers.containsKey(declaringClassProtocolName)) {
-                // error -> protocol does not exist
-                respBuilder.setStatus(RpcStatusProto.ERROR);
-                respBuilder.setErrorMsg("protocol '" + declaringClassProtocolName 
-                    + "' does not exist");
-                respBuilder.setErrorDetail(RpcErrorCodeProto.ERROR_NO_SUCH_PROTOCOL);
-            } else {
-                Object rpcHandler = rpcHandlers.get(declaringClassProtocolName);
-
-                // check if handler contains method
-                Method method = null;
-                for (Method m: rpcHandler.getClass().getMethods()) {
-                    if (m.getName().equals(methodName)) {
-                        method = m;
-                        break;
-                    }
-                }
-
-                if (method == null) {
-                    // error -> method does not exist
-                    respBuilder.setStatus(RpcStatusProto.ERROR);
-                    respBuilder.setErrorMsg("method '" + methodName + "' does not exist");
-                    respBuilder.setErrorDetail(RpcErrorCodeProto.ERROR_NO_SUCH_PROTOCOL);
-                } else {
-                    // use rpc handler to execute method
-                    try {
-                        //message = (Message) method.invoke(rpcHandler, readBuffer(in));
-                        message = (Message) method.invoke(rpcHandler, in);
-                    } catch(Exception e) {
-                        respBuilder.setStatus(RpcStatusProto.ERROR);
-                        respBuilder.setExceptionClassName(e.getClass().toString());
-                        respBuilder.setErrorMsg(e.toString());
-                        respBuilder.setErrorDetail(RpcErrorCodeProto.ERROR_RPC_SERVER);
-                    }
-                }
-            }
-
-            RpcHeaderProtos.RpcResponseHeaderProto resp = respBuilder.build();
-
-            // send response
-            int respSize = resp.getSerializedSize();
-            int messageSize = message == null ? 0 : message.getSerializedSize();
-
-            int length = CodedOutputStream.computeRawVarint32Size(respSize) + respSize
-                + (message == null ? 0 :
-                (CodedOutputStream.computeRawVarint32Size(messageSize) + messageSize));
-
-            out.writeInt(length);
-            resp.writeDelimitedTo(out);
-            if (message != null) {
-                message.writeDelimitedTo(out);
-            }
-
-            out.flush();
-            break;
+            this.packetHandlers.get(callId).handle(in, out, rpcRequestHeaderProto);
         }
     }
 

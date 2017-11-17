@@ -16,6 +16,8 @@ import java.net.Socket;
 import java.util.Random;
 
 public class RpcClient {
+    public static final int clientProtocolVersion = 1;
+
     private Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
@@ -39,10 +41,10 @@ public class RpcClient {
         random.nextBytes(this.clientId);
 
         // write connection Header
-        out.write("hrpc".getBytes());
-        out.write((byte)9);
-        out.write((byte)0);
-        out.write((byte)0);
+        this.out.write("hrpc".getBytes());
+        this.out.write((byte)9);
+        this.out.write((byte)0);
+        this.out.write((byte)0);
 
         // initialize RpcRequeestHeaderProto
         RpcHeaderProtos.RpcRequestHeaderProto rpcRequestHeaderProto =
@@ -63,13 +65,7 @@ public class RpcClient {
                 .build();
         
         // write to output stream
-        out.writeInt(1 + rpcRequestHeaderProto.getSerializedSize()
-            + 1 + ipcConnectionContextProto.getSerializedSize());
-        out.writeByte((byte) rpcRequestHeaderProto.getSerializedSize());
-        rpcRequestHeaderProto.writeTo(out);
-        out.writeByte((byte) ipcConnectionContextProto.getSerializedSize());
-        ipcConnectionContextProto.writeTo(out);
-        out.flush();
+        RpcUtil.sendMessages(this.out, rpcRequestHeaderProto, ipcConnectionContextProto);
     }
 
     public byte[] send(String methodName, Message req)
@@ -90,23 +86,11 @@ public class RpcClient {
             ProtobufRpcEngineProtos.RequestHeaderProto.newBuilder()
                 .setMethodName(methodName)
                 .setDeclaringClassProtocolName(this.protocol)
-                .setClientProtocolVersion(0) // TODO - fix this
+                .setClientProtocolVersion(clientProtocolVersion)
                 .build();
 
         // write to output stream
-        int rpcRequestHeaderSize = rpcRequestHeaderProto.getSerializedSize();
-        int requestHeaderSize = requestHeaderProto.getSerializedSize();
-        int reqSize = req.getSerializedSize();
-        int length = CodedOutputStream.computeRawVarint32Size(rpcRequestHeaderSize)
-            + rpcRequestHeaderSize 
-            + CodedOutputStream.computeRawVarint32Size(requestHeaderSize) 
-            + requestHeaderSize 
-            + CodedOutputStream.computeRawVarint32Size(reqSize) + reqSize;
-
-        out.writeInt(length);
-        rpcRequestHeaderProto.writeDelimitedTo(out);
-        requestHeaderProto.writeDelimitedTo(out);
-        req.writeDelimitedTo(out);
+        RpcUtil.sendMessages(this.out, rpcRequestHeaderProto, requestHeaderProto, req);
 
         // read response
         int packetLength = in.readInt();

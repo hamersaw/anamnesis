@@ -5,6 +5,8 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 
 import com.bushpath.anamnesis.rpc.RpcServer;
+import com.bushpath.anamnesis.rpc.packet_handler.IpcConnectionContextPacketHandler;
+import com.bushpath.anamnesis.rpc.packet_handler.SaslPacketHandler;
 import com.bushpath.anamnesis.namenode.rpc.ClientNamenodeService;
 import com.bushpath.anamnesis.namenode.rpc.DatanodeService;
 
@@ -31,16 +33,21 @@ public class Main {
             NameSystem nameSystem = new NameSystem();
             BlockManager blockManager = new BlockManager(datanodeManager, nameSystem);
 
-            // start rpc server
+            // initialize rpc server
             ServerSocket serverSocket = new ServerSocket(config.port);
             RpcServer rpcServer = new RpcServer(serverSocket);
-            rpcServer.registerRpcHandler(
+
+            rpcServer.addRpcProtocol(
                 "org.apache.hadoop.hdfs.protocol.ClientProtocol",
                 new ClientNamenodeService(nameSystem, blockManager,
                     datanodeManager, config));
-            rpcServer.registerRpcHandler(
+            rpcServer.addRpcProtocol(
                 "org.apache.hadoop.hdfs.server.protocol.DatanodeProtocol",
                 new DatanodeService(blockManager, datanodeManager));
+
+            rpcServer.addPacketHandler(new IpcConnectionContextPacketHandler());
+            rpcServer.addPacketHandler(new SaslPacketHandler());
+
             rpcServer.start();
 
             // wait until rpcServer shuts down
