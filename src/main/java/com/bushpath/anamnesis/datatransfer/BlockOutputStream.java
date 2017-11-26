@@ -1,5 +1,7 @@
 package com.bushpath.anamnesis.datatransfer;
 
+import org.apache.hadoop.hdfs.protocol.proto.DataTransferProtos;
+
 import com.bushpath.anamnesis.util.Checksum;
 
 import java.io.DataInputStream;
@@ -28,9 +30,9 @@ public class BlockOutputStream extends OutputStream {
 
     @Override
     public void write(int b) throws IOException {
-        // write chunks if buffer is full
+        // write packet if buffer is full
         if (this.index == this.buffer.length) {
-            this.writeChunks(false);
+            this.writePacket(false);
         }
 
         this.buffer[this.index] = (byte) b;
@@ -39,13 +41,7 @@ public class BlockOutputStream extends OutputStream {
 
     @Override
     public void write(byte[] b) throws IOException {
-        // write chunks if buffer is full
-        if (this.index == this.buffer.length) {
-            this.writeChunks(false);
-        }
-
         this.write(b, 0, b.length);
-        this.index += 1;
     }
 
     @Override
@@ -54,9 +50,9 @@ public class BlockOutputStream extends OutputStream {
         int bIndex = off;
 
         while (bytesWrote < len) {
-            // write chunks if buffer is full
+            // write packet if buffer is full
             if (this.index == this.buffer.length) {
-                this.writeChunks(false);
+                this.writePacket(false);
             }
 
             // copy bytes from b to buffer
@@ -68,50 +64,58 @@ public class BlockOutputStream extends OutputStream {
         }
     }
 
-    private void writeChunks(boolean lastPacketInBlock) throws IOException {
-        System.out.println("WRITING CHUNK PACKET");
-        // creeate chunk packet
-        ChunkPacket packet = new ChunkPacket(this.sequenceNumber, this.offsetInBlock,
-            lastPacketInBlock, this.checksum.getBytesPerChecksum());
-
-        // write data to packet
-        int writeIndex = 0;
-        while (writeIndex < this.index - 1) {
-            // get length of next chunk
-            int writeLength = Math.min(this.index - writeIndex - 1,
-                ChunkPacket.CHUNK_SIZE);
-
-            // write chunk to packet with checksum
-            packet.writeData(this.buffer, writeIndex, writeLength);
-            byte[] checksumBytes =
-                this.checksum.compute(this.buffer, writeIndex, writeLength);
-            packet.writeChecksum(checksumBytes, 0, checksumBytes.length);
-            System.out.println("\twrote chunk of size " + writeLength);
-
-            writeIndex += writeLength;
-        }
-
-        System.out.println("writing chunk packet (" + this.sequenceNumber + ") with "
-            + writeIndex + " bytes");
-        System.out.println("\tlast packet in block: " + lastPacketInBlock);
-
-        // write packet
-        packet.write(this.out);
-
-        this.sequenceNumber += 1;
-        this.offsetInBlock += this.index;
-        this.index = 0;
-    }
-
     @Override
     public void close() throws IOException {
         // if buffer is not empty write packet
         if (this.index != 0) {
-            writeChunks(false);
+            writePacket(false);
         }
 
         // write empty last packet
-        writeChunks(true);
+        writePacket(true);
         this.out.flush();
+    }
+
+    private void writePacket(boolean lastPacketInBlock) throws IOException {
+        // compute packet length
+        int checksumCount = 
+            (int) Math.ceil(this.index / (double) ChunkPacket.CHUNK_SIZE);
+        int packetLength = 4 + this.index + (checksumCount * 4);
+        this.out.writeInt(packetLength);
+        
+        // write packet header
+        DataTransferProtos.PacketHeaderProto packetHeaderProto =
+            DataTransferProtos.PacketHeaderProto.newBuilder()
+                .setOffsetInBlock(this.offsetInBlock)
+                .setSeqno(this.sequenceNumber)
+                .setLastPacketInBlock(lastPacketInBlock)
+                .setDataLen(this.index)
+                .setSyncBlock(false)
+                .build();
+
+        this.out.writeShort((short) packetHeaderProto.getSerializedSize());
+        packetHeaderProto.writeTo(this.out);
+ 
+        // write checksums
+        System.out.println("WRITING CHECKSUMS");
+        int checksumIndex = 0;
+        while (checksumIndex < this.index - 1) {
+            int checksumLength = Math.min(this.index - checksumIndex,
+                ChunkPacket.CHUNK_SIZE);
+
+            int checksum = (int) this.checksum.compute(this.buffer,
+                checksumIndex, checksumLength);
+            System.out.println("\tCHECKSUM "
+                + (checksumIndex / ChunkPacket.CHUNK_SIZE) + ": " + checksum);
+            this.out.writeInt(checksum);
+            checksumIndex += checksumLength;
+        }
+ 
+        // write data
+        this.out.write(this.buffer, 0, this.index);
+
+        this.sequenceNumber += 1;
+        this.offsetInBlock += this.index;
+        this.index = 0;
     }
 }
