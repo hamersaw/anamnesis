@@ -9,7 +9,6 @@ import com.bushpath.anamnesis.rpc.RpcServer;
 import com.bushpath.anamnesis.datanode.rpc.ClientDatanodeService;
 import com.bushpath.anamnesis.datanode.storage.JVMStorage;
 import com.bushpath.anamnesis.datanode.storage.Storage;
-import com.bushpath.anamnesis.datanode.storage.TmpfsStorage;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -36,9 +35,6 @@ public class Main {
             switch (config.storage) {
             case "jvm":
                 storage = new JVMStorage(config.storageUuid);
-                break;
-            case "tmpfs":
-                storage = new TmpfsStorage(config.storageUuid);
                 break;
             default:
                 throw new Exception("Unknown storage type");

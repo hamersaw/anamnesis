@@ -26,11 +26,9 @@ JNIEXPORT jint JNICALL
     uint8_t *buffer_index = (uint8_t *)buffer;
     buffer_index += offset;
 
-    // TODO compute hadoop style crc
+    // compute hadoop style crc
     uint32_t crc = 0xFFFFFFFF;
-    //crc = crc32c_sb8(crc, (uint8_t *)buffer, length);
     crc = crc32c_sb8(crc, buffer_index, length);
-    //crc = crc32_zlib_sb8(crc, buffer_index, length);
 
     // release arguments
     env->ReleaseByteArrayElements(j_buffer, buffer, 0);

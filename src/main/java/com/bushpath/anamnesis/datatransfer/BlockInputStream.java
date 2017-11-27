@@ -6,6 +6,7 @@ import com.bushpath.anamnesis.checksum.Checksum;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.BufferOverflowException;
@@ -37,7 +38,7 @@ public class BlockInputStream extends InputStream {
         // read packet if no bytes in buffer
         if (this.startIndex == this.endIndex) {
             if (this.readPacket() == 0) {
-                // TODO - throw EOF exception
+                throw new EOFException();
             }
         }
 
@@ -115,8 +116,8 @@ public class BlockInputStream extends InputStream {
                 checksumIndex, checksumLength);
 
             if (checksum != checksums.get(i)) {
-                // TODO throw exception
-                System.out.println("invalid checksum");
+                throw new IOException("invalid chunk checksum. expecting "
+                       + checksum + " and got " + checksums.get(i));
             }
 
             checksumIndex += checksumLength;

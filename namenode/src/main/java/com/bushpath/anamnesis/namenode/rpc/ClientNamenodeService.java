@@ -180,8 +180,7 @@ public class ClientNamenodeService {
                 item.toHdfsFileStatusProto(false);
 
             totalSize += hdfsFileStatusProto.getSerializedSize();
-            if (totalSize > 60000) {
-                // TODO - find the ideal size for this
+            if (totalSize > 60000) { // TODO - find the ideal size for this
                 directoryListingProtoBuilder
                     .setRemainingEntries(items.size() - index);
                 break;
