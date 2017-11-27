@@ -27,8 +27,6 @@ An in-memory, location aware, HDFS based file system.
 ## TODO
 - change DatanodeService to add Datanode not it's elements
 - setup some rock solid logging
-- get rid of stupid byte[] buffer in ChunkPacket
-    keep separate for data and checksums (no longer need to put header in it)
 - implement datanode heartbeat storage information (integrate into addBlock)
 - validate checksums in ChunkPacket.read()
 #### RPC SERVER

@@ -1,4 +1,4 @@
-package com.bushpath.anamnesis.util;
+package com.bushpath.anamnesis.checksum;
 
 public class NativeChecksumCRC32 extends Checksum {
     static {

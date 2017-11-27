@@ -1,4 +1,4 @@
-package com.bushpath.anamnesis.util;
+package com.bushpath.anamnesis.checksum;
 
 public class ChecksumJavaCRC32 extends Checksum {
   @Override
@@ -33,12 +33,6 @@ public class ChecksumJavaCRC32 extends Checksum {
     
     // Publish crc out to object
     return localCrc & 0xffffffffl;
-    /*byte[] checksumbytes = new byte[4];
-    checksumbytes[0] = (byte) (localCrc >> 24);
-    checksumbytes[1] = (byte) (localCrc >> 16);
-    checksumbytes[2] = (byte) (localCrc >> 8);
-    checksumbytes[3] = (byte) (localCrc);
-    return checksumbytes;*/
   }
 
   /*

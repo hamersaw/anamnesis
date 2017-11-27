@@ -2,10 +2,7 @@ package com.bushpath.anamnesis.datatransfer;
 
 import org.apache.hadoop.hdfs.protocol.proto.DataTransferProtos;
 
-import com.bushpath.anamnesis.util.Checksum;
-import com.bushpath.anamnesis.util.ChecksumCRC32;
-import com.bushpath.anamnesis.util.ChecksumJavaCRC32;
-import com.bushpath.anamnesis.util.ChecksumJavaCRC32C;
+import com.bushpath.anamnesis.checksum.Checksum;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

@@ -1,4 +1,4 @@
-#include <com_bushpath_anamnesis_util_NativeChecksumCRC32.h>
+#include <com_bushpath_anamnesis_checksum_NativeChecksumCRC32.h>
 
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -16,8 +16,10 @@ using namespace std;
 uint32_t crc32c_sb8(uint32_t crc, const uint8_t *buf, size_t length);
 uint32_t crc32_zlib_sb8(uint32_t crc, const uint8_t *buf, size_t length);
 
-JNIEXPORT jint JNICALL Java_com_bushpath_anamnesis_util_NativeChecksumCRC32_nativeCompute(
-    JNIEnv *env, jobject obj, jbyteArray j_buffer, jint offset, jint length) {
+JNIEXPORT jint JNICALL 
+    Java_com_bushpath_anamnesis_checksum_NativeChecksumCRC32_nativeCompute(
+        JNIEnv *env, jobject obj, jbyteArray j_buffer,
+        jint offset, jint length) {
 
     // convert arguments into usable types
     jbyte* buffer = env->GetByteArrayElements(j_buffer, NULL);

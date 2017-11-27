@@ -1,4 +1,4 @@
-package com.bushpath.anamnesis.util;
+package com.bushpath.anamnesis.checksum;
 
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 

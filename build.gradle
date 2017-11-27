@@ -32,7 +32,7 @@ protobuf{
 
 
 // define environment variables
-def jniClass = "com.bushpath.anamnesis.util.NativeChecksumCRC32"
+def jniClass = "com.bushpath.anamnesis.checksum.NativeChecksumCRC32"
 def nativeIncludeDir = "build/generated"
 def javaHome = "/usr/lib/jvm/default-java"
       

@@ -8,8 +8,8 @@ import com.bushpath.anamnesis.datatransfer.BlockInputStream;
 import com.bushpath.anamnesis.datatransfer.BlockOutputStream;
 import com.bushpath.anamnesis.datatransfer.DataTransferProtocol;
 import com.bushpath.anamnesis.datatransfer.Op;
-import com.bushpath.anamnesis.util.Checksum;
-import com.bushpath.anamnesis.util.ChecksumFactory;
+import com.bushpath.anamnesis.checksum.Checksum;
+import com.bushpath.anamnesis.checksum.ChecksumFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;

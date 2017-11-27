@@ -4,6 +4,7 @@ import com.google.protobuf.Message;
 import org.apache.hadoop.hdfs.protocol.proto.ClientNamenodeProtocolProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
+import com.bushpath.anamnesis.datatransfer.DataTransferProtocol;
 import com.bushpath.anamnesis.namenode.Block;
 import com.bushpath.anamnesis.namenode.BlockManager;
 import com.bushpath.anamnesis.namenode.Configuration;
@@ -12,7 +13,6 @@ import com.bushpath.anamnesis.namenode.DatanodeManager;
 import com.bushpath.anamnesis.namenode.NameSystem;
 import com.bushpath.anamnesis.namenode.NSFile;
 import com.bushpath.anamnesis.namenode.NSItem;
-import com.bushpath.anamnesis.util.Checksum;
 
 import java.io.DataInputStream;
 import java.util.ArrayList;
@@ -210,8 +210,7 @@ public class ClientNamenodeService {
         HdfsProtos.FsServerDefaultsProto fsServerDefaultsProto =
             HdfsProtos.FsServerDefaultsProto.newBuilder()
                 .setBlockSize(this.config.blockSize)
-                //.setBytesPerChecksum(Checksum.getBytesPerChecksum())
-                .setBytesPerChecksum(512) // TODO -fix this!
+                .setBytesPerChecksum(DataTransferProtocol.CHUNK_SIZE)
                 .setWritePacketSize(this.config.writePacketSize)
                 .setReplication(this.config.replication)
                 .setFileBufferSize(this.config.fileBufferSize)
