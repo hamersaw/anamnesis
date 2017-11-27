@@ -22,7 +22,8 @@ public class BlockOutputStream extends OutputStream {
         this.in = in;
         this.out = out;
         this.checksum = checksum;
-        this.buffer = new byte[ChunkPacket.CHUNK_SIZE * ChunkPacket.CHUNKS_PER_PACKET];
+        this.buffer = new byte[DataTransferProtocol.CHUNK_SIZE
+            * DataTransferProtocol.CHUNKS_PER_PACKET];
         this.index = 0;
         this.sequenceNumber = 0;
         this.offsetInBlock = 0;
@@ -79,7 +80,7 @@ public class BlockOutputStream extends OutputStream {
     private void writePacket(boolean lastPacketInBlock) throws IOException {
         // compute packet length
         int checksumCount = 
-            (int) Math.ceil(this.index / (double) ChunkPacket.CHUNK_SIZE);
+            (int) Math.ceil(this.index / (double) DataTransferProtocol.CHUNK_SIZE);
         int packetLength = 4 + this.index + (checksumCount * 4);
         this.out.writeInt(packetLength);
         
@@ -97,16 +98,13 @@ public class BlockOutputStream extends OutputStream {
         packetHeaderProto.writeTo(this.out);
  
         // write checksums
-        System.out.println("WRITING CHECKSUMS");
         int checksumIndex = 0;
         while (checksumIndex < this.index - 1) {
             int checksumLength = Math.min(this.index - checksumIndex,
-                ChunkPacket.CHUNK_SIZE);
+                DataTransferProtocol.CHUNK_SIZE);
 
             int checksum = (int) this.checksum.compute(this.buffer,
                 checksumIndex, checksumLength);
-            System.out.println("\tCHECKSUM "
-                + (checksumIndex / ChunkPacket.CHUNK_SIZE) + ": " + checksum);
             this.out.writeInt(checksum);
             checksumIndex += checksumLength;
         }

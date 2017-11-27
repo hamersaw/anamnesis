@@ -9,6 +9,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class DataTransferProtocol {
+    public static final int CHUNKS_PER_PACKET = 126, CHUNK_SIZE = 512;
     public static final int PROTOCOL_VERSION = 28;
 
     public static void sendBlockOpResponse(DataOutputStream out,

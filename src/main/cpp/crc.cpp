@@ -19,8 +19,6 @@ uint32_t crc32_zlib_sb8(uint32_t crc, const uint8_t *buf, size_t length);
 JNIEXPORT jint JNICALL Java_com_bushpath_anamnesis_util_NativeChecksumCRC32_nativeCompute(
     JNIEnv *env, jobject obj, jbyteArray j_buffer, jint offset, jint length) {
 
-    cout << "COMPUTING CHECKSUM OFFSET " << offset << " WITH LENGTH " << length << endl;
-
     // convert arguments into usable types
     jbyte* buffer = env->GetByteArrayElements(j_buffer, NULL);
     uint8_t *buffer_index = (uint8_t *)buffer;

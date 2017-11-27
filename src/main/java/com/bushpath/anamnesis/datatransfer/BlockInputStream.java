@@ -28,7 +28,8 @@ public class BlockInputStream extends InputStream {
         this.in = in;
         this.out = out;
         this.checksum = checksum;
-        this.buffer = new byte[ChunkPacket.CHUNKS_PER_PACKET * ChunkPacket.CHUNK_SIZE];
+        this.buffer = new byte[DataTransferProtocol.CHUNKS_PER_PACKET 
+            * DataTransferProtocol.CHUNK_SIZE];
         this.startIndex = 0;
         this.endIndex = 0;
         this.lastPacketSeen = false;
@@ -96,7 +97,7 @@ public class BlockInputStream extends InputStream {
 
         // read checksums
         int checksumCount = (int) Math.ceil(packetHeaderProto.getDataLen()
-            / (double) ChunkPacket.CHUNK_SIZE);
+            / (double) DataTransferProtocol.CHUNK_SIZE);
         List<Integer> checksums = new ArrayList<>();
         for (int i=0; i<checksumCount; i++) {
             checksums.add(this.in.readInt());
@@ -107,30 +108,21 @@ public class BlockInputStream extends InputStream {
         this.startIndex = 0;
         this.endIndex = packetHeaderProto.getDataLen();
 
-        // TODO validate checksums
-        System.out.println("PACKET LENGTH: " + packetLength);
-        System.out.println("\tREADING " + checksumCount + " CHECKSUM(S)");
+        // validate checksums
         int checksumIndex = 0;
         for (int i=0; i<checksumCount; i++) {
             int checksumLength = Math.min(this.endIndex - checksumIndex,
-                ChunkPacket.CHUNK_SIZE);
+                DataTransferProtocol.CHUNK_SIZE);
 
             int checksum = (int) this.checksum.compute(this.buffer,
                 checksumIndex, checksumLength);
-            System.out.println("\t\tCHECKSUM "
-                + i + ": " + checksums.get(i) + ":" + checksum);
+
+            if (checksum != checksums.get(i)) {
+                // TODO throw exception
+                System.out.println("invalid checksum");
+            }
+
             checksumIndex += checksumLength;
-
-            // TODO - TMP
-            /*int readChecksum = checksums.get(i);
-            for (int j=0; j<this.endIndex - checksumIndex; j++) {
-                int checksum = (int) checks.compute(this.buffer,
-                    checksumIndex, j);
-
-                if (checksum == readChecksum) {
-                    System.out.println("CHECKSUM " + i + ": " + checksum + ":" + j);
-                }
-            }*/
         }
 
         // send pipeline ack
