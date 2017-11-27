@@ -7,6 +7,8 @@ task execute(type: JavaExec, dependsOn: assemble) {
     classpath sourceSets.main.runtimeClasspath
     main = "com.bushpath.anamnesis.datanode.Main"
 
+    systemProperties['java.library.path'] = "../build/generated"
+
     if ( project.hasProperty("appArgs") ) {
         args Eval.me(appArgs)
     }

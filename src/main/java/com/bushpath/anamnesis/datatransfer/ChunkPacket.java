@@ -7,7 +7,7 @@ import java.nio.BufferOverflowException;
 import java.nio.channels.ClosedChannelException;
 
 public class ChunkPacket {
-    public static final int CHUNKS_PER_PACKET = 126, CHUNK_SIZE = 516;
+    public static final int CHUNKS_PER_PACKET = 126, CHUNK_SIZE = 512;
     private long sequenceNumber;
     private long offsetInBlock;
     private boolean syncBlock;

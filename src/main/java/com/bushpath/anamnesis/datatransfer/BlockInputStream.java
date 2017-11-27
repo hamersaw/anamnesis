@@ -108,21 +108,21 @@ public class BlockInputStream extends InputStream {
         this.endIndex = packetHeaderProto.getDataLen();
 
         // TODO validate checksums
-        System.out.println("READING CHECKSUMS");
-        Checksum checks = new ChecksumJavaCRC32C();
+        System.out.println("PACKET LENGTH: " + packetLength);
+        System.out.println("\tREADING " + checksumCount + " CHECKSUM(S)");
         int checksumIndex = 0;
         for (int i=0; i<checksumCount; i++) {
             int checksumLength = Math.min(this.endIndex - checksumIndex,
                 ChunkPacket.CHUNK_SIZE);
 
-            /*int checksum = (int) this.checksum.compute(this.buffer,
+            int checksum = (int) this.checksum.compute(this.buffer,
                 checksumIndex, checksumLength);
-            System.out.println("\tCHECKSUM "
-                + i + ": " + checksums.get(i) + ":" + checksum);*/
+            System.out.println("\t\tCHECKSUM "
+                + i + ": " + checksums.get(i) + ":" + checksum);
             checksumIndex += checksumLength;
 
             // TODO - TMP
-            int readChecksum = checksums.get(i);
+            /*int readChecksum = checksums.get(i);
             for (int j=0; j<this.endIndex - checksumIndex; j++) {
                 int checksum = (int) checks.compute(this.buffer,
                     checksumIndex, j);
@@ -130,7 +130,7 @@ public class BlockInputStream extends InputStream {
                 if (checksum == readChecksum) {
                     System.out.println("CHECKSUM " + i + ": " + checksum + ":" + j);
                 }
-            }
+            }*/
         }
 
         // send pipeline ack

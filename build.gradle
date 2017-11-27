@@ -29,3 +29,31 @@ protobuf{
         artifact = 'com.google.protobuf:protoc:3.4.0'
     }
 }
+
+
+// define environment variables
+def jniClass = "com.bushpath.anamnesis.util.NativeChecksumCRC32"
+def nativeIncludeDir = "build/generated"
+def javaHome = "/usr/lib/jvm/default-java"
+      
+// generate jni headers        
+task generateJniHeaders(type: Exec) {
+    def classpath = "build/classes/main/"
+    commandLine "javah", "-d", "$nativeIncludeDir", "-classpath", classpath, 
+        "$jniClass"       
+
+    dependsOn classes
+}
+
+// compile cpp program
+task compileCpp(type: Exec) {
+    commandLine "g++", "-o", "$nativeIncludeDir/libcrc.so",
+        "-lc", "-shared", "-fPIC",      
+        "-I", "$nativeIncludeDir", "-I", "$javaHome/include", 
+        "-I", "$javaHome/include/linux/", "src/main/cpp/crc.cpp"
+
+    dependsOn generateJniHeaders    
+}
+
+// define jar depends
+jar.dependsOn generateJniHeaders, compileCpp
