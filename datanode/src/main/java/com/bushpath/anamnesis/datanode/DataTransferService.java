@@ -14,6 +14,7 @@ import com.bushpath.anamnesis.checksum.ChecksumFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.logging.Logger;
@@ -58,88 +59,93 @@ public class DataTransferService extends Thread {
                 DataOutputStream out = 
                     new DataOutputStream(this.socket.getOutputStream());
  
-                // read operation
-                Op op = DataTransferProtocol.readOp(in);
-                logger.info("recv op '" + op + "'");
+                while (true) {
+                    // read operation
+                    Op op = DataTransferProtocol.readOp(in);
+                    logger.info("recv op '" + op + "'");
 
-                switch(op) {
-                case WRITE_BLOCK:
-                    // send op response
-                    DataTransferProtocol.sendBlockOpResponse(out,
-                            DataTransferProtos.Status.SUCCESS);
+                    switch(op) {
+                    case WRITE_BLOCK:
+                        // send op response
+                        DataTransferProtocol.sendBlockOpResponse(out,
+                                DataTransferProtos.Status.SUCCESS);
 
-                    // recv write op
-                    DataTransferProtos.OpWriteBlockProto writeBlockProto =
-                        DataTransferProtocol.recvWriteOp(in);
+                        // recv write op
+                        DataTransferProtos.OpWriteBlockProto writeBlockProto =
+                            DataTransferProtocol.recvWriteOp(in);
 
-                    HdfsProtos.ExtendedBlockProto extendedBlockProto = 
-                        writeBlockProto.getHeader().getBaseHeader().getBlock();
+                        HdfsProtos.ExtendedBlockProto extendedBlockProto = 
+                            writeBlockProto.getHeader().getBaseHeader().getBlock();
 
-                    DataTransferProtos.ChecksumProto writeChecksumProto =
-                        writeBlockProto.getRequestedChecksum();
+                        DataTransferProtos.ChecksumProto writeChecksumProto =
+                            writeBlockProto.getRequestedChecksum();
 
-                    Checksum writeChecksum =
-                        ChecksumFactory.buildChecksum(writeChecksumProto.getType());
+                        Checksum writeChecksum =
+                            ChecksumFactory.buildChecksum(writeChecksumProto.getType());
 
-                    // recv stream block chunks
-                    BlockInputStream blockIn = new BlockInputStream(in, out,
-                        writeChecksum);
-                    byte[] buffer = new byte[1024]; 
-                    int bytesRead = 0;
+                        // recv stream block chunks
+                        BlockInputStream blockIn = new BlockInputStream(in, out,
+                            writeChecksum);
+                        byte[] buffer = new byte[1024]; // TODO - find ideal buffer size
+                        int bytesRead = 0;
 
-                    ByteArrayOutputStream blockStream = new ByteArrayOutputStream();
-                    while ((bytesRead = blockIn.read(buffer)) != 0) {
-                        // add bytes to array
-                        blockStream.write(buffer, 0, bytesRead);
-                    }
+                        ByteArrayOutputStream blockStream = new ByteArrayOutputStream();
+                        while ((bytesRead = blockIn.read(buffer)) != 0) {
+                            // add bytes to array
+                            blockStream.write(buffer, 0, bytesRead);
+                        }
 
-                    // store block in storage
-                    storage.storeBlock(extendedBlockProto.getBlockId(),
-                        blockStream.toByteArray(),
-                        extendedBlockProto.getGenerationStamp());
+                        // store block in storage
+                        storage.storeBlock(extendedBlockProto.getBlockId(),
+                            blockStream.toByteArray(),
+                            extendedBlockProto.getGenerationStamp());
 
-                    blockIn.close();
+                        blockIn.close();
 
-                    // TODO - fix this
-                    /*switch (writeBlockProto.getStage()) {
-                    case PIPELINE_CLOSE:
-                        return;
-                    default:
+                        // TODO - fix this
+                        /*switch (writeBlockProto.getStage()) {
+                        case PIPELINE_CLOSE:
+                            return;
+                        default:
+                            break;
+                        }*/
+
                         break;
-                    }*/
+                    case READ_BLOCK:
+                        // create checksum
+                        Checksum readChecksum = ChecksumFactory.buildDefaultChecksum();
 
-                    break;
-                case READ_BLOCK:
-                    // create checksum
-                    Checksum readChecksum = ChecksumFactory.buildDefaultChecksum();
+                        // send op response
+                        DataTransferProtocol.sendBlockOpResponse(out,
+                                DataTransferProtos.Status.SUCCESS,
+                                HdfsProtos.ChecksumTypeProto.CHECKSUM_CRC32C, 
+                                DataTransferProtocol.CHUNK_SIZE, 0l);
 
-                    // send op response
-                    DataTransferProtocol.sendBlockOpResponse(out,
-                            DataTransferProtos.Status.SUCCESS,
-                            HdfsProtos.ChecksumTypeProto.CHECKSUM_CRC32C, 512, 0l);
+                        // recv read op
+                        DataTransferProtos.OpReadBlockProto readBlockProto =
+                            DataTransferProtocol.recvReadOp(in);
 
-                    // recv read op
-                    DataTransferProtos.OpReadBlockProto readBlockProto =
-                        DataTransferProtocol.recvReadOp(in);
+                        HdfsProtos.ExtendedBlockProto readExtendedBlockProto =
+                            readBlockProto.getHeader().getBaseHeader().getBlock();
 
-                    HdfsProtos.ExtendedBlockProto readExtendedBlockProto =
-                        readBlockProto.getHeader().getBaseHeader().getBlock();
+                        // send stream block chunks
+                        BlockOutputStream blockOut = new BlockOutputStream(in, out,
+                            readChecksum);
+                        byte[] readBlock =
+                            storage.getBlock(readExtendedBlockProto.getBlockId());
+                        blockOut.write(readBlock);
+                        blockOut.close();
 
-                    // send stream block chunks
-                    BlockOutputStream blockOut = new BlockOutputStream(in, out,
-                        readChecksum);
-                    byte[] readBlock =
-                        storage.getBlock(readExtendedBlockProto.getBlockId());
-                    blockOut.write(readBlock);
-                    blockOut.close();
+                        // TODO - read client read status proto
+                        DataTransferProtos.ClientReadStatusProto readProto =
+                            DataTransferProtocol.recvClientReadStatus(in);
+                        System.out.println("\tSTATUS:" + readProto.getStatus());
 
-                    // TODO - read client read status proto
-                    DataTransferProtos.ClientReadStatusProto readProto =
-                        DataTransferProtocol.recvClientReadStatus(in);
-                    System.out.println("\tSTATUS:" + readProto.getStatus());
-
-                    break;
+                        break;
+                    }
                 }
+            } catch (EOFException e) {
+                // socket was closed by client
             } catch (Exception e) {
                 e.printStackTrace();
                 logger.severe(e.toString());
