@@ -69,6 +69,7 @@ public class Datanode {
         return HdfsProtos.DatanodeInfoProto.newBuilder()
             .setId(this.toDatanodeIdProto())
             .setLastUpdate(this.lastUpdate)
+            .setLocation("/") // TODO - set to correct location
             .build();
     }
 }

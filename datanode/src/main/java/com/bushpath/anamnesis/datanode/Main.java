@@ -69,6 +69,8 @@ public class Main {
                 DatanodeProtocolProtos.RegisterDatanodeResponseProto response =
                     DatanodeProtocolProtos.RegisterDatanodeResponseProto
                         .parseFrom(respBuf);
+
+                rpcClient.close();
             } catch(Exception e) {
                 logger.severe("failed to register datanode: " + e);
                 System.exit(1);

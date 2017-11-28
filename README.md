@@ -14,15 +14,21 @@ An in-memory, location aware, HDFS based file system.
 > ./datanode.sh src/main/resources/config1.properties
 > ./datanode.sh src/main/resources/config2.properties
 > ./datanode.sh src/main/resources/config3.properties
+> ./datanode.sh src/main/resources/config4.properties
 #### CLIENT
 > ./anamnesis.sh mkdir foo/bar
 > ./anamnesis.sh ls foo
 > ./anamnesis.sh upload /tmp/test.txt foo/test.txt -b 2 -f 0
 > ./anamnesis.sh download foo/test.txt /tmp/test2.txt
 
+## HDFS
+> ./bin/hdfs dfs -mkdir /user/hamersaw
+> ./bin/hdfs dfs -D dfs.block.size=1024 -copyFromLocal /tmp/test.txt /user/hamersaw/test.txt
+> ./bin/hdfs dfs -copyToLocal /user/hamersaw/test.txt /tmp/test2.txt
+
 ## SPARK
-> ./sbin/start-master.sh
-> ./sbin/start-slave.sh localhost:7077
+$bin/spark-shell
+scala> val data = sc.textFile("data.txt")
 
 ## TODO
 - change DatanodeService to add Datanode not it's elements
