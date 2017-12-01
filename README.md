@@ -28,13 +28,12 @@ An in-memory, location aware, HDFS based file system.
 
 ## SPARK
 $bin/spark-shell
-scala> val data = sc.textFile("data.txt")
+scala> val rdd = sc.textFile("hdfs://localhost/user/hamersaw/MOCK_DATA.csv")
 
 ## TODO
 - change DatanodeService to add Datanode not it's elements
 - setup some rock solid logging
 - implement datanode heartbeat storage information (integrate into addBlock)
-- validate checksums in ChunkPacket.read()
 #### RPC SERVER
 - rpc response error handling (fix up)
 #### CLIENT

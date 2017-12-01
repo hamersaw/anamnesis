@@ -66,10 +66,6 @@ public class DataTransferService extends Thread {
 
                     switch(op) {
                     case WRITE_BLOCK:
-                        // send op response
-                        DataTransferProtocol.sendBlockOpResponse(out,
-                                DataTransferProtos.Status.SUCCESS);
-
                         // recv write op
                         DataTransferProtos.OpWriteBlockProto writeBlockProto =
                             DataTransferProtocol.recvWriteOp(in);
@@ -79,6 +75,10 @@ public class DataTransferService extends Thread {
 
                         DataTransferProtos.ChecksumProto writeChecksumProto =
                             writeBlockProto.getRequestedChecksum();
+
+                        // send op response
+                        DataTransferProtocol.sendBlockOpResponse(out,
+                                DataTransferProtos.Status.SUCCESS);
 
                         Checksum writeChecksum =
                             ChecksumFactory.buildChecksum(writeChecksumProto.getType());
@@ -112,15 +112,6 @@ public class DataTransferService extends Thread {
 
                         break;
                     case READ_BLOCK:
-                        // create checksum
-                        Checksum readChecksum = ChecksumFactory.buildDefaultChecksum();
-
-                        // send op response
-                        DataTransferProtocol.sendBlockOpResponse(out,
-                                DataTransferProtos.Status.SUCCESS,
-                                HdfsProtos.ChecksumTypeProto.CHECKSUM_CRC32C, 
-                                DataTransferProtocol.CHUNK_SIZE, 0l);
-
                         // recv read op
                         DataTransferProtos.OpReadBlockProto readBlockProto =
                             DataTransferProtocol.recvReadOp(in);
@@ -128,12 +119,23 @@ public class DataTransferService extends Thread {
                         HdfsProtos.ExtendedBlockProto readExtendedBlockProto =
                             readBlockProto.getHeader().getBaseHeader().getBlock();
 
+                        // send op response
+                        DataTransferProtocol.sendBlockOpResponse(out,
+                                DataTransferProtos.Status.SUCCESS,
+                                HdfsProtos.ChecksumTypeProto.CHECKSUM_CRC32C, 
+                                DataTransferProtocol.CHUNK_SIZE,
+                                readBlockProto.getOffset());
+
+                        // create checksum
+                        Checksum readChecksum = ChecksumFactory.buildDefaultChecksum();
+
                         // send stream block chunks
                         BlockOutputStream blockOut = new BlockOutputStream(in, out,
-                            readChecksum);
+                            readChecksum, readBlockProto.getOffset() + 1);
                         byte[] readBlock =
                             storage.getBlock(readExtendedBlockProto.getBlockId());
-                        blockOut.write(readBlock);
+                        blockOut.write(readBlock, (int) readBlockProto.getOffset(),
+                            (int) readBlockProto.getLen());
                         blockOut.close();
 
                         // TODO - read client read status proto

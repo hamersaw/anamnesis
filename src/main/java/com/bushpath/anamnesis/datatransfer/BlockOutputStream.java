@@ -18,7 +18,7 @@ public class BlockOutputStream extends OutputStream {
     private long sequenceNumber, offsetInBlock;
 
     public BlockOutputStream(DataInputStream in, DataOutputStream out,
-            Checksum checksum) {
+            Checksum checksum, long offsetInBlock) {
         this.in = in;
         this.out = out;
         this.checksum = checksum;
@@ -26,7 +26,7 @@ public class BlockOutputStream extends OutputStream {
             * DataTransferProtocol.CHUNKS_PER_PACKET];
         this.index = 0;
         this.sequenceNumber = 0;
-        this.offsetInBlock = 0;
+        this.offsetInBlock = offsetInBlock;
     }
 
     @Override
@@ -83,7 +83,7 @@ public class BlockOutputStream extends OutputStream {
             (int) Math.ceil(this.index / (double) DataTransferProtocol.CHUNK_SIZE);
         int packetLength = 4 + this.index + (checksumCount * 4);
         this.out.writeInt(packetLength);
-        
+
         // write packet header
         DataTransferProtos.PacketHeaderProto packetHeaderProto =
             DataTransferProtos.PacketHeaderProto.newBuilder()
