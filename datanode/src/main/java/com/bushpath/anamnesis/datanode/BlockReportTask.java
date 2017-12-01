@@ -5,6 +5,7 @@ import org.apache.hadoop.hdfs.protocol.proto.DatanodeProtocolProtos;
 import com.bushpath.anamnesis.datanode.storage.Storage;
 import com.bushpath.anamnesis.rpc.RpcClient;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.TimerTask;
 
@@ -34,7 +35,9 @@ public class BlockReportTask extends TimerTask {
                 config.namenodePort, "datanode",
                 "org.apache.hadoop.hdfs.server.protocol.DatanodeProtocol");
 
-            byte[] respBuf = rpcClient.send("blockReport", req);
+            DataInputStream in = rpcClient.send("blockReport", req);
+            DatanodeProtocolProtos.BlockReportResponseProto resp =
+                DatanodeProtocolProtos.BlockReportResponseProto.parseDelimitedFrom(in);
 
             // TODO - handle response
         } catch(Exception e) {

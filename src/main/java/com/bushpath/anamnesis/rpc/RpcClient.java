@@ -68,7 +68,7 @@ public class RpcClient {
         RpcUtil.sendMessages(this.out, rpcRequestHeaderProto, ipcConnectionContextProto);
     }
 
-    public byte[] send(String methodName, Message req)
+    public DataInputStream send(String methodName, Message req)
             throws Exception {
         if (this.socket == null) {
             throw new Exception("rpc client has been closed");
@@ -96,13 +96,15 @@ public class RpcClient {
         int packetLength = in.readInt();
         RpcHeaderProtos.RpcResponseHeaderProto rpcResponseHeaderProto =
             RpcHeaderProtos.RpcResponseHeaderProto.parseDelimitedFrom(in);
+
+        return this.in;
         // TODO - handle response
 
         // TODO - return the data input stream (could fix size issues)
-        int respLength = (int) in.readByte();
-        byte[] respBuf = new byte[respLength];
-        in.readFully(respBuf);
-        return respBuf;
+        //int respLength = (int) in.readByte();
+        //byte[] respBuf = new byte[respLength];
+        //in.readFully(respBuf);
+        //return respBuf;
     }
 
     private RpcHeaderProtos.RpcRequestHeaderProto buildRpcRequestHeaderProto(

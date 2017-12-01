@@ -10,6 +10,7 @@ import com.bushpath.anamnesis.datanode.rpc.ClientDatanodeService;
 import com.bushpath.anamnesis.datanode.storage.JVMStorage;
 import com.bushpath.anamnesis.datanode.storage.Storage;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.ArrayList;
@@ -63,12 +64,13 @@ public class Main {
                 RpcClient rpcClient = new RpcClient(config.namenodeIpAddr,
                     config.namenodePort, "datanode",
                     "org.apache.hadoop.hdfs.server.protocol.DatanodeProtocol");
-                byte[] respBuf = rpcClient.send("registerDatanode", req);
+
+                DataInputStream in = rpcClient.send("registerDatanode", req);
 
                 // TODO - handle response
                 DatanodeProtocolProtos.RegisterDatanodeResponseProto response =
                     DatanodeProtocolProtos.RegisterDatanodeResponseProto
-                        .parseFrom(respBuf);
+                        .parseDelimitedFrom(in);
 
                 rpcClient.close();
             } catch(Exception e) {

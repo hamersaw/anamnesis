@@ -5,6 +5,7 @@ import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
 import com.bushpath.anamnesis.rpc.RpcClient;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,11 +36,11 @@ public class HeartbeatTask extends TimerTask {
                 config.namenodePort, "datanode",
                 "org.apache.hadoop.hdfs.server.protocol.DatanodeProtocol");
 
-            byte[] respBuf = rpcClient.send("sendHeartbeat", req);
+            DataInputStream in = rpcClient.send("sendHeartbeat", req);
 
             // TODO - handle response
             DatanodeProtocolProtos.HeartbeatResponseProto response =
-                DatanodeProtocolProtos.HeartbeatResponseProto.parseFrom(respBuf);
+                DatanodeProtocolProtos.HeartbeatResponseProto.parseDelimitedFrom(in);
         } catch(Exception e) {
             e.printStackTrace();
             System.err.println("failed to send datanode heartbeat: " + e);
