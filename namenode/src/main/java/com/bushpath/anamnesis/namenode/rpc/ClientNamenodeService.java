@@ -247,6 +247,15 @@ public class ClientNamenodeService {
             .setResult(true)
             .build();
     }
+
+    public Message renewLease(DataInputStream in) throws Exception {
+        ClientNamenodeProtocolProtos.RenewLeaseRequestProto req =
+            ClientNamenodeProtocolProtos.RenewLeaseRequestProto.parseDelimitedFrom(in);
+
+        // response to request
+        return ClientNamenodeProtocolProtos.RenewLeaseResponseProto.newBuilder()
+            .build();
+    }
 }
     /*implements ClientNamenodeProtocolProtos.ClientNamenodeProtocol.BlockingInterface {
     
