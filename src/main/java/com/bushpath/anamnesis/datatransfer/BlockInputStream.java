@@ -12,13 +12,21 @@ import java.io.InputStream;
 import java.nio.BufferOverflowException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ArrayBlockingQueue;
 
 public class BlockInputStream extends InputStream {
+    private final static int CHUNK_PACKET_BUFFER_SIZE = 3;
+
     private DataInputStream in;
     private DataOutputStream out;
     private Checksum checksum;
+
     private byte[] buffer;
     private int startIndex, endIndex;
+    private BlockingQueue<ChunkPacket> chunkPacketQueue;
+    private BlockingQueue<Long> pipelineAckQueue;
+    private Thread pipelineAckThread;
     private boolean lastPacketSeen;
 
     public BlockInputStream(DataInputStream in, DataOutputStream out,
@@ -26,11 +34,16 @@ public class BlockInputStream extends InputStream {
         this.in = in;
         this.out = out;
         this.checksum = checksum;
-        this.buffer = new byte[DataTransferProtocol.CHUNKS_PER_PACKET 
-            * DataTransferProtocol.CHUNK_SIZE];
+
         this.startIndex = 0;
         this.endIndex = 0;
+        this.chunkPacketQueue = new ArrayBlockingQueue<>(CHUNK_PACKET_BUFFER_SIZE);
+        this.pipelineAckQueue = new ArrayBlockingQueue<>(CHUNK_PACKET_BUFFER_SIZE);
         this.lastPacketSeen = false;
+
+        new ChunkReader().start();
+        this.pipelineAckThread = new PipelineAckWriter();
+        this.pipelineAckThread.start();
     }
 
     @Override
@@ -77,56 +90,121 @@ public class BlockInputStream extends InputStream {
     }
 
     private int readPacket() throws IOException {
-        if (this.lastPacketSeen) {
+        if (this.chunkPacketQueue.isEmpty() && lastPacketSeen) {
             return 0;
         }
 
-        // read packet header
-        int packetLength = this.in.readInt();
-        short headerLength = this.in.readShort();
-        byte[] headerBuffer = new byte[headerLength];
-        this.in.readFully(headerBuffer);
+        // read next packet
+        try {
+            ChunkPacket packet = this.chunkPacketQueue.take();
 
-        DataTransferProtos.PacketHeaderProto packetHeaderProto =
-            DataTransferProtos.PacketHeaderProto.parseFrom(headerBuffer);
+            // refill buffer
+            this.buffer = packet.getBuffer();
+            this.startIndex = 0;
+            this.endIndex = (int) packet.getBufferLength();
 
-        // check lastPacketInBlock
-        this.lastPacketSeen = packetHeaderProto.getLastPacketInBlock();
+            // send ack
+            while (!this.pipelineAckQueue.offer(packet.getSequenceNumber())) {};
 
-        // read checksums
-        int checksumCount = (int) Math.ceil(packetHeaderProto.getDataLen()
-            / (double) DataTransferProtocol.CHUNK_SIZE);
-        List<Integer> checksums = new ArrayList<>();
-        for (int i=0; i<checksumCount; i++) {
-            checksums.add(this.in.readInt());
+            // check lastPacketInBlock
+            this.lastPacketSeen = packet.getLastPacketInBlock();
+
+            return this.endIndex;
+        } catch(Exception e) {
+            e.printStackTrace(); //TODO remove this
         }
 
-        // read data
-        in.readFully(this.buffer, 0, packetHeaderProto.getDataLen());
-        this.startIndex = 0;
-        this.endIndex = packetHeaderProto.getDataLen();
+        return 0;
+    }
 
-        // validate checksums
-        int checksumIndex = 0;
-        for (int i=0; i<checksumCount; i++) {
-            int checksumLength = Math.min(this.endIndex - checksumIndex,
-                DataTransferProtocol.CHUNK_SIZE);
+    @Override
+    public void close() {
+        try {
+        this.pipelineAckThread.join();
+        } catch(Exception e) {
+            e.printStackTrace(); // TODO - remove
+        }
+    }
 
-            int checksum = (int) this.checksum.compute(this.buffer,
-                checksumIndex, checksumLength);
+    private class ChunkReader extends Thread {
+        @Override
+        public void run() {
+            boolean lastPacketSeen = false;
 
-            if (checksum != checksums.get(i)) {
-                throw new IOException("invalid chunk checksum. expecting "
-                       + checksum + " and got " + checksums.get(i));
+            // read packets from data input stream
+            while (!lastPacketSeen) {
+                try {
+                    // read packet header
+                    int packetLength = in.readInt();
+                    short headerLength = in.readShort();
+                    byte[] headerBuffer = new byte[headerLength];
+                    in.readFully(headerBuffer);
+
+                    DataTransferProtos.PacketHeaderProto packetHeaderProto =
+                        DataTransferProtos.PacketHeaderProto.parseFrom(headerBuffer);
+
+                    lastPacketSeen = packetHeaderProto.getLastPacketInBlock();
+
+                    // read checksums
+                    /*int checksumCount = (int) Math.ceil(packetHeaderProto.getDataLen()
+                        / (double) DataTransferProtocol.CHUNK_SIZE);
+                    List<Integer> checksums = new ArrayList<>();
+                    for (int i=0; i<checksumCount; i++) {
+                        checksums.add(in.readInt());
+                    }*/
+                    byte[] checksumBuffer =
+                        new byte[packetLength - 4 - packetHeaderProto.getDataLen()];
+                    in.readFully(checksumBuffer);
+
+                    // read data
+                    byte[] dataBuffer = new byte[packetHeaderProto.getDataLen()];
+                    in.readFully(dataBuffer);
+
+                    // TODO - fix checksum verification
+                    /*// validate checksums
+                    int checksumIndex = 0;
+                    for (int i=0; i<checksumCount; i++) {
+                        int checksumLength = Math.min(dataBuffer.length - checksumIndex,
+                            DataTransferProtocol.CHUNK_SIZE);
+
+                        int checksumValue = (int) checksum.compute(dataBuffer,
+                            checksumIndex, checksumLength);
+
+                        if (checksumValue != checksums.get(i)) {
+                            throw new IOException("invalid chunk checksum. expecting "
+                                   + checksumValue + " and got " + checksums.get(i));
+                        }
+
+                        checksumIndex += checksumLength;
+                    }*/
+
+                    ChunkPacket chunkPacket = new ChunkPacket(
+                            packetHeaderProto.getLastPacketInBlock(),
+                            packetHeaderProto.getSeqno(),
+                            dataBuffer);
+
+                    while(!chunkPacketQueue.offer(chunkPacket)) {}
+                } catch(Exception e) {
+                    e.printStackTrace();
+                } 
             }
-
-            checksumIndex += checksumLength;
         }
+    }
 
-        // send pipeline ack
-        DataTransferProtocol.sendPipelineAck(this.out,
-            packetHeaderProto.getSeqno());
-
-        return this.endIndex;
+    private class PipelineAckWriter extends Thread {
+        @Override
+        public void run() {
+            // loop until last packet has been seen
+            Long sequenceNumber;
+            while (!lastPacketSeen) {
+                try {
+                    // send pipeline ack
+                    sequenceNumber = pipelineAckQueue.take();
+                    DataTransferProtocol.sendPipelineAck(out, sequenceNumber);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 }
