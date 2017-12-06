@@ -9,6 +9,7 @@ import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.InterruptedException;
 import java.nio.BufferOverflowException;
 import java.util.ArrayList;
 import java.util.List;
@@ -110,19 +111,19 @@ public class BlockInputStream extends InputStream {
             this.lastPacketSeen = packet.getLastPacketInBlock();
 
             return this.endIndex;
-        } catch(Exception e) {
-            e.printStackTrace(); //TODO remove this
+        } catch(InterruptedException e) {
+            throw new IOException("failed to read chunk packet:" + e.toString());
         }
 
         return 0;
     }
 
     @Override
-    public void close() {
+    public void close() throws IOException {
         try {
-        this.pipelineAckThread.join();
-        } catch(Exception e) {
-            e.printStackTrace(); // TODO - remove
+            this.pipelineAckThread.join();
+        } catch(InterruptedException e) {
+            throw new IOException("failed to join pipeline ack thread:" + e.toString());
         }
     }
 

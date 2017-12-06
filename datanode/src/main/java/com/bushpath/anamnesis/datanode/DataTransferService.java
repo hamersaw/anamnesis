@@ -86,9 +86,7 @@ public class DataTransferService extends Thread {
                         // recv stream block chunks
                         BlockInputStream blockIn = new BlockInputStream(in, out,
                             writeChecksum);
-                        //byte[] buffer = new byte[DataTransferProtocol.CHUNKS_PER_PACKET
-                        //    * DataTransferProtocol.CHUNK_SIZE]; // TODO - find ideal buffer size
-                        byte[] buffer = new byte[1024];
+                        byte[] buffer = new byte[1024]; // TODO - find ideal size
                         int bytesRead = 0;
 
                         ByteArrayOutputStream blockStream = new ByteArrayOutputStream();

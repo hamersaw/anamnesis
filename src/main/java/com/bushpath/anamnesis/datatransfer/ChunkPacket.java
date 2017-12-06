@@ -4,14 +4,11 @@ public class ChunkPacket {
     private boolean lastPacketInBlock;
     private long sequenceNumber;
     private byte[] buffer;
-    private long bufferLength;
 
-    public ChunkPacket(boolean lastPacketInBlock, long sequenceNumber,
-            byte[] buffer, long bufferLength) {
+    public ChunkPacket(boolean lastPacketInBlock, long sequenceNumber, byte[] buffer) {
         this.lastPacketInBlock = lastPacketInBlock;
         this.sequenceNumber = sequenceNumber;
         this.buffer = buffer;
-        this.bufferLength = bufferLength;
     }
 
     public boolean getLastPacketInBlock() {
