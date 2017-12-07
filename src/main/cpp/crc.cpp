@@ -1,5 +1,6 @@
 #include <com_bushpath_anamnesis_checksum_NativeChecksumCRC32.h>
 
+#include <netinet/in.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
@@ -15,6 +16,43 @@ using namespace std;
 
 uint32_t crc32c_sb8(uint32_t crc, const uint8_t *buf, size_t length);
 uint32_t crc32_zlib_sb8(uint32_t crc, const uint8_t *buf, size_t length);
+
+JNIEXPORT void JNICALL
+    Java_com_bushpath_anamnesis_checksum_NativeChecksumCRC32_nativeBulkCompute(
+        JNIEnv *env, jobject obj, jbyteArray j_buffer, jint offset, jint length,
+        jbyteArray j_cbuffer, jint coffset, jint clength, jint bytes_per_checksum) {
+
+    // convert arguments into usable types
+    jbyte* buffer = env->GetByteArrayElements(j_buffer, NULL);
+    uint8_t *buffer_index = (uint8_t*)buffer;
+    buffer_index += offset;
+
+    jbyte* cbuffer = env->GetByteArrayElements(j_cbuffer, NULL);
+    uint8_t *cbuffer_index = (uint8_t*)cbuffer;
+    cbuffer_index += coffset;
+
+    // iterate over buffer elements and compute crc values
+    int32_t remaining_bytes = length - offset;
+    while (remaining_bytes > 0) {
+        uint32_t crc = 0xFFFFFFFF;
+        uint32_t checksum_size =
+            (remaining_bytes < bytes_per_checksum) ? remaining_bytes : bytes_per_checksum;
+        crc = crc32c_sb8(crc, buffer_index, checksum_size);
+
+        // put checksum in cbuffer
+        (uint32_t&)*cbuffer_index = ntohl(~crc);
+        cbuffer_index += 4;
+
+        buffer_index += bytes_per_checksum;
+        remaining_bytes -= bytes_per_checksum;
+    }
+ 
+    // release arguments
+    env->ReleaseByteArrayElements(j_buffer, buffer, 0);
+    env->ReleaseByteArrayElements(j_cbuffer, cbuffer, 0);
+
+    return;
+}
 
 JNIEXPORT jint JNICALL 
     Java_com_bushpath_anamnesis_checksum_NativeChecksumCRC32_nativeCompute(

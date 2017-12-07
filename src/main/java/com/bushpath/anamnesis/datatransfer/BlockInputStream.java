@@ -114,8 +114,6 @@ public class BlockInputStream extends InputStream {
         } catch(InterruptedException e) {
             throw new IOException("failed to read chunk packet:" + e.toString());
         }
-
-        return 0;
     }
 
     @Override
@@ -178,6 +176,16 @@ public class BlockInputStream extends InputStream {
 
                         checksumIndex += checksumLength;
                     }*/
+
+                    byte[] checksums = new byte[checksumBuffer.length];
+                    checksum.bulkCompute(dataBuffer, 0, dataBuffer.length, 
+                        checksums, 0, checksums.length);
+                    for (int i=0; i<checksums.length; i++) {
+                        if (checksumBuffer[i] != checksums[i]) {
+                            System.out.println("checksums[" + i + "] does not match "
+                                + checksumBuffer[i] + ":" + checksums[i]);
+                        }
+                    }
 
                     ChunkPacket chunkPacket = new ChunkPacket(
                             packetHeaderProto.getLastPacketInBlock(),
