@@ -31,7 +31,6 @@ $bin/spark-shell
 scala> val rdd = sc.textFile("hdfs://localhost/user/hamersaw/MOCK_DATA.csv")
 
 ## TODO
-- integrate nativecrc32 bulkCompute into readBlock
 - change DatanodeService to add Datanode not it's elements
 - setup some rock solid logging
 - implement datanode heartbeat storage information (integrate into addBlock)

@@ -8,25 +8,38 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ArrayBlockingQueue;
 
 public class BlockOutputStream extends OutputStream {
+    private final static int CHUNK_PACKET_BUFFER_SIZE = 3;
+
     private DataInputStream in;
     private DataOutputStream out;
     private Checksum checksum;
+
     private byte[] buffer;
     private int index;
     private long sequenceNumber, offsetInBlock;
+    private BlockingQueue<ChunkPacket> chunkPacketQueue;
+    private BlockingQueue<Long> pipelineAckQueue;
+    private Thread chunkWriterThread;
 
     public BlockOutputStream(DataInputStream in, DataOutputStream out,
             Checksum checksum, long offsetInBlock) {
         this.in = in;
         this.out = out;
         this.checksum = checksum;
+
         this.buffer = new byte[DataTransferProtocol.CHUNK_SIZE
             * DataTransferProtocol.CHUNKS_PER_PACKET];
         this.index = 0;
         this.sequenceNumber = 0;
         this.offsetInBlock = offsetInBlock;
+        this.chunkPacketQueue = new ArrayBlockingQueue<>(CHUNK_PACKET_BUFFER_SIZE);
+        this.pipelineAckQueue = new ArrayBlockingQueue<>(CHUNK_PACKET_BUFFER_SIZE);
+        this.chunkWriterThread = new ChunkWriter();
+        chunkWriterThread.start();
     }
 
     @Override
@@ -74,46 +87,76 @@ public class BlockOutputStream extends OutputStream {
 
         // write empty last packet
         writePacket(true);
-        this.out.flush();
+
+        // wait until all chunks are written
+        try {
+            this.chunkWriterThread.join();
+        } catch(InterruptedException e) {
+            throw new IOException("failed to join pipeline ack thread:" + e.toString());
+        }
     }
 
     private void writePacket(boolean lastPacketInBlock) throws IOException {
-        // compute packet length
-        int checksumCount = 
-            (int) Math.ceil(this.index / (double) DataTransferProtocol.CHUNK_SIZE);
-        int packetLength = 4 + this.index + (checksumCount * 4);
-        this.out.writeInt(packetLength);
+        // create chunk packet
+        ChunkPacket chunkPacket = new ChunkPacket(lastPacketInBlock,
+            this.sequenceNumber, this.buffer, this.index, this.offsetInBlock);
 
-        // write packet header
-        DataTransferProtos.PacketHeaderProto packetHeaderProto =
-            DataTransferProtos.PacketHeaderProto.newBuilder()
-                .setOffsetInBlock(this.offsetInBlock)
-                .setSeqno(this.sequenceNumber)
-                .setLastPacketInBlock(lastPacketInBlock)
-                .setDataLen(this.index)
-                .setSyncBlock(false)
-                .build();
+        while (!this.chunkPacketQueue.offer(chunkPacket)) {}
 
-        this.out.writeShort((short) packetHeaderProto.getSerializedSize());
-        packetHeaderProto.writeTo(this.out);
- 
-        // write checksums
-        int checksumIndex = 0;
-        while (checksumIndex < this.index - 1) {
-            int checksumLength = Math.min(this.index - checksumIndex,
-                DataTransferProtocol.CHUNK_SIZE);
-
-            int checksum = (int) this.checksum.compute(this.buffer,
-                checksumIndex, checksumLength);
-            this.out.writeInt(checksum);
-            checksumIndex += checksumLength;
-        }
- 
-        // write data
-        this.out.write(this.buffer, 0, this.index);
-
+        // update instance variables
         this.sequenceNumber += 1;
         this.offsetInBlock += this.index;
+        this.buffer = new byte[DataTransferProtocol.CHUNK_SIZE
+            * DataTransferProtocol.CHUNKS_PER_PACKET];
         this.index = 0;
+    }
+
+    private class ChunkWriter extends Thread {
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    ChunkPacket chunkPacket = chunkPacketQueue.take();
+
+                    // compute packet length
+                    int checksumCount = (int) Math.ceil(chunkPacket.getBufferLength()
+                        / (double) DataTransferProtocol.CHUNK_SIZE);
+                    int packetLength = 4 + chunkPacket.getBufferLength()
+                        + (checksumCount * 4);
+                    out.writeInt(packetLength);
+
+                    // write packet header
+                    DataTransferProtos.PacketHeaderProto packetHeaderProto =
+                        DataTransferProtos.PacketHeaderProto.newBuilder()
+                            .setOffsetInBlock(chunkPacket.getOffsetInBlock())
+                            .setSeqno(chunkPacket.getSequenceNumber())
+                            .setLastPacketInBlock(chunkPacket.getLastPacketInBlock())
+                            .setDataLen(chunkPacket.getBufferLength())
+                            .setSyncBlock(false)
+                            .build();
+
+                    out.writeShort((short) packetHeaderProto.getSerializedSize());
+                    packetHeaderProto.writeTo(out);
+             
+                    // write checksums
+                    byte[] checksums = new byte[checksumCount * 4];
+                    checksum.bulkCompute(
+                        chunkPacket.getBuffer(), 0, chunkPacket.getBufferLength(), 
+                        checksums, 0, checksums.length);
+                    out.write(checksums, 0, checksums.length);
+             
+                    // write data
+                    out.write(chunkPacket.getBuffer(), 0, chunkPacket.getBufferLength());
+                    out.flush();
+
+                    // if last packet in block break from loop
+                    if (chunkPacket.getLastPacketInBlock()) {
+                        break;
+                    }
+                } catch(Exception e) {
+                    System.err.println("ChunkWriter failed: " + e.toString());
+                }
+            }
+        }
     }
 }

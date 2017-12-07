@@ -10,9 +10,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.InterruptedException;
-import java.nio.BufferOverflowException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -145,12 +142,6 @@ public class BlockInputStream extends InputStream {
                     lastPacketSeen = packetHeaderProto.getLastPacketInBlock();
 
                     // read checksums
-                    /*int checksumCount = (int) Math.ceil(packetHeaderProto.getDataLen()
-                        / (double) DataTransferProtocol.CHUNK_SIZE);
-                    List<Integer> checksums = new ArrayList<>();
-                    for (int i=0; i<checksumCount; i++) {
-                        checksums.add(in.readInt());
-                    }*/
                     byte[] checksumBuffer =
                         new byte[packetLength - 4 - packetHeaderProto.getDataLen()];
                     in.readFully(checksumBuffer);
@@ -159,42 +150,27 @@ public class BlockInputStream extends InputStream {
                     byte[] dataBuffer = new byte[packetHeaderProto.getDataLen()];
                     in.readFully(dataBuffer);
 
-                    // TODO - fix checksum verification
-                    /*// validate checksums
-                    int checksumIndex = 0;
-                    for (int i=0; i<checksumCount; i++) {
-                        int checksumLength = Math.min(dataBuffer.length - checksumIndex,
-                            DataTransferProtocol.CHUNK_SIZE);
-
-                        int checksumValue = (int) checksum.compute(dataBuffer,
-                            checksumIndex, checksumLength);
-
-                        if (checksumValue != checksums.get(i)) {
-                            throw new IOException("invalid chunk checksum. expecting "
-                                   + checksumValue + " and got " + checksums.get(i));
-                        }
-
-                        checksumIndex += checksumLength;
-                    }*/
-
+                    // validate checksums
                     byte[] checksums = new byte[checksumBuffer.length];
                     checksum.bulkCompute(dataBuffer, 0, dataBuffer.length, 
                         checksums, 0, checksums.length);
                     for (int i=0; i<checksums.length; i++) {
                         if (checksumBuffer[i] != checksums[i]) {
-                            System.out.println("checksums[" + i + "] does not match "
-                                + checksumBuffer[i] + ":" + checksums[i]);
+                            throw new IOException("invalid chunk checksum. expecting "
+                                   + checksumBuffer[i] + " and got " + checksums[i]);
                         }
                     }
 
                     ChunkPacket chunkPacket = new ChunkPacket(
                             packetHeaderProto.getLastPacketInBlock(),
                             packetHeaderProto.getSeqno(),
-                            dataBuffer);
+                            dataBuffer,
+                            dataBuffer.length,
+                            packetHeaderProto.getOffsetInBlock());
 
                     while(!chunkPacketQueue.offer(chunkPacket)) {}
                 } catch(Exception e) {
-                    e.printStackTrace();
+                    System.err.println("ChunkReader failed: " + e.toString());
                 } 
             }
         }
@@ -211,7 +187,7 @@ public class BlockInputStream extends InputStream {
                     sequenceNumber = pipelineAckQueue.take();
                     DataTransferProtocol.sendPipelineAck(out, sequenceNumber);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    System.err.println("PipelineAckWriter failed: " + e.toString());
                 }
             }
         }
