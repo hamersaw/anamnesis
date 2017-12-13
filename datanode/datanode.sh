@@ -1,2 +1,15 @@
 #!/bin/bash
-java -Xmx3G -cp "build/libs/anamnesis-datanode-deps.jar:build/libs/anamnesis-datanode.jar" -Djava.library.path="../build/generated" com.bushpath.anamnesis.datanode.Main $@
+BASEDIR=$(dirname $0)
+
+JAVA_OPTS="-Xmx3G -Djava.library.path=../build/generated"
+
+CLASSPATH=""
+if [ -f $BASEDIR/build/libs/anamnesis-datanode.jar ]
+then
+    CLASSPATH="$BASEDIR/build/libs/anamnesis-datanode.jar"
+else
+    echo "unable to find anamnesis-datanode.jar. please compile with 'gradle build'."
+    exit 1
+fi
+
+java -cp $CLASSPATH $JAVA_OPTS com.bushpath.anamnesis.datanode.Main $@

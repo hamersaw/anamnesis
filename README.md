@@ -5,7 +5,6 @@ An in-memory, location aware, HDFS based file system.
 ## BUILD
 #### EACH COMPONENT (CLIENT, NAMENODE, DATANODE)
 > gradle build
-> gradle depsJar
 
 ## EXECUTE
 #### NAMENODE
