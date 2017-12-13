@@ -27,8 +27,8 @@ An in-memory, location aware, HDFS based file system.
 > ./bin/hdfs dfs -copyToLocal /user/hamersaw/test.txt /tmp/test2.txt
 
 ## SPARK
-$bin/spark-shell
-scala> val rdd = sc.textFile("hdfs://localhost/user/hamersaw/MOCK_DATA.csv")
+> $bin/spark-shell
+> scala> val rdd = sc.textFile("hdfs://localhost/user/hamersaw/MOCK_DATA.csv")
 
 ## TODO
 - change DatanodeService to add Datanode not it's elements
