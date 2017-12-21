@@ -1,4 +1,4 @@
-package com.bushpath.anamnesis.rpc.packet_handler;
+package com.bushpath.anamnesis.ipc.rpc.packet_handler;
 
 import org.apache.hadoop.ipc.protobuf.RpcHeaderProtos;
 

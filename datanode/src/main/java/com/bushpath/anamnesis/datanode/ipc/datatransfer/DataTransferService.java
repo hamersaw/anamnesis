@@ -1,13 +1,13 @@
-package com.bushpath.anamnesis.datanode;
+package com.bushpath.anamnesis.datanode.ipc.datatransfer;
 
 import org.apache.hadoop.hdfs.protocol.proto.DataTransferProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
 import com.bushpath.anamnesis.datanode.storage.Storage;
-import com.bushpath.anamnesis.datatransfer.BlockInputStream;
-import com.bushpath.anamnesis.datatransfer.BlockOutputStream;
-import com.bushpath.anamnesis.datatransfer.DataTransferProtocol;
-import com.bushpath.anamnesis.datatransfer.Op;
+import com.bushpath.anamnesis.ipc.datatransfer.BlockInputStream;
+import com.bushpath.anamnesis.ipc.datatransfer.BlockOutputStream;
+import com.bushpath.anamnesis.ipc.datatransfer.DataTransferProtocol;
+import com.bushpath.anamnesis.ipc.datatransfer.Op;
 import com.bushpath.anamnesis.checksum.Checksum;
 import com.bushpath.anamnesis.checksum.ChecksumFactory;
 

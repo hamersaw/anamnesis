@@ -1,4 +1,4 @@
-package com.bushpath.anamnesis.datatransfer;
+package com.bushpath.anamnesis.ipc.datatransfer;
 
 import com.google.protobuf.Message;
 import org.apache.hadoop.hdfs.protocol.proto.DataTransferProtos;

@@ -4,11 +4,12 @@ import io.grpc.BindableService;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 
-import com.bushpath.anamnesis.rpc.RpcServer;
-import com.bushpath.anamnesis.rpc.packet_handler.IpcConnectionContextPacketHandler;
-import com.bushpath.anamnesis.rpc.packet_handler.SaslPacketHandler;
-import com.bushpath.anamnesis.namenode.rpc.ClientNamenodeService;
-import com.bushpath.anamnesis.namenode.rpc.DatanodeService;
+import com.bushpath.anamnesis.ipc.rpc.RpcServer;
+import com.bushpath.anamnesis.ipc.rpc.packet_handler.IpcConnectionContextPacketHandler;
+import com.bushpath.anamnesis.ipc.rpc.packet_handler.SaslPacketHandler;
+import com.bushpath.anamnesis.namenode.ipc.rpc.ClientNamenodeService;
+import com.bushpath.anamnesis.namenode.ipc.rpc.DatanodeService;
+import com.bushpath.anamnesis.namenode.namesystem.NameSystem;
 
 import java.io.IOException;
 import java.net.ServerSocket;

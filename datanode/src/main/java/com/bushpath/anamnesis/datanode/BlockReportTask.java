@@ -3,7 +3,7 @@ package com.bushpath.anamnesis.datanode;
 import org.apache.hadoop.hdfs.protocol.proto.DatanodeProtocolProtos;
 
 import com.bushpath.anamnesis.datanode.storage.Storage;
-import com.bushpath.anamnesis.rpc.RpcClient;
+import com.bushpath.anamnesis.ipc.rpc.RpcClient;
 
 import java.io.DataInputStream;
 import java.io.IOException;

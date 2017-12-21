@@ -1,4 +1,4 @@
-package com.bushpath.anamnesis.datatransfer;
+package com.bushpath.anamnesis.ipc.datatransfer;
 
 import org.apache.hadoop.hdfs.protocol.proto.DataTransferProtos;
 

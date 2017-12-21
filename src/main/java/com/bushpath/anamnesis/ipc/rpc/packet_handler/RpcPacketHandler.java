@@ -1,4 +1,4 @@
-package com.bushpath.anamnesis.rpc.packet_handler;
+package com.bushpath.anamnesis.ipc.rpc.packet_handler;
 
 import com.google.protobuf.Message;
 import org.apache.hadoop.ipc.protobuf.RpcHeaderProtos;
@@ -6,7 +6,7 @@ import org.apache.hadoop.ipc.protobuf.RpcHeaderProtos.RpcResponseHeaderProto.Rpc
 import org.apache.hadoop.ipc.protobuf.RpcHeaderProtos.RpcResponseHeaderProto.RpcStatusProto;
 import org.apache.hadoop.ipc.protobuf.ProtobufRpcEngineProtos;
 
-import com.bushpath.anamnesis.rpc.RpcUtil;
+import com.bushpath.anamnesis.ipc.rpc.RpcUtil;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

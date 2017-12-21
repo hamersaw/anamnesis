@@ -1,4 +1,4 @@
-package com.bushpath.anamnesis.namenode;
+package com.bushpath.anamnesis.namenode.namesystem;
 
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 

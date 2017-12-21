@@ -1,4 +1,4 @@
-package com.bushpath.anamnesis.rpc;
+package com.bushpath.anamnesis.ipc.rpc;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.CodedOutputStream;

@@ -1,4 +1,4 @@
-package com.bushpath.anamnesis.namenode;
+package com.bushpath.anamnesis.namenode.namesystem;
 
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;

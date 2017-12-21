@@ -4,9 +4,10 @@ import org.apache.hadoop.hdfs.protocol.proto.DatanodeProtocolProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsServerProtos;
 
-import com.bushpath.anamnesis.rpc.RpcClient;
-import com.bushpath.anamnesis.rpc.RpcServer;
-import com.bushpath.anamnesis.datanode.rpc.ClientDatanodeService;
+import com.bushpath.anamnesis.ipc.rpc.RpcClient;
+import com.bushpath.anamnesis.ipc.rpc.RpcServer;
+import com.bushpath.anamnesis.datanode.ipc.datatransfer.DataTransferService;
+import com.bushpath.anamnesis.datanode.ipc.rpc.ClientDatanodeService;
 import com.bushpath.anamnesis.datanode.storage.JVMStorage;
 import com.bushpath.anamnesis.datanode.storage.Storage;
 

@@ -1,4 +1,4 @@
-package com.bushpath.anamnesis.datanode.rpc;
+package com.bushpath.anamnesis.datanode.ipc.rpc;
 
 import com.google.protobuf.Message;
 import org.apache.hadoop.hdfs.protocol.proto.ClientDatanodeProtocolProtos;

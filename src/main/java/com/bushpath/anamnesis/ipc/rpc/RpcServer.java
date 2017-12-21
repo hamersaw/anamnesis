@@ -1,9 +1,9 @@
-package com.bushpath.anamnesis.rpc;
+package com.bushpath.anamnesis.ipc.rpc;
 
 import org.apache.hadoop.ipc.protobuf.RpcHeaderProtos;
 
-import com.bushpath.anamnesis.rpc.packet_handler.PacketHandler;
-import com.bushpath.anamnesis.rpc.packet_handler.RpcPacketHandler;
+import com.bushpath.anamnesis.ipc.rpc.packet_handler.PacketHandler;
+import com.bushpath.anamnesis.ipc.rpc.packet_handler.RpcPacketHandler;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
