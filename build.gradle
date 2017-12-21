@@ -30,7 +30,6 @@ protobuf{
     }
 }
 
-
 // define environment variables
 def jniClass = "com.bushpath.anamnesis.checksum.NativeChecksumCRC32"
 def nativeIncludeDir = "build/generated"

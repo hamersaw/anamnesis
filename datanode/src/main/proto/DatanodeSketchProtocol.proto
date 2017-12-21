@@ -1,0 +1,20 @@
+option java_package = "com.bushpath.anamensis.protocol.proto";
+option java_outer_classname = "DatanodeSketchProtocolProtos";
+option java_generic_services = true;
+option java_generate_equals_and_hash = true;
+package anamnesis;
+
+message SendStatsRequestProto {
+    required uint64 blockId = 1;
+    required uint64 generationStamp = 2;
+    repeated double means = 3;
+    repeated double standardDeviations = 4;
+    required uint64 recordCount = 5;
+}
+
+message SendStatsResponseProto {
+}
+
+service DatanodeSketchService {
+    rpc sendStats(SendStatsRequestProto) returns (SendStatsResponseProto);
+}

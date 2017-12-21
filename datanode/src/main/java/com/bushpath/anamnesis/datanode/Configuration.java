@@ -14,6 +14,7 @@ public class Configuration {
     public String clusterId;
     public int namespceId;
     public String poolId;
+    public String inflator;
     public String storage;
     public String storageUuid;
 
@@ -46,6 +47,7 @@ public class Configuration {
         clusterId = properties.getProperty("clusterId");
         namespceId = Integer.parseInt(properties.getProperty("namespceId"));
         poolId = properties.getProperty("poolId");
+        inflator = properties.getProperty("inflator");
         storage = properties.getProperty("storage");
         storageUuid = properties.getProperty("storageUuid");
 

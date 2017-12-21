@@ -98,13 +98,6 @@ public class RpcClient {
             RpcHeaderProtos.RpcResponseHeaderProto.parseDelimitedFrom(in);
 
         return this.in;
-        // TODO - handle response
-
-        // TODO - return the data input stream (could fix size issues)
-        //int respLength = (int) in.readByte();
-        //byte[] respBuf = new byte[respLength];
-        //in.readFully(respBuf);
-        //return respBuf;
     }
 
     private RpcHeaderProtos.RpcRequestHeaderProto buildRpcRequestHeaderProto(

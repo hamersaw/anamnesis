@@ -6,8 +6,11 @@ import org.apache.hadoop.hdfs.protocol.proto.HdfsServerProtos;
 
 import com.bushpath.anamnesis.ipc.rpc.RpcClient;
 import com.bushpath.anamnesis.ipc.rpc.RpcServer;
+import com.bushpath.anamnesis.datanode.inflator.ByteInflator;
+import com.bushpath.anamnesis.datanode.inflator.Inflator;
 import com.bushpath.anamnesis.datanode.ipc.datatransfer.DataTransferService;
 import com.bushpath.anamnesis.datanode.ipc.rpc.ClientDatanodeService;
+import com.bushpath.anamnesis.datanode.ipc.rpc.DatanodeSketchService;
 import com.bushpath.anamnesis.datanode.storage.JVMStorage;
 import com.bushpath.anamnesis.datanode.storage.Storage;
 
@@ -42,6 +45,16 @@ public class Main {
                 throw new Exception("Unknown storage type");
             }
 
+            // initialize inflator
+            Inflator inflator;
+            switch (config.inflator) {
+            case "byte":
+                inflator = new ByteInflator();
+                break;
+            default:
+                throw new Exception("Unknown inflator tyep");
+            }
+
             // initialize rpc server
             ServerSocket serverSocket = new ServerSocket(config.ipcPort);
             RpcServer rpcServer = new RpcServer(serverSocket);
@@ -49,6 +62,10 @@ public class Main {
             rpcServer.addRpcProtocol(
                 "org.apache.hadoop.hdfs.protocol.ClientDatanodeProtocol",
                 new ClientDatanodeService(storage));
+
+            rpcServer.addRpcProtocol(
+                "com.bushpath.anamnesis.protocol.DatanodeSketchProtocol",
+                new DatanodeSketchService(inflator, storage));
 
             rpcServer.start();
 
