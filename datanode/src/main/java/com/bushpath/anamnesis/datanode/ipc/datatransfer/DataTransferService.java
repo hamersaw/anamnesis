@@ -4,12 +4,14 @@ import org.apache.hadoop.hdfs.protocol.proto.DataTransferProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
 import com.bushpath.anamnesis.datanode.storage.Storage;
+import com.bushpath.anamnesis.datanode.inflator.Inflator;
 import com.bushpath.anamnesis.ipc.datatransfer.BlockInputStream;
 import com.bushpath.anamnesis.ipc.datatransfer.BlockOutputStream;
 import com.bushpath.anamnesis.ipc.datatransfer.DataTransferProtocol;
 import com.bushpath.anamnesis.ipc.datatransfer.Op;
 import com.bushpath.anamnesis.checksum.Checksum;
 import com.bushpath.anamnesis.checksum.ChecksumFactory;
+import com.bushpath.anamensis.protocol.proto.DatanodeSketchProtocolProtos;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -17,16 +19,19 @@ import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 import java.util.logging.Logger;
 
 public class DataTransferService extends Thread {
     private static final Logger logger =
         Logger.getLogger(DataTransferService.class.getName());
     private int port;
+    private Inflator inflator;
     private Storage storage;
 
-    public DataTransferService(int port, Storage storage) {
+    public DataTransferService(int port, Inflator inflator, Storage storage) {
         this.port = port;
+        this.inflator = inflator;
         this.storage = storage;
     }
 
@@ -109,6 +114,39 @@ public class DataTransferService extends Thread {
                         default:
                             break;
                         }*/
+
+                        break;
+                    case WRITE_BLOCK_STATS:
+                        // recv write block stats op
+                        DatanodeSketchProtocolProtos.WriteBlockStatsProto
+                            writeBlockStatsProto = DatanodeSketchProtocolProtos
+                                .WriteBlockStatsProto.parseDelimitedFrom(in);
+
+                        // inflate stats
+                        List<Double> meansList = writeBlockStatsProto.getMeansList();
+                        double[] means = new double[meansList.size()];
+                        for (int i=0; i<meansList.size(); i++) {
+                            means[i] = meansList.get(i).doubleValue();
+                        }
+
+                        List<Double> standardDeviationsList =
+                            writeBlockStatsProto.getStandardDeviationsList();
+                        double[] standardDeviations =
+                            new double[standardDeviationsList.size()];
+                        for (int i=0; i<standardDeviationsList.size(); i++) {
+                            standardDeviations[i] =
+                                standardDeviationsList.get(i).doubleValue();
+                        }
+
+                        byte[] block = inflator.inflate(means,
+                            standardDeviations, writeBlockStatsProto.getRecordCount());
+
+                        storage.storeBlock(writeBlockStatsProto.getBlockId(), block,
+                            writeBlockStatsProto.getGenerationStamp());
+
+                        // send op reponse
+                        DataTransferProtocol.sendBlockOpResponse(out,
+                                DataTransferProtos.Status.SUCCESS);
 
                         break;
                     case READ_BLOCK:

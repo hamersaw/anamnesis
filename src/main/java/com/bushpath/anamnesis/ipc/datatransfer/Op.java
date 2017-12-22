@@ -5,6 +5,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public enum Op {
+    WRITE_BLOCK_STATS((byte)45),
     WRITE_BLOCK((byte)80),
     READ_BLOCK((byte)81);
 
