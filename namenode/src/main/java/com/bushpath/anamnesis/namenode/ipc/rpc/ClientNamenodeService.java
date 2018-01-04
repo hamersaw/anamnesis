@@ -131,6 +131,26 @@ public class ClientNamenodeService {
             .build();
     }
 
+    public Message getDatanodeStorageReport(DataInputStream in) throws Exception {
+        ClientNamenodeProtocolProtos.GetDatanodeStorageReportRequestProto req =
+            ClientNamenodeProtocolProtos.GetDatanodeStorageReportRequestProto
+                .parseDelimitedFrom(in);
+
+        // iterate over datanodes
+        List<ClientNamenodeProtocolProtos.DatanodeStorageReportProto>
+            datanodeStorageReports = new ArrayList<>();
+
+        for (Datanode datanode : this.datanodeManager.getDatanodes()) {
+            datanodeStorageReports.add(datanode.toDatanodeStorageReportProto());
+        }
+
+        // return datanode storage reports
+        return ClientNamenodeProtocolProtos.GetDatanodeStorageReportResponseProto
+            .newBuilder()
+                .addAllDatanodeStorageReports(datanodeStorageReports)
+                .build();
+    }
+
     public Message getFileInfo(DataInputStream in) throws Exception {
         ClientNamenodeProtocolProtos.GetFileInfoRequestProto req =
             ClientNamenodeProtocolProtos.GetFileInfoRequestProto.parseDelimitedFrom(in);

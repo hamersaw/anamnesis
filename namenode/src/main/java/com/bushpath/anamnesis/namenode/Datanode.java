@@ -1,9 +1,12 @@
 package com.bushpath.anamnesis.namenode;
 
+import org.apache.hadoop.hdfs.protocol.proto.ClientNamenodeProtocolProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 public class Datanode {
     private String ipAddr;
@@ -88,6 +91,33 @@ public class Datanode {
             .setId(this.toDatanodeIdProto())
             .setLastUpdate(this.lastUpdate)
             .setLocation("/") // TODO - set to correct location
+            .build();
+    }
+
+    public ClientNamenodeProtocolProtos.DatanodeStorageReportProto
+            toDatanodeStorageReportProto() {
+        List<HdfsProtos.StorageReportProto> storageReports = new ArrayList<>();
+        for (Map.Entry<String, Storage> entry : this.storages.entrySet()) {
+            HdfsProtos.DatanodeStorageProto datanodeStorageProto =
+                HdfsProtos.DatanodeStorageProto.newBuilder()
+                    .setStorageUuid(entry.getKey())
+                    .build();
+
+            Storage storage = entry.getValue();
+            HdfsProtos.StorageReportProto storageReport =
+                HdfsProtos.StorageReportProto.newBuilder()
+                    .setStorageUuid(entry.getKey())
+                    .setCapacity(storage.capacity)
+                    .setRemaining(storage.remaining)
+                    .setStorage(datanodeStorageProto)
+                    .build();
+
+            storageReports.add(storageReport);
+        }
+
+        return ClientNamenodeProtocolProtos.DatanodeStorageReportProto.newBuilder()
+            .setDatanodeInfo(this.toDatanodeInfoProto())
+            .addAllStorageReports(storageReports)
             .build();
     }
 

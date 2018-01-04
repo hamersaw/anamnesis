@@ -9,6 +9,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,6 +116,10 @@ public class DatanodeManager {
 
     public Datanode get(String datanodeUuid) {
         return this.datanodes.get(datanodeUuid);
+    }
+
+    public Collection<Datanode> getDatanodes() {
+        return this.datanodes.values();
     }
 
     public Datanode getRandom() {

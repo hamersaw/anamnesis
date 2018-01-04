@@ -32,7 +32,6 @@ An in-memory, location aware, HDFS based file system.
 ## TODO
 - change DatanodeService to add Datanode not it's elements
 - setup some rock solid logging
-- let client get storage information from datanodes
 - perhaps dataset generate shouldn't be based on gaussian curve
     - find which bucket the sketch fits into and base off portion of curve?
     - limitation of sketches? a gaussian distribution has to be "good enough" because we only have mean, std
