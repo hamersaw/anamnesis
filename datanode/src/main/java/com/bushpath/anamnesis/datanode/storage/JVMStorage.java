@@ -58,6 +58,18 @@ public class JVMStorage extends Storage {
             .build();
     }
 
+    @Override
+    public HdfsProtos.StorageReportProto toStorageReportProto() {
+        Runtime runtime = Runtime.getRuntime();
+
+        return HdfsProtos.StorageReportProto.newBuilder()
+            .setStorageUuid(this.storageUuid)
+            .setCapacity(runtime.maxMemory())
+            .setRemaining(runtime.freeMemory())
+            .setStorage(this.toDatanodeStorageProto())
+            .build();
+    }
+
     private class Block {
         long blockId;
         byte[] bytes;

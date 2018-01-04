@@ -98,7 +98,7 @@ public class Main {
             long heartbeatIntervalMs = config.heartbeatInterval * 1000;
             timer.scheduleAtFixedRate(new BlockReportTask(config, storage),
                 blockReportIntervalMs, blockReportIntervalMs);
-            timer.scheduleAtFixedRate(new HeartbeatTask(config),
+            timer.scheduleAtFixedRate(new HeartbeatTask(config, storage),
                 heartbeatIntervalMs, heartbeatIntervalMs);
 
             // wait until rpc server shuts down

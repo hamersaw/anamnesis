@@ -25,4 +25,5 @@ public abstract class Storage {
 
     public abstract DatanodeProtocolProtos.StorageBlockReportProto 
         toStorageBlockReportProto();
+    public abstract HdfsProtos.StorageReportProto toStorageReportProto();
 }

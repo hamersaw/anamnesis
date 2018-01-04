@@ -2,6 +2,9 @@ package com.bushpath.anamnesis.namenode;
 
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Datanode {
     private String ipAddr;
     private String hostname;
@@ -10,6 +13,7 @@ public class Datanode {
     private int infoPort;
     private int ipcPort;
     private long lastUpdate;
+    private Map<String,Storage> storages;
 
     public Datanode(String ipAddr, String hostname, String datanodeUuid, 
             int xferPort, int infoPort, int ipcPort, long lastUpdate) {
@@ -20,6 +24,7 @@ public class Datanode {
         this.infoPort = infoPort;
         this.ipcPort = ipcPort;
         this.lastUpdate = lastUpdate;
+        this.storages = new HashMap<>();
     }
 
     public String getIpAddr() {
@@ -54,6 +59,19 @@ public class Datanode {
         this.lastUpdate = lastUpdate;
     }
 
+    public void updateStorage(String storageUuid, long capacity, long remaining) {
+        if (this.storages.containsKey(storageUuid)) {
+            Storage storage = this.storages.get(storageUuid);
+            if (storage.capacity != capacity) {
+                storage.capacity = capacity;
+            }
+
+            storage.remaining = remaining;
+        } else {
+            this.storages.put(storageUuid, new Storage(capacity, remaining));
+        }
+    }
+
     public HdfsProtos.DatanodeIDProto toDatanodeIdProto() {
         return HdfsProtos.DatanodeIDProto.newBuilder()
             .setIpAddr(this.ipAddr)
@@ -71,5 +89,15 @@ public class Datanode {
             .setLastUpdate(this.lastUpdate)
             .setLocation("/") // TODO - set to correct location
             .build();
+    }
+
+    private class Storage {
+        public long capacity;
+        public long remaining;
+
+        public Storage(long capacity, long remaining) {
+            this.capacity = capacity;
+            this.remaining = remaining;
+        }
     }
 }

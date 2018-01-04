@@ -3,6 +3,7 @@ package com.bushpath.anamnesis.datanode;
 import org.apache.hadoop.hdfs.protocol.proto.DatanodeProtocolProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
+import com.bushpath.anamnesis.datanode.storage.Storage;
 import com.bushpath.anamnesis.ipc.rpc.RpcClient;
 
 import java.io.DataInputStream;
@@ -13,25 +14,29 @@ import java.util.TimerTask;
 
 public class HeartbeatTask extends TimerTask {
     private Configuration config;
+    private Storage storage;
 
-    public HeartbeatTask(Configuration config) {
+    public HeartbeatTask(Configuration config, Storage storage) {
         this.config = config;
+        this.storage = storage;
     }
 
     @Override
     public void run() {
         RpcClient rpcClient = null;
         try {
+            // construct storage reports
             List<HdfsProtos.StorageReportProto> reports = new ArrayList<>();
+            reports.add(this.storage.toStorageReportProto());
 
-            // TODO - construct storage reports
-            
+            // build request protobufs
             DatanodeProtocolProtos.HeartbeatRequestProto req = 
                 DatanodeProtocolProtos.HeartbeatRequestProto.newBuilder()
                     .setRegistration(Main.buildDatanodeRegistrationProto(this.config))
                     .addAllReports(reports)
                     .build();
 
+            // send request
             rpcClient = new RpcClient(config.namenodeIpAddr,
                 config.namenodePort, "datanode",
                 "org.apache.hadoop.hdfs.server.protocol.DatanodeProtocol");

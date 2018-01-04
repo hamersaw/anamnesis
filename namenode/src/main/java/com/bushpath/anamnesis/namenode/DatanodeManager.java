@@ -67,7 +67,7 @@ public class DatanodeManager {
                     .withDescription("unable to register empty datanode uuid"));
             }
  
-            // enxure datanode exists
+            // ensure datanode exists
             if (!this.datanodes.containsKey(datanodeUuid)) {
                 throw new StatusRuntimeException(Status.NOT_FOUND
                     .withDescription("'" + datanodeUuid + "' does not exist"));
@@ -76,6 +76,34 @@ public class DatanodeManager {
             // update datanode
             Datanode datanode = this.datanodes.get(datanodeUuid);
             datanode.setLastUpdate(lastUpdate);
+        } finally {
+            this.lock.writeLock().unlock();
+        }
+    }
+
+    public void updateDatanodeStorage(String datanodeUuid, String storageUuid,
+            long capacity, long remaining) throws Exception {
+        this.lock.writeLock().lock();
+        try {
+            logger.info("updating storage " + datanodeUuid + ":" + storageUuid + " " +
+                    remaining + "/" + capacity);
+
+            // ensure datanodeuuid is not empty
+            if (datanodeUuid.isEmpty()) {
+                throw new StatusRuntimeException(Status.INVALID_ARGUMENT
+                    .withDescription("unable to update datanode storage " +
+                        "with empty datanode uuid"));
+            }
+ 
+            // ensure datanode exists
+            if (!this.datanodes.containsKey(datanodeUuid)) {
+                throw new StatusRuntimeException(Status.NOT_FOUND
+                    .withDescription("'" + datanodeUuid + "' does not exist"));
+            }
+
+            // update datanode
+            Datanode datanode = this.datanodes.get(datanodeUuid);
+            datanode.updateStorage(storageUuid, capacity, remaining);
         } finally {
             this.lock.writeLock().unlock();
         }

@@ -55,6 +55,15 @@ public class DatanodeService {
         this.datanodeManager.updateDatanode(datanodeID.getDatanodeUuid(),
             System.currentTimeMillis());
 
+        // update datanode storages
+        for (HdfsProtos.StorageReportProto storageReport : req.getReportsList()) {
+            this.datanodeManager.updateDatanodeStorage(
+                datanodeID.getDatanodeUuid(),
+                storageReport.getStorage().getStorageUuid(),
+                storageReport.getCapacity(),
+                storageReport.getRemaining());
+        }
+
         // send response
         List<DatanodeProtocolProtos.DatanodeCommandProto> cmds = new ArrayList<>();
 
