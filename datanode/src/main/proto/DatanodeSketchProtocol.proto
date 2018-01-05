@@ -7,7 +7,11 @@ package anamnesis;
 message WriteBlockStatsProto {
     required uint64 blockId = 1;
     required uint64 generationStamp = 2;
-    repeated double means = 3;
-    repeated double standardDeviations = 4;
-    required uint64 recordCount = 5;
+    repeated StatisticsProto statistics = 3;
+}
+
+message StatisticsProto {
+    repeated double means = 1;
+    repeated double standardDeviations = 2;
+    required uint64 recordCount = 3;
 }
