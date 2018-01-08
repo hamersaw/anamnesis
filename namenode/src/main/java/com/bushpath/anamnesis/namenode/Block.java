@@ -4,24 +4,30 @@ import com.google.protobuf.ByteString;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 import org.apache.hadoop.security.proto.SecurityProtos;
 
+import com.bushpath.anamnesis.namenode.namesystem.NSFile;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class Block {
-    private long blockId, generationStamp, offset;
-
+    private long blockId;
+    private long generationStamp;
+    private NSFile file;
     private long length;
+    private long offset;
+
     private List<Datanode> locs;
     private List<Boolean> isCached;
     private List<HdfsProtos.StorageTypeProto> storageTypes;
     private List<String> storageIds;
 
-    public Block(long blockId, long generationStamp, long offset) {
+    public Block(long blockId, long generationStamp, NSFile file) {
         this.blockId = blockId;
         this.generationStamp = generationStamp;
-        this.offset = offset;
+        this.file = file;
 
         this.length = 0;
+        this.offset = 0;
         this.locs = new ArrayList<>();
         this.isCached = new ArrayList<>();
         this.storageTypes = new ArrayList<>();
@@ -36,16 +42,24 @@ public class Block {
         return this.generationStamp;
     }
 
-    public long getOffset() {
-        return this.offset;
+    public NSFile getFile() {
+        return this.file;
+    }
+
+    public void setLength(long length) {
+        this.length = length;
     }
 
     public long getLength() {
         return this.length;
     }
 
-    public void setLength(long length) {
-        this.length = length;
+    public void setOffset(long offset) {
+        this.offset = offset;
+    }
+
+    public long getOffset() {
+        return this.offset;
     }
 
     public void addLoc(Datanode loc, boolean isCached,

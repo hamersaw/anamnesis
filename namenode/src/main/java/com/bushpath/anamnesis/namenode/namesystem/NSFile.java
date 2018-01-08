@@ -66,6 +66,14 @@ public class NSFile extends NSItem {
         this.complete = true;
     }
 
+    public void updateBlockOffsets() {
+        long offset = 0;
+        for (Block block : this.blocks) {
+            block.setOffset(offset);
+            offset += block.getLength();
+        }
+    }
+
     public HdfsProtos.LocatedBlocksProto toLocatedBlocksProto() {
         List<HdfsProtos.LocatedBlockProto> blocks = new ArrayList<>();
         for (Block block: this.blocks) {

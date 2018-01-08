@@ -99,6 +99,7 @@ public class DatanodeService {
                 // update block
                 Block block = blockManager.get(blockList.get(i));
                 block.setLength(blockList.get(i + 1));
+                block.getFile().updateBlockOffsets();
 
                 // add block location
                 HdfsProtos.DatanodeStorageProto datanodeStorage =
@@ -108,7 +109,6 @@ public class DatanodeService {
                 block.addLoc(datanode, true, datanodeStorage.getStorageType(),
                     datanodeStorage.getStorageUuid());
             }
-
         }
         
         return DatanodeProtocolProtos.BlockReportResponseProto.newBuilder()

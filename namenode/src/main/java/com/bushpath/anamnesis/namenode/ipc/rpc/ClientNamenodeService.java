@@ -64,8 +64,10 @@ public class ClientNamenodeService {
 
         // create block
         Random random = new Random();
-        Block block = new Block(random.nextLong(), System.currentTimeMillis(),
-            file.getBlockSize() * file.getBlockCount());
+        Block block = new Block(random.nextLong(), System.currentTimeMillis(), file);
+        // TODO - remove
+        //Block block = new Block(random.nextLong(), System.currentTimeMillis(),
+        //    file.getBlockSize() * file.getBlockCount());
         file.addBlock(block);
         this.blockManager.add(block);
 
