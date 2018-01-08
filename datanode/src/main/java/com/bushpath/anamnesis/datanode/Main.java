@@ -7,6 +7,7 @@ import org.apache.hadoop.hdfs.protocol.proto.HdfsServerProtos;
 import com.bushpath.anamnesis.ipc.rpc.RpcClient;
 import com.bushpath.anamnesis.ipc.rpc.RpcServer;
 import com.bushpath.anamnesis.datanode.inflator.ByteInflator;
+import com.bushpath.anamnesis.datanode.inflator.CSVInflator;
 import com.bushpath.anamnesis.datanode.inflator.Inflator;
 import com.bushpath.anamnesis.datanode.ipc.datatransfer.DataTransferService;
 import com.bushpath.anamnesis.datanode.ipc.rpc.ClientDatanodeService;
@@ -49,6 +50,9 @@ public class Main {
             switch (config.inflator) {
             case "byte":
                 inflator = new ByteInflator();
+                break;
+            case "csv":
+                inflator = new CSVInflator();
                 break;
             default:
                 throw new Exception("Unknown inflator type");
