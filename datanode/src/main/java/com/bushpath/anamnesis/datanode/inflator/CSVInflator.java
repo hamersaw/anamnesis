@@ -15,11 +15,16 @@ public class CSVInflator extends Inflator {
 
         // generating random records
         for (int i=0; i<recordCount; i++) {
-            StringBuilder stringBuilder = new StringBuilder(i != 0 ? "\n" : "");
+            StringBuilder stringBuilder = new StringBuilder();
             for (int j=0; j<means.length; j++) {
-                stringBuilder.append((j != 0 ? "," : "")
-                    + (means[j] + (standardDeviations[j] * random.nextGaussian())));
+                double value = means[j];
+                if (!Double.isNaN(standardDeviations[j])) {
+                    value += standardDeviations[j] * random.nextGaussian();
+                }
+
+                stringBuilder.append((j != 0 ? "," : "") + value);
             }
+            stringBuilder.append("\n");
 
             out.write(stringBuilder.toString().getBytes());
         }

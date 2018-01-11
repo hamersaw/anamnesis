@@ -16,8 +16,12 @@ public class ByteInflator extends Inflator {
         // generating random records
         for (int i=0; i<recordCount; i++) {
             for (int j=0; j<means.length; j++) {
-                out.writeDouble(means[j]
-                    + (standardDeviations[j] * random.nextGaussian()));
+                double value = means[j];
+                if (!Double.isNaN(standardDeviations[j])) {
+                    value += standardDeviations[j] * random.nextGaussian();
+                }
+
+                out.writeDouble(value);
             }
         }
 
