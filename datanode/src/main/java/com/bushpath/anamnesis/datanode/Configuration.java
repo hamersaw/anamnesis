@@ -17,6 +17,7 @@ public class Configuration {
     public String inflator;
     public String storage;
     public String storageUuid;
+    public boolean justInTimeInflation;
 
     public String namenodeIpAddr;
     public int namenodePort;
@@ -50,6 +51,8 @@ public class Configuration {
         inflator = properties.getProperty("inflator");
         storage = properties.getProperty("storage");
         storageUuid = properties.getProperty("storageUuid");
+        justInTimeInflation =
+            Boolean.parseBoolean(properties.getProperty("justInTimeInflation"));
 
         namenodeIpAddr = properties.getProperty("namenodeIpAddr");
         namenodePort = Integer.parseInt(properties.getProperty("namenodePort"));

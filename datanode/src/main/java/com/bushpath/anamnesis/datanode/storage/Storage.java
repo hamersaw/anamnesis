@@ -3,6 +3,10 @@ package com.bushpath.anamnesis.datanode.storage;
 import org.apache.hadoop.hdfs.protocol.proto.DatanodeProtocolProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
+import com.bushpath.anamnesis.datanode.inflator.Inflator;
+
+import java.io.IOException;
+
 public abstract class Storage {
     protected String storageUuid;
     protected HdfsProtos.StorageTypeProto storageType;
@@ -12,9 +16,11 @@ public abstract class Storage {
         this.storageType = storageType;
     }
 
-    public abstract void storeBlock(long blockId, byte[] block, long generationStamp);
-    public abstract byte[] getBlock(long blockId);
-    public abstract long getBlockLength(long blockId);
+    public abstract void storeBlock(long blockId, long generationStamp, double[][] means,
+        double[][] standardDeviations, long[] recordCounts, Inflator inflator);
+    public abstract void storeBlock(long blockId, long generationStamp, byte[] bytes);
+    public abstract byte[] getBlock(long blockId) throws IOException;
+    public abstract long getBlockLength(long blockId) throws IOException;
 
     public HdfsProtos.DatanodeStorageProto toDatanodeStorageProto() {
         return HdfsProtos.DatanodeStorageProto.newBuilder()

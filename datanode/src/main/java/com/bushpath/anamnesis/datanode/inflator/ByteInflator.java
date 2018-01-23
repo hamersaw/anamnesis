@@ -30,4 +30,11 @@ public class ByteInflator extends Inflator {
         byteOut.close();
         return byteOut.toByteArray();
     }
+
+    @Override
+    public long getLength(double[] means, double[] standardDeviations,
+            long recordCount) {
+
+        return recordCount * means.length * 8;
+    }
 }

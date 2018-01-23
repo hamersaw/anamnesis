@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.util.Random;
 
 public class CSVInflator extends Inflator {
+    public static final int LENGTH = 10;
+
     @Override
     public byte[] inflate(double[] means, double[] standardDeviations,
             long recordCount) throws IOException {
@@ -22,7 +24,17 @@ public class CSVInflator extends Inflator {
                     value += standardDeviations[j] * random.nextGaussian();
                 }
 
-                stringBuilder.append((j != 0 ? "," : "") + value);
+                // TODO - optimize this
+                String valueString = Double.toString(value);
+                int stringLength = valueString.length();
+                if (stringLength > LENGTH) {    
+                    valueString = valueString.substring(0, LENGTH);
+                } else if (stringLength < LENGTH) {
+                    valueString = String.format("%1$-" + LENGTH + "s", valueString)
+                        .replace(' ', '0'); 
+                }
+
+                stringBuilder.append((j != 0 ? "\t" : "") + valueString);
             }
             stringBuilder.append("\n");
 
@@ -33,5 +45,13 @@ public class CSVInflator extends Inflator {
         out.close();
         byteOut.close();
         return byteOut.toByteArray();
+    }
+
+    @Override
+    public long getLength(double[] means, double[] standardDeviations,
+            long recordCount) {
+
+        // (LENGTH) characters per value + (means.length - 1) tabs
+        return recordCount * ((means.length * LENGTH) + (means.length - 1));
     }
 }

@@ -30,11 +30,10 @@ An in-memory, location aware, HDFS based file system.
 > scala> val rdd = sc.textFile("hdfs://localhost/user/hamersaw/MOCK_DATA.csv")
 
 ## TODO
+- optimize CSVInflator - too many string operations
 - change DatanodeService to add Datanode not it's elements
 - setup some rock solid logging
-- perhaps dataset generate shouldn't be based on gaussian curve
-    - find which bucket the sketch fits into and base off portion of curve?
-    - limitation of sketches? a gaussian distribution has to be "good enough" because we only have mean, std
+- evict memory-resident data based on usage patterns
 #### RPC SERVER
 - rpc response error handling (fix up)
 #### CLIENT

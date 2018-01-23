@@ -6,9 +6,6 @@ import org.apache.hadoop.hdfs.protocol.proto.HdfsServerProtos;
 
 import com.bushpath.anamnesis.ipc.rpc.RpcClient;
 import com.bushpath.anamnesis.ipc.rpc.RpcServer;
-import com.bushpath.anamnesis.datanode.inflator.ByteInflator;
-import com.bushpath.anamnesis.datanode.inflator.CSVInflator;
-import com.bushpath.anamnesis.datanode.inflator.Inflator;
 import com.bushpath.anamnesis.datanode.ipc.datatransfer.DataTransferService;
 import com.bushpath.anamnesis.datanode.ipc.rpc.ClientDatanodeService;
 import com.bushpath.anamnesis.datanode.storage.JVMStorage;
@@ -45,19 +42,6 @@ public class Main {
                 throw new Exception("Unknown storage type");
             }
 
-            // initialize inflator
-            Inflator inflator;
-            switch (config.inflator) {
-            case "byte":
-                inflator = new ByteInflator();
-                break;
-            case "csv":
-                inflator = new CSVInflator();
-                break;
-            default:
-                throw new Exception("Unknown inflator type");
-            }
-
             // initialize rpc server
             ServerSocket serverSocket = new ServerSocket(config.ipcPort);
             RpcServer rpcServer = new RpcServer(serverSocket);
@@ -69,7 +53,7 @@ public class Main {
             rpcServer.start();
 
             // start data transfer service
-            new Thread(new DataTransferService(config.xferPort, inflator, storage))
+            new Thread(new DataTransferService(config.xferPort, storage))
                 .start();
 
             // send registration

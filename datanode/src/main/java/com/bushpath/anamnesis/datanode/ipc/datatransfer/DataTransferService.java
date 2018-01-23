@@ -3,8 +3,10 @@ package com.bushpath.anamnesis.datanode.ipc.datatransfer;
 import org.apache.hadoop.hdfs.protocol.proto.DataTransferProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
-import com.bushpath.anamnesis.datanode.storage.Storage;
+import com.bushpath.anamnesis.datanode.inflator.ByteInflator;
+import com.bushpath.anamnesis.datanode.inflator.CSVInflator;
 import com.bushpath.anamnesis.datanode.inflator.Inflator;
+import com.bushpath.anamnesis.datanode.storage.Storage;
 import com.bushpath.anamnesis.ipc.datatransfer.BlockInputStream;
 import com.bushpath.anamnesis.ipc.datatransfer.BlockOutputStream;
 import com.bushpath.anamnesis.ipc.datatransfer.DataTransferProtocol;
@@ -26,12 +28,10 @@ public class DataTransferService extends Thread {
     private static final Logger logger =
         Logger.getLogger(DataTransferService.class.getName());
     private int port;
-    private Inflator inflator;
     private Storage storage;
 
-    public DataTransferService(int port, Inflator inflator, Storage storage) {
+    public DataTransferService(int port, Storage storage) {
         this.port = port;
-        this.inflator = inflator;
         this.storage = storage;
     }
 
@@ -102,8 +102,8 @@ public class DataTransferService extends Thread {
 
                         // store block in storage
                         storage.storeBlock(extendedBlockProto.getBlockId(),
-                            blockStream.toByteArray(),
-                            extendedBlockProto.getGenerationStamp());
+                            extendedBlockProto.getGenerationStamp(),
+                            blockStream.toByteArray());
 
                         blockIn.close();
 
@@ -122,7 +122,52 @@ public class DataTransferService extends Thread {
                             writeBlockStatsProto = DatanodeSketchProtocolProtos
                                 .WriteBlockStatsProto.parseDelimitedFrom(in);
 
-                        ByteArrayOutputStream statisticsBlockOut =
+                        // initialize inflator
+                        Inflator inflator = null;
+                        switch(writeBlockStatsProto.getInflationType()) {
+                        case BYTE:
+                            inflator = new ByteInflator();
+                            break;
+                        case CSV:
+                            inflator = new CSVInflator();
+                            break;
+                        }
+
+                        // convert block stats
+                        int statsCount = writeBlockStatsProto.getStatisticsCount();
+                        double[][] means = new double[statsCount][];
+                        double[][] standardDeviations = new double[statsCount][];
+                        long[] recordCounts = new long[statsCount];
+                            
+                        int index = 0;
+                        for (DatanodeSketchProtocolProtos.StatisticsProto statisticsProto
+                                : writeBlockStatsProto.getStatisticsList()) {
+
+                            List<Double> meansList = statisticsProto.getMeansList();
+                            double[] meansArray = new double[meansList.size()];
+                            for (int i=0; i<meansList.size(); i++) {
+                                meansArray[i] = meansList.get(i).doubleValue();
+                            }
+
+                            List<Double> standardDeviationsList =
+                                statisticsProto.getStandardDeviationsList();
+                            double[] standardDeviationsArray =
+                                new double[standardDeviationsList.size()];
+                            for (int i=0; i<standardDeviationsList.size(); i++) {
+                                standardDeviationsArray[i] =
+                                    standardDeviationsList.get(i).doubleValue();
+                            }
+
+                            means[index] = meansArray;
+                            standardDeviations[index] = standardDeviationsArray;
+                            recordCounts[index] = statisticsProto.getRecordCount();
+                            index += 1;
+                        }
+
+                        storage.storeBlock(writeBlockStatsProto.getBlockId(),
+                                writeBlockStatsProto.getGenerationStamp(),
+                                means, standardDeviations, recordCounts, inflator);
+                        /*ByteArrayOutputStream statisticsBlockOut =
                             new ByteArrayOutputStream();
                         for (DatanodeSketchProtocolProtos.StatisticsProto statisticsProto
                                 : writeBlockStatsProto.getStatisticsList()) {
@@ -150,8 +195,8 @@ public class DataTransferService extends Thread {
                         }
 
                         byte[] block = statisticsBlockOut.toByteArray();
-                        storage.storeBlock(writeBlockStatsProto.getBlockId(), block,
-                            writeBlockStatsProto.getGenerationStamp());
+                        storage.storeBlock(writeBlockStatsProto.getBlockId(),
+                            writeBlockStatsProto.getGenerationStamp(), block);*/
 
                         // send op reponse
                         DataTransferProtocol.sendBlockOpResponse(out,
