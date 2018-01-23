@@ -51,7 +51,9 @@ public class CSVInflator extends Inflator {
     public long getLength(double[] means, double[] standardDeviations,
             long recordCount) {
 
-        // (LENGTH) characters per value + (means.length - 1) tabs
-        return recordCount * ((means.length * LENGTH) + (means.length - 1));
+        // recordCount *                total number of records
+        // ((means.length * LENGTH)     number of characters for each value
+        // + means.length)              tab an newline for each value
+        return recordCount * ((means.length * LENGTH) + means.length);
     }
 }
