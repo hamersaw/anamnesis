@@ -17,8 +17,8 @@ public class JVMStorage extends Storage {
     private static final Logger logger = Logger.getLogger(JVMStorage.class.getName());
     private Map<Long, Block> blocks;
 
-    public JVMStorage(String storageUuid) {
-        super(storageUuid, HdfsProtos.StorageTypeProto.RAM_DISK);
+    public JVMStorage(String storageUuid, boolean justInTimeInflation) {
+        super(storageUuid, HdfsProtos.StorageTypeProto.RAM_DISK, justInTimeInflation);
 
         this.blocks = new HashMap<>();
     }
@@ -32,10 +32,16 @@ public class JVMStorage extends Storage {
 
     @Override
     public void storeBlock(long blockId, long generationStamp, double[][] means,
-            double[][] standardDeviations, long[] recordCounts, Inflator inflator) {
+            double[][] standardDeviations, long[] recordCounts, Inflator inflator)
+            throws IOException {
         logger.info("storing block '" + blockId + "'");
         Block block = new Block(blockId, generationStamp, means,
             standardDeviations, recordCounts, inflator);
+
+        // if justInTimeInflation is disabled inflate
+        if (!this.justInTimeInflation) {
+            block.inflate();
+        }
 
         this.blocks.put(blockId, block);
     }
@@ -122,18 +128,7 @@ public class JVMStorage extends Storage {
         public byte[] getBytes() throws IOException {
             // if not memory resident -> compute
             if (this.bytes == null) {
-                // compute bytes
-                ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
-
-                for (int i=0; i<this.recordCounts.length; i++) {
-                    byte[] bytes = this.inflator.inflate(this.means[i],
-                        this.standardDeviations[i], this.recordCounts[i]);
-
-                    bytesOut.write(bytes);
-                }
-
-                this.bytes = bytesOut.toByteArray();
-                bytesOut.close();
+                this.inflate();
             }
  
             return this.bytes;
@@ -153,6 +148,21 @@ public class JVMStorage extends Storage {
             }
 
             return length;
+        }
+
+        private void inflate() throws IOException {
+            // compute bytes
+            ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
+
+            for (int i=0; i<this.recordCounts.length; i++) {
+                byte[] bytes = this.inflator.inflate(this.means[i],
+                    this.standardDeviations[i], this.recordCounts[i]);
+
+                bytesOut.write(bytes);
+            }
+
+            this.bytes = bytesOut.toByteArray();
+            bytesOut.close();
         }
     }
 }

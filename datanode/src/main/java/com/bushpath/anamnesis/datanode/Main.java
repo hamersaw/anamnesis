@@ -36,7 +36,7 @@ public class Main {
             Storage storage;
             switch (config.storage) {
             case "jvm":
-                storage = new JVMStorage(config.storageUuid);
+                storage = new JVMStorage(config.storageUuid, config.justInTimeInflation);
                 break;
             default:
                 throw new Exception("Unknown storage type");

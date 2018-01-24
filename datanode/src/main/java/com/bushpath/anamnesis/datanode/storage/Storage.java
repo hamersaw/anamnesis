@@ -10,15 +10,19 @@ import java.io.IOException;
 public abstract class Storage {
     protected String storageUuid;
     protected HdfsProtos.StorageTypeProto storageType;
+    protected boolean justInTimeInflation;
 
-    public Storage(String storageUuid, HdfsProtos.StorageTypeProto storageType) {
+    public Storage(String storageUuid, HdfsProtos.StorageTypeProto storageType,
+            boolean justInTimeInflation) {
         this.storageUuid = storageUuid;
         this.storageType = storageType;
+        this.justInTimeInflation = justInTimeInflation;
     }
 
-    public abstract void storeBlock(long blockId, long generationStamp, double[][] means,
-        double[][] standardDeviations, long[] recordCounts, Inflator inflator);
     public abstract void storeBlock(long blockId, long generationStamp, byte[] bytes);
+    public abstract void storeBlock(long blockId, long generationStamp, double[][] means,
+        double[][] standardDeviations, long[] recordCounts, Inflator inflator)
+        throws IOException;
     public abstract byte[] getBlock(long blockId) throws IOException;
     public abstract long getBlockLength(long blockId) throws IOException;
 

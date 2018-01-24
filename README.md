@@ -30,10 +30,10 @@ An in-memory, location aware, HDFS based file system.
 > scala> val rdd = sc.textFile("hdfs://localhost/user/hamersaw/MOCK_DATA.csv")
 
 ## TODO
+- **evict memory-resident data based on usage patterns**
 - optimize CSVInflator - too many string operations
 - change DatanodeService to add Datanode not it's elements
 - setup some rock solid logging
-- evict memory-resident data based on usage patterns
 #### RPC SERVER
 - rpc response error handling (fix up)
 #### CLIENT
