@@ -7,6 +7,7 @@ import com.bushpath.anamnesis.datanode.inflator.Inflator;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,25 +24,17 @@ public class JVMStorage extends Storage {
     }
 
     @Override
-    public void storeBlock(long blockId, long generationStamp, byte[] bytes) {
-        logger.info("storing block '" + blockId + "' with length " + bytes.length);
-        Block block = new RawBlock(blockId, generationStamp, bytes);
-        this.blocks.put(blockId, block);
+    public void storeBlock(Block block) throws IOException {
+        // if not just in time inflation -> inflate statistics block
+        if (block instanceof StatisticsBlock && !this.justInTimeInflation) {
+            ((StatisticsBlock) block).inflate();
+        }
+
+        this.blocks.put(block.getBlockId(), block);
     }
 
     @Override
-    public void storeBlock(long blockId, long generationStamp, double[][] means,
-            double[][] standardDeviations, long[] recordCounts, Inflator inflator)
-            throws IOException {
-        logger.info("storing block '" + blockId + "'");
-        Block block = new StatisticsBlock(blockId, generationStamp, means,
-            standardDeviations, recordCounts, inflator, this.justInTimeInflation);
-
-        this.blocks.put(blockId, block);
-    }
-
-    @Override
-    public byte[] getBlock(long blockId) throws IOException {
+    public byte[] getBlockBytes(long blockId) throws IOException {
         if (!this.blocks.containsKey(blockId)) {
             throw new IOException("can not get block, block '"
                 + blockId + "' does not exist");
@@ -58,6 +51,11 @@ public class JVMStorage extends Storage {
         }
 
         return this.blocks.get(blockId).getLength();
+    }
+
+    @Override
+    public Collection<Block> getBlocks() {
+        return this.blocks.values();
     }
 
     @Override

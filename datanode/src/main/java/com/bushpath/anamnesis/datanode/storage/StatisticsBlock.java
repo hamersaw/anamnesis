@@ -13,22 +13,19 @@ public class StatisticsBlock extends Block {
     
     public StatisticsBlock(long blockId, long generationStamp, double[][] means, 
             double[][] standardDeviations, long[] recordCounts,
-            Inflator inflator, boolean justInTimeInflation) throws IOException {
+            Inflator inflator) throws IOException {
         super(blockId, generationStamp, null);
 
         this.means = means;
         this.standardDeviations = standardDeviations;
         this.recordCounts = recordCounts;
         this.inflator = inflator;
-
-        // if not justInTimeInflation -> inflate()
-        if (!justInTimeInflation) {
-            this.inflate();
-        }
     }
 
     @Override
     public byte[] getBytes() throws IOException {
+        this.addAccess();
+
         // if not memory resident -> compute
         if (this.bytes == null) {
             this.inflate();
@@ -71,5 +68,9 @@ public class StatisticsBlock extends Block {
 
         this.bytes = bytesOut.toByteArray();
         bytesOut.close();
+    }
+
+    public void evict() {
+        this.bytes = null;
     }
 }

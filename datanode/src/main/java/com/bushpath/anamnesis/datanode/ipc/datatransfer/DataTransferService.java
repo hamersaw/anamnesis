@@ -6,6 +6,8 @@ import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 import com.bushpath.anamnesis.datanode.inflator.ByteInflator;
 import com.bushpath.anamnesis.datanode.inflator.CSVInflator;
 import com.bushpath.anamnesis.datanode.inflator.Inflator;
+import com.bushpath.anamnesis.datanode.storage.RawBlock;
+import com.bushpath.anamnesis.datanode.storage.StatisticsBlock;
 import com.bushpath.anamnesis.datanode.storage.Storage;
 import com.bushpath.anamnesis.ipc.datatransfer.BlockInputStream;
 import com.bushpath.anamnesis.ipc.datatransfer.BlockOutputStream;
@@ -101,9 +103,12 @@ public class DataTransferService extends Thread {
                         }
 
                         // store block in storage
-                        storage.storeBlock(extendedBlockProto.getBlockId(),
-                            extendedBlockProto.getGenerationStamp(),
-                            blockStream.toByteArray());
+                        storage.storeBlock(
+                            new RawBlock(
+                                extendedBlockProto.getBlockId(),
+                                extendedBlockProto.getGenerationStamp(),
+                                blockStream.toByteArray()
+                            ));
 
                         blockIn.close();
 
@@ -164,9 +169,12 @@ public class DataTransferService extends Thread {
                             index += 1;
                         }
 
-                        storage.storeBlock(writeBlockStatsProto.getBlockId(),
+                        storage.storeBlock(
+                            new StatisticsBlock(
+                                writeBlockStatsProto.getBlockId(),
                                 writeBlockStatsProto.getGenerationStamp(),
-                                means, standardDeviations, recordCounts, inflator);
+                                means, standardDeviations, recordCounts, inflator
+                            ));
                         /*ByteArrayOutputStream statisticsBlockOut =
                             new ByteArrayOutputStream();
                         for (DatanodeSketchProtocolProtos.StatisticsProto statisticsProto
@@ -225,7 +233,7 @@ public class DataTransferService extends Thread {
                         BlockOutputStream blockOut = new BlockOutputStream(in, out,
                             readChecksum, readBlockProto.getOffset() + 1);
                         byte[] readBlock =
-                            storage.getBlock(readExtendedBlockProto.getBlockId());
+                            storage.getBlockBytes(readExtendedBlockProto.getBlockId());
                         blockOut.write(readBlock, (int) readBlockProto.getOffset(),
                             (int) readBlockProto.getLen());
                         blockOut.close();

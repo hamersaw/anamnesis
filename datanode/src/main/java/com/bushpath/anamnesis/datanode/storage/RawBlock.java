@@ -9,6 +9,7 @@ public class RawBlock extends Block {
 
     @Override
     public byte[] getBytes() throws IOException {
+        this.addAccess();
         return this.bytes;
     }
 

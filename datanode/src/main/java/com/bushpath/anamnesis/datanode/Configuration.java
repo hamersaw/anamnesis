@@ -19,6 +19,7 @@ public class Configuration {
     public String storageUuid;
 
     public boolean justInTimeInflation;
+    public long blockAccessTimeDelta;
     public double maxMemoryThreshold;
     public double minMemoryThreshold;
 
@@ -58,6 +59,8 @@ public class Configuration {
 
         justInTimeInflation =
             Boolean.parseBoolean(properties.getProperty("justInTimeInflation"));
+        blockAccessTimeDelta =
+            Long.parseLong(properties.getProperty("blockAccessTimeDelta"));
         maxMemoryThreshold =
             Double.parseDouble(properties.getProperty("maxMemoryThreshold"));
         minMemoryThreshold =

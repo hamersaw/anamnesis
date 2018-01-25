@@ -6,6 +6,7 @@ import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 import com.bushpath.anamnesis.datanode.inflator.Inflator;
 
 import java.io.IOException;
+import java.util.Collection;
 
 public abstract class Storage {
     protected String storageUuid;
@@ -19,12 +20,10 @@ public abstract class Storage {
         this.justInTimeInflation = justInTimeInflation;
     }
 
-    public abstract void storeBlock(long blockId, long generationStamp, byte[] bytes);
-    public abstract void storeBlock(long blockId, long generationStamp, double[][] means,
-        double[][] standardDeviations, long[] recordCounts, Inflator inflator)
-        throws IOException;
-    public abstract byte[] getBlock(long blockId) throws IOException;
+    public abstract void storeBlock(Block block) throws IOException;
+    public abstract byte[] getBlockBytes(long blockId) throws IOException;
     public abstract long getBlockLength(long blockId) throws IOException;
+    public abstract Collection<Block> getBlocks();
 
     public HdfsProtos.DatanodeStorageProto toDatanodeStorageProto() {
         return HdfsProtos.DatanodeStorageProto.newBuilder()
