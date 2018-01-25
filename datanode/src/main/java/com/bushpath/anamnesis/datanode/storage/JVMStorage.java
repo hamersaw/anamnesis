@@ -5,7 +5,6 @@ import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
 import com.bushpath.anamnesis.datanode.inflator.Inflator;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,7 +25,7 @@ public class JVMStorage extends Storage {
     @Override
     public void storeBlock(long blockId, long generationStamp, byte[] bytes) {
         logger.info("storing block '" + blockId + "' with length " + bytes.length);
-        Block block = new Block(blockId, generationStamp, bytes);
+        Block block = new RawBlock(blockId, generationStamp, bytes);
         this.blocks.put(blockId, block);
     }
 
@@ -35,13 +34,8 @@ public class JVMStorage extends Storage {
             double[][] standardDeviations, long[] recordCounts, Inflator inflator)
             throws IOException {
         logger.info("storing block '" + blockId + "'");
-        Block block = new Block(blockId, generationStamp, means,
-            standardDeviations, recordCounts, inflator);
-
-        // if justInTimeInflation is disabled inflate
-        if (!this.justInTimeInflation) {
-            block.inflate();
-        }
+        Block block = new StatisticsBlock(blockId, generationStamp, means,
+            standardDeviations, recordCounts, inflator, this.justInTimeInflation);
 
         this.blocks.put(blockId, block);
     }
@@ -95,74 +89,5 @@ public class JVMStorage extends Storage {
             .setRemaining(runtime.freeMemory())
             .setStorage(this.toDatanodeStorageProto())
             .build();
-    }
-
-    protected class Block {
-        long blockId;
-        long generationStamp;
-        double[][] means;
-        double[][] standardDeviations;
-        long[] recordCounts;
-        Inflator inflator;
-
-        byte[] bytes;
-
-        public Block(long blockId, long generationStamp, byte[] bytes) {
-            this.blockId = blockId;
-            this.generationStamp = generationStamp;
-            this.bytes = bytes;
-        }
-
-        public Block(long blockId, long generationStamp, double[][] means, 
-                double[][] standardDeviations, long[] recordCounts, Inflator inflator) {
-            this.blockId = blockId;
-            this.generationStamp = generationStamp;
-            this.means = means;
-            this.standardDeviations = standardDeviations;
-            this.recordCounts = recordCounts;
-            this.inflator = inflator;
-
-            this.bytes = null;
-        }
-
-        public byte[] getBytes() throws IOException {
-            // if not memory resident -> compute
-            if (this.bytes == null) {
-                this.inflate();
-            }
- 
-            return this.bytes;
-        }
-
-        public long getLength() {
-            // if memory resident -> return length
-            if (this.bytes != null) {
-                return this.bytes.length;
-            }
-
-            // otherwise compute length
-            long length = 0;
-            for (int i=0; i<this.recordCounts.length; i++) {
-                length += this.inflator.getLength(this.means[i],
-                    this.standardDeviations[i], this.recordCounts[i]);
-            }
-
-            return length;
-        }
-
-        private void inflate() throws IOException {
-            // compute bytes
-            ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
-
-            for (int i=0; i<this.recordCounts.length; i++) {
-                byte[] bytes = this.inflator.inflate(this.means[i],
-                    this.standardDeviations[i], this.recordCounts[i]);
-
-                bytesOut.write(bytes);
-            }
-
-            this.bytes = bytesOut.toByteArray();
-            bytesOut.close();
-        }
     }
 }

@@ -84,10 +84,13 @@ public class Main {
             Timer timer = new Timer(true);
             long blockReportIntervalMs = config.blockReportInterval * 1000;
             long heartbeatIntervalMs = config.heartbeatInterval * 1000;
+            long memoryEvictionIntervalMs = config.memoryEvictionInterval * 1000;
             timer.scheduleAtFixedRate(new BlockReportTask(config, storage),
                 blockReportIntervalMs, blockReportIntervalMs);
             timer.scheduleAtFixedRate(new HeartbeatTask(config, storage),
                 heartbeatIntervalMs, heartbeatIntervalMs);
+            timer.scheduleAtFixedRate(new MemoryEvictionTask(config, storage),
+                memoryEvictionIntervalMs, memoryEvictionIntervalMs);
 
             // wait until rpc server shuts down
             rpcServer.join();

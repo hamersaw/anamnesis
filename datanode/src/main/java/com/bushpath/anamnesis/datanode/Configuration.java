@@ -17,13 +17,17 @@ public class Configuration {
     public String inflator;
     public String storage;
     public String storageUuid;
+
     public boolean justInTimeInflation;
+    public double maxMemoryThreshold;
+    public double minMemoryThreshold;
 
     public String namenodeIpAddr;
     public int namenodePort;
 
     public int blockReportInterval;
     public int heartbeatInterval;
+    public int memoryEvictionInterval;
 
     public Configuration(String filename) throws Exception {
         // read file into properties
@@ -51,8 +55,13 @@ public class Configuration {
         inflator = properties.getProperty("inflator");
         storage = properties.getProperty("storage");
         storageUuid = properties.getProperty("storageUuid");
+
         justInTimeInflation =
             Boolean.parseBoolean(properties.getProperty("justInTimeInflation"));
+        maxMemoryThreshold =
+            Double.parseDouble(properties.getProperty("maxMemoryThreshold"));
+        minMemoryThreshold =
+            Double.parseDouble(properties.getProperty("minMemoryThreshold"));
 
         namenodeIpAddr = properties.getProperty("namenodeIpAddr");
         namenodePort = Integer.parseInt(properties.getProperty("namenodePort"));
@@ -61,5 +70,7 @@ public class Configuration {
             Integer.parseInt(properties.getProperty("blockReportInterval"));
         heartbeatInterval =
             Integer.parseInt(properties.getProperty("heartbeatInterval"));
+        memoryEvictionInterval =
+            Integer.parseInt(properties.getProperty("memoryEvictionInterval"));
     }
 }
