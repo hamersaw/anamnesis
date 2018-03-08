@@ -55,8 +55,12 @@ public class StatisticsBlock extends Block {
         return length;
     }
 
+    public boolean isInflated() {
+        return this.bytes != null;
+    }
+
     public void inflate() throws IOException {
-        if (bytes != null) {
+        if (this.bytes != null) {
             return;
         }
 

@@ -9,8 +9,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.TimerTask;
+import java.util.logging.Logger;
 
 public class MemoryEvictionTask extends TimerTask {
+    private static final Logger logger =
+        Logger.getLogger(MemoryEvictionTask.class.getName());
+
     protected Configuration configuration;
     protected Storage storage;
 
@@ -23,16 +27,17 @@ public class MemoryEvictionTask extends TimerTask {
     public void run() {
         // check if memory usage is over threshold
         Runtime runtime = Runtime.getRuntime();
-        double maxMemory = runtime.maxMemory();
-        double usedMemory = maxMemory - runtime.freeMemory();
-        if (usedMemory / maxMemory < this.configuration.maxMemoryThreshold) {
+        long maxMemory = runtime.maxMemory();
+        long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+        if (usedMemory < (maxMemory * this.configuration.maxMemoryThreshold)) {
             return;
         }
- 
+
         // retrieve StatisticBlocks
         List<StatisticsBlock> blocks = new ArrayList<>();
         for (Block block : this.storage.getBlocks()) {
-            if(block instanceof StatisticsBlock) {
+            if(block instanceof StatisticsBlock
+                    && ((StatisticsBlock) block).isInflated()) {
                 blocks.add((StatisticsBlock) block);
             }
         }
@@ -60,6 +65,7 @@ public class MemoryEvictionTask extends TimerTask {
 
         // evict blocks
         for (StatisticsBlock block : blocks) {
+            logger.info("evicting block " + block.getBlockId());
             block.evict();
             usedMemory -= block.getLength();
 

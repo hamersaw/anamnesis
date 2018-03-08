@@ -1,7 +1,7 @@
 #!/bin/bash
 BASEDIR=$(dirname $0)
 
-JAVA_OPTS="-Xmx3G -Djava.library.path=../build/generated"
+JAVA_OPTS="-Xmx2G -Djava.library.path=../build/generated"
 
 CLASSPATH=""
 if [ -f $BASEDIR/build/libs/anamnesis-datanode.jar ]

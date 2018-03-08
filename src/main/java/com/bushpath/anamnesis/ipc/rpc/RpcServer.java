@@ -24,7 +24,7 @@ public class RpcServer extends Thread {
 
     public RpcServer(ServerSocket serverSocket) {
         this.serverSocket = serverSocket;
-        this.executorService = Executors.newFixedThreadPool(4);
+        this.executorService = Executors.newFixedThreadPool(24);
         this.rpcPacketHandler = new RpcPacketHandler();
         this.packetHandlers = new HashMap<>();
     }
