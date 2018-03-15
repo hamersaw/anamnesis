@@ -155,6 +155,7 @@ public class BlockOutputStream extends OutputStream {
                     }
                 } catch(Exception e) {
                     System.err.println("ChunkWriter failed: " + e.toString());
+                    break;
                 }
             }
         }

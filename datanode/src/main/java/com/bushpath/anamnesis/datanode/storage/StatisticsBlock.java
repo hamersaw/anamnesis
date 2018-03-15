@@ -4,6 +4,7 @@ import com.bushpath.anamnesis.datanode.inflator.Inflator;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 
 public class StatisticsBlock extends Block {
@@ -64,7 +65,7 @@ public class StatisticsBlock extends Block {
             return;
         }
 
-        // compute bytes
+        /*// compute bytes
         ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
 
         long startTime = System.currentTimeMillis();
@@ -81,7 +82,21 @@ public class StatisticsBlock extends Block {
             + " record(s) in " + (System.currentTimeMillis() - startTime) + " ms");
 
         this.bytes = bytesOut.toByteArray();
-        bytesOut.close();
+        bytesOut.close();*/
+
+        ByteBuffer byteBuffer = ByteBuffer.allocate((int) this.getLength());
+        long startTime = System.currentTimeMillis();
+        long totalRecordCount = 0;
+        for (int i=0; i<this.recordCounts.length; i++) {
+            totalRecordCount += this.recordCounts[i];
+            this.inflator.inflate(this.means[i], this.standardDeviations[i],
+                this.recordCounts[i], byteBuffer);
+        }
+
+        logger.info("block " + this.blockId + ": generated " + totalRecordCount
+            + " record(s) in " + (System.currentTimeMillis() - startTime) + " ms");
+
+        this.bytes = byteBuffer.array();
     }
 
     public void evict() {

@@ -3,6 +3,7 @@ package com.bushpath.anamnesis.datanode.inflator;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Random;
 
 public class CSVInflator extends Inflator {
@@ -45,6 +46,37 @@ public class CSVInflator extends Inflator {
         out.close();
         byteOut.close();
         return byteOut.toByteArray();
+    }
+
+    @Override
+    public void inflate(double[] means, double[] standardDeviations,
+            long recordCount, ByteBuffer byteBuffer) throws IOException {
+        Random random = new Random();
+
+        // generating random records
+        for (int i=0; i<recordCount; i++) {
+            for (int j=0; j<means.length; j++) {
+                double value = means[j];
+                if (!Double.isNaN(standardDeviations[j])) {
+                    value += standardDeviations[j] * random.nextGaussian();
+                }
+
+                if (j != 0) {
+                    byteBuffer.put((byte) '\t');
+                }
+
+                String valueString = Double.toString(value);
+                for (int k=0; k<LENGTH; k++) {
+                    if (k < valueString.length()) {
+                        byteBuffer.put((byte) valueString.charAt(k));
+                    } else {
+                        byteBuffer.put((byte) '0');
+                    }
+                }
+            }
+
+            byteBuffer.put((byte) '\n');
+        }
     }
 
     @Override
