@@ -86,15 +86,17 @@ public class StatisticsBlock extends Block {
 
         ByteBuffer byteBuffer = ByteBuffer.allocate((int) this.getLength());
         long startTime = System.currentTimeMillis();
+        this.inflator.inflate(this.means,
+            this.standardDeviations, this.recordCounts, byteBuffer);
+        long endTime = System.currentTimeMillis();
+
         long totalRecordCount = 0;
-        for (int i=0; i<this.recordCounts.length; i++) {
-            totalRecordCount += this.recordCounts[i];
-            this.inflator.inflate(this.means[i], this.standardDeviations[i],
-                this.recordCounts[i], byteBuffer);
+        for (long recordCount : this.recordCounts) {
+            totalRecordCount += recordCount;
         }
 
         logger.info("block " + this.blockId + ": generated " + totalRecordCount
-            + " record(s) in " + (System.currentTimeMillis() - startTime) + " ms");
+            + " record(s) in " + (endTime - startTime) + " ms");
 
         this.bytes = byteBuffer.array();
     }

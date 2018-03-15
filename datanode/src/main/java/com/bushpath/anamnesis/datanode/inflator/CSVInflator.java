@@ -8,6 +8,11 @@ import java.util.Random;
 
 public class CSVInflator extends Inflator {
     public static final int LENGTH = 10;
+    private Random random;
+
+    public CSVInflator() {
+        this.random = new Random(System.currentTimeMillis());
+    }
 
     @Override
     public byte[] inflate(double[] means, double[] standardDeviations,
@@ -49,33 +54,34 @@ public class CSVInflator extends Inflator {
     }
 
     @Override
-    public void inflate(double[] means, double[] standardDeviations,
-            long recordCount, ByteBuffer byteBuffer) throws IOException {
-        Random random = new Random();
+    public void inflate(double[][] means, double[][] standardDeviations,
+            long[] recordCount, ByteBuffer byteBuffer) throws IOException {
 
         // generating random records
-        for (int i=0; i<recordCount; i++) {
-            for (int j=0; j<means.length; j++) {
-                double value = means[j];
-                if (!Double.isNaN(standardDeviations[j])) {
-                    value += standardDeviations[j] * random.nextGaussian();
-                }
+        for (int x=0; x<means.length; x++) {
+            for (int i=0; i<recordCount[x]; i++) {
+                for (int j=0; j<means[x].length; j++) {
+                    double value = means[x][j];
+                    if (!Double.isNaN(standardDeviations[x][j])) {
+                        value += standardDeviations[x][j] * random.nextGaussian();
+                    }
 
-                if (j != 0) {
-                    byteBuffer.put((byte) '\t');
-                }
+                    if (j != 0) {
+                        byteBuffer.put((byte) '\t');
+                    }
 
-                String valueString = Double.toString(value);
-                for (int k=0; k<LENGTH; k++) {
-                    if (k < valueString.length()) {
-                        byteBuffer.put((byte) valueString.charAt(k));
-                    } else {
-                        byteBuffer.put((byte) '0');
+                    String valueString = Double.toString(value);
+                    for (int k=0; k<LENGTH; k++) {
+                        if (k < valueString.length()) {
+                            byteBuffer.put((byte) valueString.charAt(k));
+                        } else {
+                            byteBuffer.put((byte) '0');
+                        }
                     }
                 }
-            }
 
-            byteBuffer.put((byte) '\n');
+                byteBuffer.put((byte) '\n');
+            }
         }
     }
 

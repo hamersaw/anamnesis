@@ -7,6 +7,12 @@ import java.nio.ByteBuffer;
 import java.util.Random;
 
 public class ByteInflator extends Inflator {
+    private Random random;
+
+    public ByteInflator() {
+        this.random = new Random(System.currentTimeMillis());
+    }
+
     @Override
     public byte[] inflate(double[] means, double[] standardDeviations,
             long recordCount) throws IOException {
@@ -33,20 +39,19 @@ public class ByteInflator extends Inflator {
     }
 
     @Override
-    public void inflate(double[] means, double[] standardDeviations,
-            long recordCount, ByteBuffer byteBuffer) throws IOException {
-        Random random = new Random();
-
+    public void inflate(double[][] means, double[][] standardDeviations,
+            long[] recordCount, ByteBuffer byteBuffer) throws IOException {
         // generating random records
-        for (int i=0; i<recordCount; i++) {
-            for (int j=0; j<means.length; j++) {
-                double value = means[j];
-                if (!Double.isNaN(standardDeviations[j])) {
-                    value += standardDeviations[j] * random.nextGaussian();
-                }
+        for (int x=0; x<means.length; x++) {
+            for (int i=0; i<recordCount[x]; i++) {
+                for (int j=0; j<means[x].length; j++) {
+                    double value = means[x][j];
+                    if (!Double.isNaN(standardDeviations[x][j])) {
+                        value += standardDeviations[x][j] * this.random.nextGaussian();
+                    }
 
-                byteBuffer.putDouble(value);
-                //out.writeDouble(value);
+                    byteBuffer.putDouble(value);
+                }
             }
         }
     }
