@@ -43,6 +43,10 @@ public abstract class NSItem {
         return this.perm;
     }
 
+    public void setPerm(int perm) {
+        this.perm = perm;
+    }
+
     public long getModificationTime() {
         return this.modificationTime;
     }

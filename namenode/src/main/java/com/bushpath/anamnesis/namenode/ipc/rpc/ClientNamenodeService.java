@@ -116,6 +116,18 @@ public class ClientNamenodeService {
             .build();
     }
 
+    public Message delete(DataInputStream in) throws Exception {
+        ClientNamenodeProtocolProtos.DeleteRequestProto req =
+            ClientNamenodeProtocolProtos.DeleteRequestProto.parseDelimitedFrom(in);
+
+        // TODO - delete
+        System.out.println("TODO - delete '" + req.getSrc() + "':" + req.getRecursive());
+
+        return ClientNamenodeProtocolProtos.DeleteResponseProto.newBuilder()
+            .setResult(true)
+            .build();
+    }
+
     public Message getBlockLocations(DataInputStream in) throws Exception {
         ClientNamenodeProtocolProtos.GetBlockLocationsRequestProto req =
             ClientNamenodeProtocolProtos.GetBlockLocationsRequestProto.parseDelimitedFrom(in);
@@ -278,6 +290,27 @@ public class ClientNamenodeService {
         return ClientNamenodeProtocolProtos.RenewLeaseResponseProto.newBuilder()
             .build();
     }
+
+      /*public ClientNamenodeProtocolProtos.SetPermissionResponseProto setPermission(
+          com.google.protobuf.RpcController controller,
+          ClientNamenodeProtocolProtos.SetPermissionRequestProto request)
+          throws com.google.protobuf.ServiceException;*/
+    public Message setPermission(DataInputStream in) throws Exception {
+        ClientNamenodeProtocolProtos.SetPermissionRequestProto req =
+            ClientNamenodeProtocolProtos.SetPermissionRequestProto.parseDelimitedFrom(in);
+
+        // retrieve item
+        NSItem item = this.nameSystem.getFile(req.getSrc());
+
+        // response to request
+        return ClientNamenodeProtocolProtos.SetPermissionResponseProto.newBuilder()
+            .build();
+    }
+
+      /*public ClientNamenodeProtocolProtos.SetOwnerResponseProto setOwner(
+          com.google.protobuf.RpcController controller,
+          ClientNamenodeProtocolProtos.SetOwnerRequestProto request)
+          throws com.google.protobuf.ServiceException;*/
 }
     /*implements ClientNamenodeProtocolProtos.ClientNamenodeProtocol.BlockingInterface {
     
