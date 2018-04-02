@@ -5,6 +5,7 @@ import org.apache.hadoop.hdfs.protocol.proto.DatanodeProtocolProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsServerProtos;
 
+import com.bushpath.anamnesis.ipc.rpc.SocketContext;
 import com.bushpath.anamnesis.namenode.Block;
 import com.bushpath.anamnesis.namenode.BlockManager;
 import com.bushpath.anamnesis.namenode.Datanode;
@@ -23,7 +24,8 @@ public class DatanodeService {
         this.datanodeManager = datanodeManager;
     }
 
-    public Message registerDatanode(DataInputStream in) throws Exception {
+    public Message registerDatanode(DataInputStream in,
+            SocketContext socketContext) throws Exception {
         DatanodeProtocolProtos.RegisterDatanodeRequestProto req =
             DatanodeProtocolProtos.RegisterDatanodeRequestProto.parseDelimitedFrom(in);
         
@@ -43,7 +45,8 @@ public class DatanodeService {
             .build();
     }
 
-    public Message sendHeartbeat(DataInputStream in) throws Exception {
+    public Message sendHeartbeat(DataInputStream in,
+            SocketContext socketContext) throws Exception {
         DatanodeProtocolProtos.HeartbeatRequestProto req =
             DatanodeProtocolProtos.HeartbeatRequestProto.parseDelimitedFrom(in);
 
@@ -79,7 +82,8 @@ public class DatanodeService {
             .build();
     }
 
-    public Message blockReport(DataInputStream in) throws Exception {
+    public Message blockReport(DataInputStream in,
+            SocketContext socketContext) throws Exception {
         DatanodeProtocolProtos.BlockReportRequestProto req =
             DatanodeProtocolProtos.BlockReportRequestProto.parseDelimitedFrom(in);
 

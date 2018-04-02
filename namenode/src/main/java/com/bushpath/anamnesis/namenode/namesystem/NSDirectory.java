@@ -12,8 +12,9 @@ import java.util.TreeMap;
 public class NSDirectory extends NSItem {
     private Map<String, NSItem> children;
 
-    public NSDirectory(String name, int perm, NSItem parent) {
-        super(name, NSItem.Type.DIRECTORY, perm, parent);
+    public NSDirectory(String name, int perm, String owner,
+            String group, NSItem parent) {
+        super(name, NSItem.Type.DIRECTORY, perm, owner, group, parent);
         this.children = new TreeMap<>();
     }
 
@@ -54,8 +55,8 @@ public class NSDirectory extends NSItem {
             .setPath(ByteString.copyFrom(this.getPath().getBytes()))
             .setLength(-1)
             .setPermission(permission)
-            .setOwner("")
-            .setGroup("")
+            .setOwner(this.owner)
+            .setGroup(this.group)
             .setModificationTime(this.modificationTime)
             .setAccessTime(this.accessTime)
             .setChildrenNum(this.children.size())

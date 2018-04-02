@@ -20,18 +20,14 @@ public class NameSystem {
 
     public NameSystem() {
         this.lock = new ReentrantReadWriteLock();
-        this.root = new NSDirectory("", Integer.MAX_VALUE, null);
-
-        // TMP
-        try {
-            this.mkdir("/user", 666, false);
-        } catch(Exception e) {}
+        this.root = new NSDirectory("", Integer.MAX_VALUE, "", "", null);
     }
 
-    public NSItem create(String path, int perm, String owner, 
+    public NSItem create(String path, int perm, String owner, String group,
             boolean createParent, long blockSize) throws Exception {
         // retrieve parent directory
-        NSDirectory parentDirectory = getParentDirectory(path, createParent, perm);
+        NSDirectory parentDirectory =
+            getParentDirectory(path, createParent, perm, owner, group);
 
         this.lock.writeLock().lock();
         try {
@@ -44,7 +40,7 @@ public class NameSystem {
  
             // create new file and add as child of parent directory
             NSItem file = new NSFile(elements[elements.length - 1], owner,
-                    owner, perm, blockSize, parentDirectory);
+                    group, perm, blockSize, parentDirectory);
             parentDirectory.addChild(file);
 
             return file;
@@ -102,9 +98,11 @@ public class NameSystem {
         }
     }
 
-    public void mkdir(String path, int perm, boolean createParent) throws Exception {
+    public void mkdir(String path, int perm, String owner,
+            String group, boolean createParent) throws Exception {
         // retrieve parent directory
-        NSDirectory parentDirectory = getParentDirectory(path, createParent, perm);
+        NSDirectory parentDirectory =
+            getParentDirectory(path, createParent, perm, owner, group);
 
         this.lock.writeLock().lock();
         try {
@@ -117,7 +115,7 @@ public class NameSystem {
  
             // create new directory and add as child of parent directory
             NSItem dir = new NSDirectory(elements[elements.length - 1],
-                perm, parentDirectory);
+                perm, owner, group, parentDirectory);
             parentDirectory.addChild(dir);
         } finally {
             this.lock.writeLock().unlock();
@@ -132,8 +130,8 @@ public class NameSystem {
 
         this.lock.writeLock().lock();
         try {
-            NSDirectory oldParent = getParentDirectory(srcPath, false, 0);
-            NSDirectory newParent = getParentDirectory(dstPath, false, 0);
+            NSDirectory oldParent = getParentDirectory(srcPath, false, 0, "", "");
+            NSDirectory newParent = getParentDirectory(dstPath, false, 0, "", "");
 
             // remove from parents children
             oldParent.removeChild(file);
@@ -179,7 +177,7 @@ public class NameSystem {
     }
 
     private NSDirectory getParentDirectory(String path, 
-            boolean createParent, int perm) throws Exception {
+            boolean createParent, int perm, String owner, String group) throws Exception {
         this.lock.writeLock().lock();
         try {
             NSDirectory current = this.root;
@@ -205,7 +203,7 @@ public class NameSystem {
                 } else if (createParent) {
                     // create directory
                     NSDirectory newDirectory = new NSDirectory(elements[i],
-                        perm, current);
+                        perm, owner, group, current);
                     current.addChild(newDirectory);
                     current = newDirectory;
                 } else {

@@ -9,28 +9,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class NSFile extends NSItem {
-    private String owner, group;
     private long modificationTime, accessTime, blockSize;
     private List<Block> blocks;
     private boolean complete;
 
     public NSFile (String name, String owner, String group, int perm,
             long blockSize, NSItem parent) {
-        super(name, NSItem.Type.FILE, perm, parent);
+        super(name, NSItem.Type.FILE, perm, owner, group, parent);
 
-        this.owner = owner;
-        this.group = group;
         this.blockSize = blockSize;
         this.blocks = new ArrayList<>();
         this.complete = false;
-    }
-
-    public String getOwner() {
-        return this.owner;
-    }
-
-    public String getGroup() {
-        return this.group;
     }
 
     public long getLength() {

@@ -4,6 +4,7 @@ import org.apache.hadoop.ipc.protobuf.RpcHeaderProtos;
 import org.apache.hadoop.ipc.protobuf.RpcHeaderProtos.RpcResponseHeaderProto.RpcStatusProto;
 
 import com.bushpath.anamnesis.ipc.rpc.RpcUtil;
+import com.bushpath.anamnesis.ipc.rpc.SocketContext;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -16,8 +17,8 @@ public class SaslPacketHandler implements PacketHandler {
 
     @Override
     public void handle(DataInputStream in, DataOutputStream out, 
-            RpcHeaderProtos.RpcRequestHeaderProto rpcRequestHeaderProto)
-            throws Exception {
+            RpcHeaderProtos.RpcRequestHeaderProto rpcRequestHeaderProto,
+            SocketContext socketContext) throws Exception {
         // handle SASL RPC request
         RpcHeaderProtos.RpcSaslProto rpcSaslProto =
             RpcHeaderProtos.RpcSaslProto.parseDelimitedFrom(in);

@@ -5,6 +5,7 @@ import org.apache.hadoop.hdfs.protocol.proto.ClientNamenodeProtocolProtos;
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
 import com.bushpath.anamnesis.ipc.datatransfer.DataTransferProtocol;
+import com.bushpath.anamnesis.ipc.rpc.SocketContext;
 import com.bushpath.anamnesis.namenode.Block;
 import com.bushpath.anamnesis.namenode.BlockManager;
 import com.bushpath.anamnesis.namenode.Configuration;
@@ -35,7 +36,8 @@ public class ClientNamenodeService {
         this.config = config;
     }
 
-    public Message addBlock(DataInputStream in) throws Exception {
+    public Message addBlock(DataInputStream in,
+            SocketContext socketContext) throws Exception {
         ClientNamenodeProtocolProtos.AddBlockRequestProto req =
             ClientNamenodeProtocolProtos.AddBlockRequestProto.parseDelimitedFrom(in);
 
@@ -65,9 +67,6 @@ public class ClientNamenodeService {
         // create block
         Random random = new Random();
         Block block = new Block(random.nextLong(), System.currentTimeMillis(), file);
-        // TODO - remove
-        //Block block = new Block(random.nextLong(), System.currentTimeMillis(),
-        //    file.getBlockSize() * file.getBlockCount());
         file.addBlock(block);
         this.blockManager.add(block);
 
@@ -89,7 +88,8 @@ public class ClientNamenodeService {
             .build();
     }
 
-    public Message complete(DataInputStream in) throws Exception {
+    public Message complete(DataInputStream in,
+            SocketContext socketContext) throws Exception {
         ClientNamenodeProtocolProtos.CompleteRequestProto req =
             ClientNamenodeProtocolProtos.CompleteRequestProto.parseDelimitedFrom(in);
 
@@ -102,13 +102,15 @@ public class ClientNamenodeService {
             .build();
     }
 
-    public Message create(DataInputStream in) throws Exception {
+    public Message create(DataInputStream in,
+            SocketContext socketContext) throws Exception {
         ClientNamenodeProtocolProtos.CreateRequestProto req =
             ClientNamenodeProtocolProtos.CreateRequestProto.parseDelimitedFrom(in);
 
         // create file with name system
         NSItem item = this.nameSystem.create(req.getSrc(), req.getMasked().getPerm(),
-            req.getClientName(), req.getCreateParent(), req.getBlockSize());
+            req.getClientName(), req.getClientName(), req.getCreateParent(),
+            req.getBlockSize());
 
         // respond to request
         return ClientNamenodeProtocolProtos.CreateResponseProto.newBuilder()
@@ -116,7 +118,8 @@ public class ClientNamenodeService {
             .build();
     }
 
-    public Message delete(DataInputStream in) throws Exception {
+    public Message delete(DataInputStream in,
+            SocketContext socketContext) throws Exception {
         ClientNamenodeProtocolProtos.DeleteRequestProto req =
             ClientNamenodeProtocolProtos.DeleteRequestProto.parseDelimitedFrom(in);
 
@@ -128,7 +131,8 @@ public class ClientNamenodeService {
             .build();
     }
 
-    public Message getBlockLocations(DataInputStream in) throws Exception {
+    public Message getBlockLocations(DataInputStream in,
+            SocketContext socketContext) throws Exception {
         ClientNamenodeProtocolProtos.GetBlockLocationsRequestProto req =
             ClientNamenodeProtocolProtos.GetBlockLocationsRequestProto.parseDelimitedFrom(in);
 
@@ -145,7 +149,8 @@ public class ClientNamenodeService {
             .build();
     }
 
-    public Message getDatanodeStorageReport(DataInputStream in) throws Exception {
+    public Message getDatanodeStorageReport(DataInputStream in,
+            SocketContext socketContext) throws Exception {
         ClientNamenodeProtocolProtos.GetDatanodeStorageReportRequestProto req =
             ClientNamenodeProtocolProtos.GetDatanodeStorageReportRequestProto
                 .parseDelimitedFrom(in);
@@ -165,7 +170,8 @@ public class ClientNamenodeService {
                 .build();
     }
 
-    public Message getFileInfo(DataInputStream in) throws Exception {
+    public Message getFileInfo(DataInputStream in,
+            SocketContext socketContext) throws Exception {
         ClientNamenodeProtocolProtos.GetFileInfoRequestProto req =
             ClientNamenodeProtocolProtos.GetFileInfoRequestProto.parseDelimitedFrom(in);
 
@@ -180,7 +186,8 @@ public class ClientNamenodeService {
         return respBuilder.build();
     }
 
-    public Message getListing(DataInputStream in) throws Exception {
+    public Message getListing(DataInputStream in,
+            SocketContext socketContext) throws Exception {
         ClientNamenodeProtocolProtos.GetListingRequestProto req =
             ClientNamenodeProtocolProtos.GetListingRequestProto.parseDelimitedFrom(in);
 
@@ -235,7 +242,8 @@ public class ClientNamenodeService {
             .build();
     }
 
-    public Message getServerDefaults(DataInputStream in) throws Exception {
+    public Message getServerDefaults(DataInputStream in,
+            SocketContext socketContext) throws Exception {
         ClientNamenodeProtocolProtos.GetServerDefaultsRequestProto req =
             ClientNamenodeProtocolProtos.GetServerDefaultsRequestProto.parseDelimitedFrom(in);
 
@@ -255,12 +263,14 @@ public class ClientNamenodeService {
             .build();
     }
 
-    public Message mkdirs(DataInputStream in) throws Exception {
+    public Message mkdirs(DataInputStream in,
+            SocketContext socketContext) throws Exception {
         ClientNamenodeProtocolProtos.MkdirsRequestProto req =
             ClientNamenodeProtocolProtos.MkdirsRequestProto.parseDelimitedFrom(in);
 
         // use name system to make directory
         this.nameSystem.mkdir(req.getSrc(), req.getMasked().getPerm(),
+            socketContext.getEffectiveUser(), socketContext.getEffectiveUser(),
             req.getCreateParent());
 
         // respond to request
@@ -269,7 +279,8 @@ public class ClientNamenodeService {
             .build();
     }
 
-    public Message rename(DataInputStream in) throws Exception {
+    public Message rename(DataInputStream in,
+            SocketContext socketContext) throws Exception {
         ClientNamenodeProtocolProtos.RenameRequestProto req =
             ClientNamenodeProtocolProtos.RenameRequestProto.parseDelimitedFrom(in);
 
@@ -282,7 +293,8 @@ public class ClientNamenodeService {
             .build();
     }
 
-    public Message renewLease(DataInputStream in) throws Exception {
+    public Message renewLease(DataInputStream in,
+            SocketContext socketContext) throws Exception {
         ClientNamenodeProtocolProtos.RenewLeaseRequestProto req =
             ClientNamenodeProtocolProtos.RenewLeaseRequestProto.parseDelimitedFrom(in);
 
@@ -291,11 +303,8 @@ public class ClientNamenodeService {
             .build();
     }
 
-      /*public ClientNamenodeProtocolProtos.SetPermissionResponseProto setPermission(
-          com.google.protobuf.RpcController controller,
-          ClientNamenodeProtocolProtos.SetPermissionRequestProto request)
-          throws com.google.protobuf.ServiceException;*/
-    public Message setPermission(DataInputStream in) throws Exception {
+    public Message setPermission(DataInputStream in,
+            SocketContext socketContext) throws Exception {
         ClientNamenodeProtocolProtos.SetPermissionRequestProto req =
             ClientNamenodeProtocolProtos.SetPermissionRequestProto.parseDelimitedFrom(in);
 

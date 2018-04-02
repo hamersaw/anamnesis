@@ -6,13 +6,17 @@ public abstract class NSItem {
     protected String name;
     protected Type type;
     protected int perm;
+    protected String owner, group;
     protected long modificationTime, accessTime;
     protected NSItem parent;
 
-    public NSItem(String name, Type type, int perm, NSItem parent) {
+    public NSItem(String name, Type type, int perm, String owner,
+            String group, NSItem parent) {
         this.name = name;
         this.type = type;
         this.perm = perm;
+        this.owner = owner;
+        this.group = group;
         this.parent = parent;
 
         this.modificationTime = System.currentTimeMillis();
@@ -45,6 +49,14 @@ public abstract class NSItem {
 
     public void setPerm(int perm) {
         this.perm = perm;
+    }
+
+    public String getOwner() {
+        return this.owner;
+    }
+
+    public String getGroup() {
+        return this.group;
     }
 
     public long getModificationTime() {

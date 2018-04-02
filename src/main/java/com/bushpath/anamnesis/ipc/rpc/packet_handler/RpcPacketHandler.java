@@ -7,6 +7,7 @@ import org.apache.hadoop.ipc.protobuf.RpcHeaderProtos.RpcResponseHeaderProto.Rpc
 import org.apache.hadoop.ipc.protobuf.ProtobufRpcEngineProtos;
 
 import com.bushpath.anamnesis.ipc.rpc.RpcUtil;
+import com.bushpath.anamnesis.ipc.rpc.SocketContext;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -32,8 +33,8 @@ public class RpcPacketHandler implements PacketHandler {
 
     @Override
     public void handle(DataInputStream in, DataOutputStream out, 
-            RpcHeaderProtos.RpcRequestHeaderProto rpcRequestHeaderProto)
-            throws Exception {
+            RpcHeaderProtos.RpcRequestHeaderProto rpcRequestHeaderProto,
+            SocketContext socketContext) throws Exception {
         ProtobufRpcEngineProtos.RequestHeaderProto requestHeaderProto =
             ProtobufRpcEngineProtos.RequestHeaderProto.parseDelimitedFrom(in);
 
@@ -78,7 +79,7 @@ public class RpcPacketHandler implements PacketHandler {
             } else {
                 // use rpc handler to execute method
                 try {
-                    message = (Message) method.invoke(rpcHandler, in);
+                    message = (Message) method.invoke(rpcHandler, in, socketContext);
                 } catch(Exception e) {
                     respBuilder.setStatus(RpcStatusProto.ERROR);
                     respBuilder.setExceptionClassName(e.getClass().toString());
