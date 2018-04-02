@@ -53,22 +53,63 @@ public class DatanodeService {
         // update datanode
         DatanodeProtocolProtos.DatanodeRegistrationProto registration
             = req.getRegistration();
-        HdfsProtos.DatanodeIDProto datanodeID = registration.getDatanodeID();
+        HdfsProtos.DatanodeIDProto datanodeId = registration.getDatanodeID();
 
-        this.datanodeManager.updateDatanode(datanodeID.getDatanodeUuid(),
+        this.datanodeManager.updateDatanode(datanodeId.getDatanodeUuid(),
             System.currentTimeMillis());
 
         // update datanode storages
         for (HdfsProtos.StorageReportProto storageReport : req.getReportsList()) {
             this.datanodeManager.updateDatanodeStorage(
-                datanodeID.getDatanodeUuid(),
+                datanodeId.getDatanodeUuid(),
                 storageReport.getStorage().getStorageUuid(),
                 storageReport.getCapacity(),
                 storageReport.getRemaining());
         }
 
+        // check for differences in reported and actual managed block ids
+        List<Long> reportedBlockIds =
+            this.datanodeManager.get(datanodeId.getDatanodeUuid()).getReportedBlockIds();
+        List<Block> blocks =
+            this.blockManager.getDatanodeBlocks(datanodeId.getDatanodeUuid());
+        List<HdfsProtos.BlockProto> removeBlocks = new ArrayList<>();
+        for (Long reportedBlockId : reportedBlockIds) {
+            Block block = null;
+            for (Block b : blocks) {
+                if (b.getBlockId() == reportedBlockId) {
+                    block = b;
+                    break;
+                }
+            }
+
+            if (block != null) {
+                removeBlocks.add(block.toBlockProto());
+            }
+        }
+
         // send response
         List<DatanodeProtocolProtos.DatanodeCommandProto> cmds = new ArrayList<>();
+
+        // if there are block ids to remove add block command
+        if (!removeBlocks.isEmpty()) {
+            DatanodeProtocolProtos.DatanodeCommandProto.Type cmdType =
+                DatanodeProtocolProtos.DatanodeCommandProto.Type.BlockCommand;
+
+            DatanodeProtocolProtos.BlockCommandProto blkCmd =
+                DatanodeProtocolProtos.BlockCommandProto.newBuilder()
+                    .setAction(DatanodeProtocolProtos.BlockCommandProto.Action.INVALIDATE)
+                    .setBlockPoolId("") // TODO - set block pool id
+                    .addAllBlocks(removeBlocks)
+                    .build();
+
+            DatanodeProtocolProtos.DatanodeCommandProto datanodeCommand =
+                DatanodeProtocolProtos.DatanodeCommandProto.newBuilder()
+                    .setCmdType(cmdType)
+                    .setBlkCmd(blkCmd)
+                    .build();
+
+            cmds.add(datanodeCommand);
+        }
 
         HdfsServerProtos.NNHAStatusHeartbeatProto status = 
             HdfsServerProtos.NNHAStatusHeartbeatProto.newBuilder()
@@ -90,30 +131,42 @@ public class DatanodeService {
         // retreive DatanodeId
         HdfsProtos.DatanodeIDProto datanodeIdProto =
             req.getRegistration().getDatanodeID();
+        Datanode datanode = 
+            this.datanodeManager.get(datanodeIdProto.getDatanodeUuid());
         
         // iterate over storage block reports
         List<DatanodeProtocolProtos.StorageBlockReportProto> storageReports = 
             req.getReportsList();
+        List<Long> reportedBlockIds = new ArrayList<>();
         for (DatanodeProtocolProtos.StorageBlockReportProto storageReport:
                 storageReports) {
 
             // iterate over blocks in report
             List<Long> blockList = storageReport.getBlocksList();
             for (int i=0; i<blockList.size(); i += 4) {
+                // check if block still exists
+                if (!this.blockManager.contains(blockList.get(i))) {
+                    continue;
+                }
+
                 // update block
-                Block block = blockManager.get(blockList.get(i));
+                Block block = this.blockManager.get(blockList.get(i));
                 block.setLength(blockList.get(i + 1));
                 block.getFile().updateBlockOffsets();
 
                 // add block location
                 HdfsProtos.DatanodeStorageProto datanodeStorage =
                     storageReport.getStorage();
-                Datanode datanode = 
-                    this.datanodeManager.get(datanodeIdProto.getDatanodeUuid());
                 block.addLoc(datanode, true, datanodeStorage.getStorageType(),
                     datanodeStorage.getStorageUuid());
             }
+
+            // add reported block ids to list
+            reportedBlockIds.addAll(blockList);
         }
+
+        // set datanode reported block ids
+        datanode.setReportedBlockIds(reportedBlockIds);
         
         return DatanodeProtocolProtos.BlockReportResponseProto.newBuilder()
             .build();

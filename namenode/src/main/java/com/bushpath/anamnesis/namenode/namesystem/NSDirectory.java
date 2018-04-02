@@ -13,7 +13,7 @@ public class NSDirectory extends NSItem {
     private Map<String, NSItem> children;
 
     public NSDirectory(String name, int perm, String owner,
-            String group, NSItem parent) {
+            String group, NSDirectory parent) {
         super(name, NSItem.Type.DIRECTORY, perm, owner, group, parent);
         this.children = new TreeMap<>();
     }
@@ -41,6 +41,16 @@ public class NSDirectory extends NSItem {
         }
 
         return list;
+    }
+
+    @Override
+    public List<Long> delete() {
+        List<Long> blockIds = new ArrayList<>();
+        for (NSItem child : this.children.values()) {
+            blockIds.addAll(child.delete());
+        }
+
+        return blockIds;
     }
 
     @Override

@@ -14,7 +14,7 @@ public class NSFile extends NSItem {
     private boolean complete;
 
     public NSFile (String name, String owner, String group, int perm,
-            long blockSize, NSItem parent) {
+            long blockSize, NSDirectory parent) {
         super(name, NSItem.Type.FILE, perm, owner, group, parent);
 
         this.blockSize = blockSize;
@@ -75,6 +75,16 @@ public class NSFile extends NSItem {
             .setUnderConstruction(!this.complete)
             .setIsLastBlockComplete(true) // TODO - set correctly
             .build();
+    }
+
+    @Override
+    public List<Long> delete() {
+        List<Long> blockIds = new ArrayList<>();
+        for (Block block : this.blocks) {
+            blockIds.add(block.getBlockId());
+        }
+
+        return blockIds;
     }
 
     @Override

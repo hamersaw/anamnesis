@@ -32,7 +32,7 @@ public class Main {
             // initialize managers
             DatanodeManager datanodeManager = new DatanodeManager();
             NameSystem nameSystem = new NameSystem();
-            BlockManager blockManager = new BlockManager(datanodeManager, nameSystem);
+            BlockManager blockManager = new BlockManager();
 
             // initialize rpc server
             ServerSocket serverSocket = new ServerSocket(config.port);

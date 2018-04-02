@@ -2,16 +2,18 @@ package com.bushpath.anamnesis.namenode.namesystem;
 
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
+import java.util.List;
+
 public abstract class NSItem {
     protected String name;
     protected Type type;
     protected int perm;
     protected String owner, group;
     protected long modificationTime, accessTime;
-    protected NSItem parent;
+    protected NSDirectory parent;
 
     public NSItem(String name, Type type, int perm, String owner,
-            String group, NSItem parent) {
+            String group, NSDirectory parent) {
         this.name = name;
         this.type = type;
         this.perm = perm;
@@ -75,7 +77,11 @@ public abstract class NSItem {
         this.accessTime = accessTime;
     }
 
-    public void setParent(NSItem parent) {
+    public NSDirectory getParent() {
+        return this.parent;
+    }
+
+    public void setParent(NSDirectory parent) {
         this.parent = parent;
     }
 
@@ -84,6 +90,7 @@ public abstract class NSItem {
         FILE
     }
 
+    public abstract List<Long> delete();
     public abstract HdfsProtos.HdfsFileStatusProto
         toHdfsFileStatusProto(boolean needLocation);
     public abstract void print(int indent);

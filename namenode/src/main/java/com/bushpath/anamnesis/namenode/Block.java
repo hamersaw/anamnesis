@@ -77,6 +77,18 @@ public class Block {
         this.storageIds.add(storageId);
     }
 
+    public List<Datanode> getLocs() {
+        return this.locs;
+    }
+
+    public HdfsProtos.BlockProto toBlockProto() {
+        return HdfsProtos.BlockProto.newBuilder()
+            .setBlockId(this.blockId)
+            .setGenStamp(this.generationStamp)
+            .setNumBytes(this.length)
+            .build();
+    }
+
     public HdfsProtos.ExtendedBlockProto toExtendedBlockProto() {
         return HdfsProtos.ExtendedBlockProto.newBuilder()
             .setPoolId("")

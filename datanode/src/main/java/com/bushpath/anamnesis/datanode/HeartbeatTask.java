@@ -46,6 +46,8 @@ public class HeartbeatTask extends TimerTask {
             // TODO - handle response
             DatanodeProtocolProtos.HeartbeatResponseProto response =
                 DatanodeProtocolProtos.HeartbeatResponseProto.parseDelimitedFrom(in);
+
+            // TODO - execute commands in response
         } catch(Exception e) {
             e.printStackTrace();
             System.err.println("failed to send datanode heartbeat: " + e);

@@ -2,26 +2,17 @@ package com.bushpath.anamnesis.namenode;
 
 import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos;
 
-import com.bushpath.anamnesis.namenode.namesystem.NameSystem;
+import com.bushpath.anamnesis.namenode.Datanode;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 public class BlockManager {
-    private DatanodeManager datanodeManager;
-    private NameSystem nameSystem;
-    private Random random;
-
     private Map<Long, Block> blocks;
 
-    public BlockManager(DatanodeManager datanodeManager,
-            NameSystem nameSystem) {
-        this.datanodeManager = datanodeManager;
-        this.nameSystem = nameSystem;
-        this.random = new Random();
-
+    public BlockManager() {
         this.blocks = new HashMap<>();
     }
 
@@ -29,7 +20,32 @@ public class BlockManager {
         this.blocks.put(block.getBlockId(), block);
     }
 
+    public void delete(long blockId) {
+        this.blocks.remove(blockId);
+    }
+
     public Block get(long blockId) {
         return this.blocks.get(blockId);
+    }
+
+    public boolean contains(long blockId) {
+        return this.blocks.containsKey(blockId);
+    }
+
+    public List<Block> getDatanodeBlocks(String datanodeUuid) {
+        List<Block> blocks = new ArrayList<>();
+        for (Map.Entry<Long, Block> entry : this.blocks.entrySet()) {
+            boolean datanodeFound = false;
+            for (Datanode datanode : entry.getValue().getLocs()) {
+                if (datanode.getDatanodeUuid().equals(datanodeUuid)) {
+                    datanodeFound = true;
+                    break;
+                }
+            }
+
+            blocks.add(entry.getValue());
+        }
+
+        return blocks;
     }
 }

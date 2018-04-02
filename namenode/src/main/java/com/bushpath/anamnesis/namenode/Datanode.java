@@ -17,6 +17,7 @@ public class Datanode {
     private int ipcPort;
     private long lastUpdate;
     private Map<String,Storage> storages;
+    private List<Long> reportedBlockIds;
 
     public Datanode(String ipAddr, String hostname, String datanodeUuid, 
             int xferPort, int infoPort, int ipcPort, long lastUpdate) {
@@ -28,6 +29,7 @@ public class Datanode {
         this.ipcPort = ipcPort;
         this.lastUpdate = lastUpdate;
         this.storages = new HashMap<>();
+        this.reportedBlockIds = new ArrayList<>();
     }
 
     public String getIpAddr() {
@@ -73,6 +75,14 @@ public class Datanode {
         } else {
             this.storages.put(storageUuid, new Storage(capacity, remaining));
         }
+    }
+
+    public void setReportedBlockIds(List<Long> reportedBlockIds) {
+        this.reportedBlockIds = reportedBlockIds;
+    }
+
+    public List<Long> getReportedBlockIds() {
+        return this.reportedBlockIds;
     }
 
     public HdfsProtos.DatanodeIDProto toDatanodeIdProto() {

@@ -6,6 +6,7 @@ import io.grpc.StatusRuntimeException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -63,6 +64,25 @@ public class NameSystem {
             }
 
             ((NSFile) file).complete();
+        } finally {
+            this.lock.writeLock().unlock();
+        }
+    }
+
+    public List<Long> delete(String path, boolean recursive) throws Exception {
+        NSItem file = getFile(path);
+        if (file == null) {
+            throw new Exception("file '" + path + "' does not exist");
+        }
+
+        this.lock.writeLock().lock();
+        try {
+            // retrieve parent directory
+            NSDirectory parentDirectory = file.getParent();
+            parentDirectory.removeChild(file);
+
+            // delete actual file (removing block ids)
+            return file.delete();
         } finally {
             this.lock.writeLock().unlock();
         }
