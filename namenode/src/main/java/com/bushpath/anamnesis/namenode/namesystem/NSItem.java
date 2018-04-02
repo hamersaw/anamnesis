@@ -57,8 +57,16 @@ public abstract class NSItem {
         return this.owner;
     }
 
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+
     public String getGroup() {
         return this.group;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
     }
 
     public long getModificationTime() {

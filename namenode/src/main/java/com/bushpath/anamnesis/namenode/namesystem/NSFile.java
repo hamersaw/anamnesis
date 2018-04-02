@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class NSFile extends NSItem {
-    private long modificationTime, accessTime, blockSize;
+    private long blockSize;
     private List<Block> blocks;
     private boolean complete;
 

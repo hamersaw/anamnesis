@@ -109,8 +109,8 @@ public class ClientNamenodeService {
 
         // create file with name system
         NSItem item = this.nameSystem.create(req.getSrc(), req.getMasked().getPerm(),
-            req.getClientName(), req.getClientName(), req.getCreateParent(),
-            req.getBlockSize());
+            socketContext.getEffectiveUser(), socketContext.getEffectiveUser(),
+            req.getCreateParent(), req.getBlockSize());
 
         // respond to request
         return ClientNamenodeProtocolProtos.CreateResponseProto.newBuilder()
@@ -306,6 +306,26 @@ public class ClientNamenodeService {
             .build();
     }
 
+    public Message setOwner(DataInputStream in,
+            SocketContext socketContext) throws Exception {
+        ClientNamenodeProtocolProtos.SetOwnerRequestProto req =
+            ClientNamenodeProtocolProtos.SetOwnerRequestProto.parseDelimitedFrom(in);
+
+        // retrieve item
+        NSItem item = this.nameSystem.getFile(req.getSrc());
+        if (req.hasUsername()) {
+            item.setOwner(req.getUsername());
+        }
+
+        if (req.hasGroupname()) {
+            item.setGroup(req.getGroupname());
+        }
+
+        // response to request
+        return ClientNamenodeProtocolProtos.SetPermissionResponseProto.newBuilder()
+            .build();
+    }
+
     public Message setPermission(DataInputStream in,
             SocketContext socketContext) throws Exception {
         ClientNamenodeProtocolProtos.SetPermissionRequestProto req =
@@ -313,9 +333,23 @@ public class ClientNamenodeService {
 
         // retrieve item
         NSItem item = this.nameSystem.getFile(req.getSrc());
+        item.setPerm(req.getPermission().getPerm());
 
         // response to request
         return ClientNamenodeProtocolProtos.SetPermissionResponseProto.newBuilder()
+            .build();
+    }
+
+    public Message setReplication(DataInputStream in,
+            SocketContext socketContext) throws Exception {
+        ClientNamenodeProtocolProtos.SetReplicationRequestProto req =
+            ClientNamenodeProtocolProtos.SetReplicationRequestProto.parseDelimitedFrom(in);
+
+        // dummy method returning success - we don't currently support replication
+
+        // response to request
+        return ClientNamenodeProtocolProtos.SetReplicationResponseProto.newBuilder()
+            .setResult(true)
             .build();
     }
 }
