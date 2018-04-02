@@ -21,6 +21,7 @@ public abstract class Storage {
     }
 
     public abstract void storeBlock(Block block) throws IOException;
+    public abstract void deleteBlock(long blockId) throws IOException;
     public abstract byte[] getBlockBytes(long blockId) throws IOException;
     public abstract long getBlockLength(long blockId) throws IOException;
     public abstract Collection<Block> getBlocks();

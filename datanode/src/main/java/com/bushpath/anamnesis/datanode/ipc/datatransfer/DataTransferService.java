@@ -175,36 +175,6 @@ public class DataTransferService extends Thread {
                                 writeBlockStatsProto.getGenerationStamp(),
                                 means, standardDeviations, recordCounts, inflator
                             ));
-                        /*ByteArrayOutputStream statisticsBlockOut =
-                            new ByteArrayOutputStream();
-                        for (DatanodeSketchProtocolProtos.StatisticsProto statisticsProto
-                                : writeBlockStatsProto.getStatisticsList()) {
-
-                            // inflate stats
-                            List<Double> meansList = statisticsProto.getMeansList();
-                            double[] means = new double[meansList.size()];
-                            for (int i=0; i<meansList.size(); i++) {
-                                means[i] = meansList.get(i).doubleValue();
-                            }
-
-                            List<Double> standardDeviationsList =
-                                statisticsProto.getStandardDeviationsList();
-                            double[] standardDeviations =
-                                new double[standardDeviationsList.size()];
-                            for (int i=0; i<standardDeviationsList.size(); i++) {
-                                standardDeviations[i] =
-                                    standardDeviationsList.get(i).doubleValue();
-                            }
-
-                            byte[] bytes = inflator.inflate(means, standardDeviations,
-                                statisticsProto.getRecordCount());
-
-                            statisticsBlockOut.write(bytes);
-                        }
-
-                        byte[] block = statisticsBlockOut.toByteArray();
-                        storage.storeBlock(writeBlockStatsProto.getBlockId(),
-                            writeBlockStatsProto.getGenerationStamp(), block);*/
 
                         // send op reponse
                         DataTransferProtocol.sendBlockOpResponse(out,

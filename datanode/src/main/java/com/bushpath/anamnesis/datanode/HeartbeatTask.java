@@ -47,7 +47,33 @@ public class HeartbeatTask extends TimerTask {
             DatanodeProtocolProtos.HeartbeatResponseProto response =
                 DatanodeProtocolProtos.HeartbeatResponseProto.parseDelimitedFrom(in);
 
-            // TODO - execute commands in response
+            // execute commands in response
+            for (DatanodeProtocolProtos.DatanodeCommandProto datanodeCommand :
+                    response.getCmdsList()) {
+                switch (datanodeCommand.getCmdType()) {
+                case BlockCommand :
+                    // parse block command
+                    DatanodeProtocolProtos.BlockCommandProto blockCommand =
+                        datanodeCommand.getBlkCmd();
+
+                    switch (blockCommand.getAction()) {
+                    case INVALIDATE:
+                        for (HdfsProtos.BlockProto block : blockCommand.getBlocksList()) {
+                            this.storage.deleteBlock(block.getBlockId());
+                        }
+
+                        break;
+                    default:
+                        System.err.println("Unsupported block command action '" 
+                            + blockCommand.getAction() + "'");
+                    }
+
+                    break;
+                default:
+                    System.err.println("Unsupported datanode command type '" 
+                        + datanodeCommand.getCmdType() + "'");
+                }
+            }
         } catch(Exception e) {
             e.printStackTrace();
             System.err.println("failed to send datanode heartbeat: " + e);

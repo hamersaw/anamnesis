@@ -34,6 +34,16 @@ public class JVMStorage extends Storage {
     }
 
     @Override
+    public void deleteBlock(long blockId) throws IOException {
+        if (!this.blocks.containsKey(blockId)) {
+            throw new IOException("can not delete block, block '"
+                + blockId + "' does not exist");
+        }
+        
+        this.blocks.remove(blockId);
+    }
+
+    @Override
     public byte[] getBlockBytes(long blockId) throws IOException {
         if (!this.blocks.containsKey(blockId)) {
             throw new IOException("can not get block, block '"

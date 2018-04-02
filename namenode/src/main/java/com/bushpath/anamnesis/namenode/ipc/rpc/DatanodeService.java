@@ -74,16 +74,21 @@ public class DatanodeService {
             this.blockManager.getDatanodeBlocks(datanodeId.getDatanodeUuid());
         List<HdfsProtos.BlockProto> removeBlocks = new ArrayList<>();
         for (Long reportedBlockId : reportedBlockIds) {
-            Block block = null;
-            for (Block b : blocks) {
-                if (b.getBlockId() == reportedBlockId) {
-                    block = b;
+            boolean blockFound = false;
+            for (Block block : blocks) {
+                if (block.getBlockId() == reportedBlockId) {
+                    blockFound = true;
                     break;
                 }
             }
 
-            if (block != null) {
-                removeBlocks.add(block.toBlockProto());
+            if (!blockFound) {
+                removeBlocks.add(
+                    HdfsProtos.BlockProto.newBuilder()
+                        .setBlockId(reportedBlockId)
+                        .setGenStamp(-1)
+                        .build()
+                    );
             }
         }
 
@@ -144,6 +149,9 @@ public class DatanodeService {
             // iterate over blocks in report
             List<Long> blockList = storageReport.getBlocksList();
             for (int i=0; i<blockList.size(); i += 4) {
+                // add block to reported block ids list
+                reportedBlockIds.add(blockList.get(i));
+
                 // check if block still exists
                 if (!this.blockManager.contains(blockList.get(i))) {
                     continue;
@@ -160,9 +168,6 @@ public class DatanodeService {
                 block.addLoc(datanode, true, datanodeStorage.getStorageType(),
                     datanodeStorage.getStorageUuid());
             }
-
-            // add reported block ids to list
-            reportedBlockIds.addAll(blockList);
         }
 
         // set datanode reported block ids
