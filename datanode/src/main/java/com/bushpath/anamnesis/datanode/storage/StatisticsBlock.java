@@ -5,12 +5,8 @@ import com.bushpath.anamnesis.datanode.inflator.Inflator;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.logging.Logger;
 
 public class StatisticsBlock extends Block {
-    private static final Logger logger =
-        Logger.getLogger(StatisticsBlock.class.getName());
-
     protected double[][] means;
     protected double[][] standardDeviations;
     protected long[] recordCounts;
@@ -65,25 +61,6 @@ public class StatisticsBlock extends Block {
             return;
         }
 
-        /*// compute bytes
-        ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
-
-        long startTime = System.currentTimeMillis();
-        long totalRecordCount = 0;
-        for (int i=0; i<this.recordCounts.length; i++) {
-            totalRecordCount += this.recordCounts[i];
-            byte[] bytes = this.inflator.inflate(this.means[i],
-                this.standardDeviations[i], this.recordCounts[i]);
-
-            bytesOut.write(bytes);
-        }
-
-        logger.info("block " + this.blockId + ": generated " + totalRecordCount
-            + " record(s) in " + (System.currentTimeMillis() - startTime) + " ms");
-
-        this.bytes = bytesOut.toByteArray();
-        bytesOut.close();*/
-
         ByteBuffer byteBuffer = ByteBuffer.allocate((int) this.getLength());
         long startTime = System.currentTimeMillis();
         this.inflator.inflate(this.means,
@@ -95,8 +72,8 @@ public class StatisticsBlock extends Block {
             totalRecordCount += recordCount;
         }
 
-        logger.info("block " + this.blockId + ": generated " + totalRecordCount
-            + " record(s) in " + (endTime - startTime) + " ms");
+        System.out.println("block '" + this.blockId + "': generated " 
+            + totalRecordCount + " record(s) in " + (endTime - startTime) + "ms");
 
         this.bytes = byteBuffer.array();
     }

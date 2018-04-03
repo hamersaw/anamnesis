@@ -9,12 +9,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.TimerTask;
-import java.util.logging.Logger;
 
 public class MemoryEvictionTask extends TimerTask {
-    private static final Logger logger =
-        Logger.getLogger(MemoryEvictionTask.class.getName());
-
     protected Configuration configuration;
     protected Storage storage;
 
@@ -65,7 +61,6 @@ public class MemoryEvictionTask extends TimerTask {
 
         // evict blocks
         for (StatisticsBlock block : blocks) {
-            logger.info("evicting block " + block.getBlockId());
             block.evict();
             usedMemory -= block.getLength();
 

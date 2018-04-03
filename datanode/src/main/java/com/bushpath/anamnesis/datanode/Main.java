@@ -17,10 +17,8 @@ import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
-import java.util.logging.Logger;
 
 public class Main {
-    private static final Logger logger = Logger.getLogger(Main.class.getName());
     public static final String softwareVersion = "2.8.0";
 
     public static void main(String[] args) {
@@ -76,7 +74,7 @@ public class Main {
 
                 rpcClient.close();
             } catch(Exception e) {
-                logger.severe("failed to register datanode: " + e);
+                System.err.println("failed to register datanode: " + e);
                 System.exit(1);
             }
             

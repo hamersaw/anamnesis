@@ -11,10 +11,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 public class JVMStorage extends Storage {
-    private static final Logger logger = Logger.getLogger(JVMStorage.class.getName());
     private Map<Long, Block> blocks;
 
     public JVMStorage(String storageUuid, boolean justInTimeInflation) {

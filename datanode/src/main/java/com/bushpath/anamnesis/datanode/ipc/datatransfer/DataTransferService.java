@@ -24,11 +24,8 @@ import java.io.EOFException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
-import java.util.logging.Logger;
 
 public class DataTransferService extends Thread {
-    private static final Logger logger =
-        Logger.getLogger(DataTransferService.class.getName());
     private int port;
     private Storage storage;
 
@@ -47,8 +44,7 @@ public class DataTransferService extends Thread {
                 new Thread(new DataTransferWorker(socket)).start();
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            logger.severe(e.toString());
+            System.err.println("Unknown server socket error: " + e.toString());
         }
     }
 
@@ -69,7 +65,6 @@ public class DataTransferService extends Thread {
                 while (true) {
                     // read operation
                     Op op = DataTransferProtocol.readOp(in);
-                    logger.info("recv op '" + op + "'");
 
                     switch(op) {
                     case WRITE_BLOCK:
@@ -79,6 +74,9 @@ public class DataTransferService extends Thread {
 
                         HdfsProtos.ExtendedBlockProto extendedBlockProto = 
                             writeBlockProto.getHeader().getBaseHeader().getBlock();
+
+                        System.out.println(System.currentTimeMillis() + ": writing block "
+                            + extendedBlockProto.getBlockId());
 
                         DataTransferProtos.ChecksumProto writeChecksumProto =
                             writeBlockProto.getRequestedChecksum();
@@ -95,11 +93,13 @@ public class DataTransferService extends Thread {
                             writeChecksum);
                         byte[] buffer = new byte[1024]; // TODO - find ideal size
                         int bytesRead = 0;
+                        int totalBytesRead = 0;
 
                         ByteArrayOutputStream blockStream = new ByteArrayOutputStream();
                         while ((bytesRead = blockIn.read(buffer)) != 0) {
                             // add bytes to array
                             blockStream.write(buffer, 0, bytesRead);
+                            totalBytesRead += bytesRead;
                         }
 
                         // store block in storage
@@ -111,6 +111,10 @@ public class DataTransferService extends Thread {
                             ));
 
                         blockIn.close();
+
+                        System.out.println(System.currentTimeMillis() + ": wrote "
+                            + totalBytesRead + " bytes to block "
+                            + extendedBlockProto.getBlockId());
 
                         // TODO - fix this
                         /*switch (writeBlockProto.getStage()) {
@@ -126,6 +130,10 @@ public class DataTransferService extends Thread {
                         DatanodeSketchProtocolProtos.WriteBlockStatsProto
                             writeBlockStatsProto = DatanodeSketchProtocolProtos
                                 .WriteBlockStatsProto.parseDelimitedFrom(in);
+
+                        System.out.println(System.currentTimeMillis()
+                            + ": writing stats block "
+                            + writeBlockStatsProto.getBlockId());
 
                         // initialize inflator
                         Inflator inflator = null;
@@ -176,6 +184,10 @@ public class DataTransferService extends Thread {
                                 means, standardDeviations, recordCounts, inflator
                             ));
 
+                        System.out.println(System.currentTimeMillis() + ": wrote "
+                            + index + " micro-sketches to block "
+                            + writeBlockStatsProto.getBlockId());
+
                         // send op reponse
                         DataTransferProtocol.sendBlockOpResponse(out,
                                 DataTransferProtos.Status.SUCCESS);
@@ -188,6 +200,9 @@ public class DataTransferService extends Thread {
 
                         HdfsProtos.ExtendedBlockProto readExtendedBlockProto =
                             readBlockProto.getHeader().getBaseHeader().getBlock();
+
+                        System.out.println(System.currentTimeMillis() + ": reading block "
+                            + readExtendedBlockProto.getBlockId());
 
                         // send op response
                         DataTransferProtocol.sendBlockOpResponse(out,
@@ -208,10 +223,13 @@ public class DataTransferService extends Thread {
                             (int) readBlockProto.getLen());
                         blockOut.close();
 
+                        System.out.println(System.currentTimeMillis() + ": read "
+                            + readBlock.length + " bytes from block " +
+                            readExtendedBlockProto.getBlockId());
+
                         // TODO - read client read status proto
                         DataTransferProtos.ClientReadStatusProto readProto =
                             DataTransferProtocol.recvClientReadStatus(in);
-                        System.out.println("\tSTATUS:" + readProto.getStatus());
 
                         break;
                     }
@@ -219,8 +237,7 @@ public class DataTransferService extends Thread {
             } catch (EOFException e) {
                 // socket was closed by client
             } catch (Exception e) {
-                e.printStackTrace();
-                logger.severe(e.toString());
+                System.out.println("Unknown data transfer error: " + e.toString());
             }
         }
     }

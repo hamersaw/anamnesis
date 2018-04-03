@@ -42,7 +42,7 @@ public class SaslPacketHandler implements PacketHandler {
             RpcUtil.sendMessages(out, rpcResponse, message);
             break;
         default:
-            System.out.println("TODO - handle sasl " + rpcSaslProto.getState());
+            System.err.println("TODO - handle sasl " + rpcSaslProto.getState());
             break;
         }
     }

@@ -70,6 +70,11 @@ public class ClientNamenodeService {
         file.addBlock(block);
         this.blockManager.add(block);
 
+        System.out.println(System.currentTimeMillis() + ": added block "
+            + block.getBlockId() + " : '" + req.getSrc()
+            + "' : " + datanode.getDatanodeUuid());
+
+        // respond to request
         HdfsProtos.LocatedBlockProto locatedBlockProto =
             HdfsProtos.LocatedBlockProto.newBuilder()
                 .setB(block.toExtendedBlockProto())
@@ -82,7 +87,6 @@ public class ClientNamenodeService {
                 .addStorageIDs("")
                 .build();
 
-        // respond to request
         return ClientNamenodeProtocolProtos.AddBlockResponseProto.newBuilder()
             .setBlock(locatedBlockProto)
             .build();
@@ -95,6 +99,9 @@ public class ClientNamenodeService {
 
         // complete file with name system
         this.nameSystem.complete(req.getSrc());
+
+        System.out.println(System.currentTimeMillis() + ": completed file '"
+            + req.getSrc() + "'");
 
         // response to request
         return ClientNamenodeProtocolProtos.CompleteResponseProto.newBuilder()
@@ -112,6 +119,9 @@ public class ClientNamenodeService {
             socketContext.getEffectiveUser(), socketContext.getEffectiveUser(),
             req.getCreateParent(), req.getBlockSize());
 
+        System.out.println(System.currentTimeMillis() + ": created file '"
+            + req.getSrc() + "'");
+
         // respond to request
         return ClientNamenodeProtocolProtos.CreateResponseProto.newBuilder()
             .setFs(item.toHdfsFileStatusProto(false))
@@ -128,6 +138,9 @@ public class ClientNamenodeService {
         for (Long blockId : blockIds) {
             this.blockManager.delete(blockId);
         }
+
+        System.out.println(System.currentTimeMillis() + ": deleted file '"
+            + req.getSrc() + "' : " + req.getRecursive());
 
         return ClientNamenodeProtocolProtos.DeleteResponseProto.newBuilder()
             .setResult(true)
@@ -276,6 +289,9 @@ public class ClientNamenodeService {
             socketContext.getEffectiveUser(), socketContext.getEffectiveUser(),
             req.getCreateParent());
 
+        System.out.println(System.currentTimeMillis() + ": made directory '"
+            + req.getSrc() + "' : " + req.getCreateParent());
+
         // respond to request
         return ClientNamenodeProtocolProtos.MkdirsResponseProto.newBuilder()
             .setResult(true)
@@ -289,6 +305,9 @@ public class ClientNamenodeService {
 
         // use name system to make directory
         this.nameSystem.rename(req.getSrc(), req.getDst());
+
+        System.out.println(System.currentTimeMillis() + ": renamed '"
+            + req.getSrc() + "' to '" + req.getDst() + "'");
 
         // respond to request
         return ClientNamenodeProtocolProtos.RenameResponseProto.newBuilder()
@@ -321,6 +340,10 @@ public class ClientNamenodeService {
             item.setGroup(req.getGroupname());
         }
 
+        System.out.println(System.currentTimeMillis() + ": changed owner of '"
+            + req.getSrc()  + "' to '" + req.getUsername() + ":"
+            + req.getGroupname() + "'");
+
         // response to request
         return ClientNamenodeProtocolProtos.SetPermissionResponseProto.newBuilder()
             .build();
@@ -334,6 +357,9 @@ public class ClientNamenodeService {
         // retrieve item
         NSItem item = this.nameSystem.getFile(req.getSrc());
         item.setPerm(req.getPermission().getPerm());
+
+        System.out.println(System.currentTimeMillis() + ": set permission of '"
+            + req.getSrc() + "' to " + req.getPermission().getPerm());
 
         // response to request
         return ClientNamenodeProtocolProtos.SetPermissionResponseProto.newBuilder()

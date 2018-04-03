@@ -15,12 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.logging.Logger;
 
 public class DatanodeManager {
-    private static final Logger logger =
-        Logger.getLogger(DatanodeManager.class.getName());
-
     protected ReadWriteLock lock;
     protected Random random;
 
@@ -36,8 +32,6 @@ public class DatanodeManager {
             int xferPort, int infoPort, int ipcPort, long lastUpdate) throws Exception {
         this.lock.writeLock().lock();
         try {
-            logger.info("registering node '" + datanodeUuid + "'");
-
             // ensure datanodeuuid is not empty
             if (datanodeUuid.isEmpty()) {
                 throw new StatusRuntimeException(Status.INVALID_ARGUMENT
@@ -86,9 +80,6 @@ public class DatanodeManager {
             long capacity, long remaining) throws Exception {
         this.lock.writeLock().lock();
         try {
-            logger.info("updating storage " + datanodeUuid + ":" + storageUuid + " " +
-                    remaining + "/" + capacity);
-
             // ensure datanodeuuid is not empty
             if (datanodeUuid.isEmpty()) {
                 throw new StatusRuntimeException(Status.INVALID_ARGUMENT

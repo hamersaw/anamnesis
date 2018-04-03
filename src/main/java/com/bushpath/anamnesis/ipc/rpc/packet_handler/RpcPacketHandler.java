@@ -50,8 +50,6 @@ public class RpcPacketHandler implements PacketHandler {
         String declaringClassProtocolName =
             requestHeaderProto.getDeclaringClassProtocolName();
 
-        System.out.println(declaringClassProtocolName + " : " + methodName);
-
         Message message = null;
         if (!this.protocols.containsKey(declaringClassProtocolName)) {
             // error -> protocol does not exist
