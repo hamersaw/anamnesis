@@ -70,6 +70,9 @@ public class RpcPacketHandler implements PacketHandler {
             }
 
             if (method == null) {
+                System.out.println("ERROR: rpc method '" + declaringClassProtocolName
+                    + "." + methodName + "' is not implemented");
+
                 // error -> method does not exist
                 respBuilder.setStatus(RpcStatusProto.ERROR);
                 respBuilder.setErrorMsg("method '" + methodName + "' does not exist");

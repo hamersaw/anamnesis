@@ -224,7 +224,7 @@ public class DataTransferService extends Thread {
                         blockOut.close();
 
                         System.out.println(System.currentTimeMillis() + ": read "
-                            + readBlock.length + " bytes from block " +
+                            + readBlockProto.getLen() + " bytes from block " +
                             readExtendedBlockProto.getBlockId());
 
                         // TODO - read client read status proto

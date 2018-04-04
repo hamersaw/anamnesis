@@ -147,6 +147,17 @@ public class ClientNamenodeService {
             .build();
     }
 
+    public Message fsync(DataInputStream in,
+            SocketContext socketContext) throws Exception {
+        ClientNamenodeProtocolProtos.FsyncRequestProto req =
+            ClientNamenodeProtocolProtos.FsyncRequestProto.parseDelimitedFrom(in);
+
+        // dummy method - meant to flush data from memory to disk
+
+        return ClientNamenodeProtocolProtos.FsyncResponseProto.newBuilder()
+            .build();
+    }
+
     public Message getBlockLocations(DataInputStream in,
             SocketContext socketContext) throws Exception {
         ClientNamenodeProtocolProtos.GetBlockLocationsRequestProto req =

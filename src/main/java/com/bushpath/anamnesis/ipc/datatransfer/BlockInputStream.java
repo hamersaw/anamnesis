@@ -169,6 +169,8 @@ public class BlockInputStream extends InputStream {
                             packetHeaderProto.getOffsetInBlock());
 
                     while(!chunkPacketQueue.offer(chunkPacket)) {}
+                } catch(EOFException e) {
+                    break;
                 } catch(Exception e) {
                     System.err.println("ChunkReader failed: " + e.toString());
                 } 
