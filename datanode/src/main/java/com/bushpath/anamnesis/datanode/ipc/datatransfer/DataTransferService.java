@@ -216,7 +216,7 @@ public class DataTransferService extends Thread {
 
                         // send stream block chunks
                         BlockOutputStream blockOut = new BlockOutputStream(in, out,
-                            readChecksum, readBlockProto.getOffset() + 1);
+                            readChecksum, readBlockProto.getOffset() + 1, false);
                         byte[] readBlock =
                             storage.getBlockBytes(readExtendedBlockProto.getBlockId());
                         blockOut.write(readBlock, (int) readBlockProto.getOffset(),

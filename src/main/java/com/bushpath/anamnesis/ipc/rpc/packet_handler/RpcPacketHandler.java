@@ -82,6 +82,7 @@ public class RpcPacketHandler implements PacketHandler {
                 try {
                     message = (Message) method.invoke(rpcHandler, in, socketContext);
                 } catch(Exception e) {
+                    e.printStackTrace();
                     respBuilder.setStatus(RpcStatusProto.ERROR);
                     respBuilder.setExceptionClassName(e.getClass().toString());
                     respBuilder.setErrorMsg(e.toString());

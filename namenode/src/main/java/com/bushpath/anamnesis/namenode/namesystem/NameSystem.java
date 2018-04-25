@@ -24,6 +24,25 @@ public class NameSystem {
         this.root = new NSDirectory("", Integer.MAX_VALUE, "", "", null);
     }
 
+    public void complete(String path) throws Exception {
+        NSItem file = getFile(path);
+        if (file == null) {
+            throw new Exception("file '" + path + "' does not exist");
+        }
+
+        this.lock.writeLock().lock();
+        try {
+            if (file.getType() != NSItem.Type.FILE) {
+                throw new StatusRuntimeException(Status.INVALID_ARGUMENT
+                    .withDescription("'" + path + "' is not a file"));
+            }
+
+            ((NSFile) file).complete();
+        } finally {
+            this.lock.writeLock().unlock();
+        }
+    }
+
     public NSItem create(String path, int perm, String owner, String group,
             boolean createParent, long blockSize) throws Exception {
         // retrieve parent directory
@@ -45,25 +64,6 @@ public class NameSystem {
             parentDirectory.addChild(file);
 
             return file;
-        } finally {
-            this.lock.writeLock().unlock();
-        }
-    }
-
-    public void complete(String path) throws Exception {
-        NSItem file = getFile(path);
-        if (file == null) {
-            throw new Exception("file '" + path + "' does not exist");
-        }
-
-        this.lock.writeLock().lock();
-        try {
-            if (file.getType() != NSItem.Type.FILE) {
-                throw new StatusRuntimeException(Status.INVALID_ARGUMENT
-                    .withDescription("'" + path + "' is not a file"));
-            }
-
-            ((NSFile) file).complete();
         } finally {
             this.lock.writeLock().unlock();
         }

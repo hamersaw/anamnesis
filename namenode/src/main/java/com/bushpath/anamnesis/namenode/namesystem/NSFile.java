@@ -13,7 +13,7 @@ public class NSFile extends NSItem {
     private List<Block> blocks;
     private boolean complete;
 
-    public NSFile (String name, String owner, String group, int perm,
+    public NSFile(String name, String owner, String group, int perm,
             long blockSize, NSDirectory parent) {
         super(name, NSItem.Type.FILE, perm, owner, group, parent);
 

@@ -10,6 +10,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.InterruptedException;
+import java.net.SocketException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -65,6 +66,7 @@ public class BlockInputStream extends InputStream {
 
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
+        //System.out.println("*: read() " + off + ":" + len);
         int bytesRead = 0;
         int bIndex = 0;
 
@@ -169,7 +171,7 @@ public class BlockInputStream extends InputStream {
                             packetHeaderProto.getOffsetInBlock());
 
                     while(!chunkPacketQueue.offer(chunkPacket)) {}
-                } catch(EOFException e) {
+                } catch(EOFException | SocketException e) {
                     break;
                 } catch(Exception e) {
                     System.err.println("ChunkReader failed: " + e.toString());
@@ -183,13 +185,14 @@ public class BlockInputStream extends InputStream {
         public void run() {
             // loop until last packet has been seen
             Long sequenceNumber;
-            while (!lastPacketSeen) {
+            while (!lastPacketSeen || !pipelineAckQueue.isEmpty()) {
                 try {
                     // send pipeline ack
                     sequenceNumber = pipelineAckQueue.take();
                     DataTransferProtocol.sendPipelineAck(out, sequenceNumber);
                 } catch (Exception e) {
                     System.err.println("PipelineAckWriter failed: " + e.toString());
+                    return;
                 }
             }
         }
