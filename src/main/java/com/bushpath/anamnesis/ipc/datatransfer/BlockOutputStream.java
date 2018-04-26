@@ -126,9 +126,10 @@ public class BlockOutputStream extends OutputStream {
     private class ChunkWriter extends Thread {
         @Override
         public void run() {
+            ChunkPacket chunkPacket;
             while (true) {
                 try {
-                    ChunkPacket chunkPacket = chunkPacketQueue.take();
+                    chunkPacket = chunkPacketQueue.take();
 
                     // compute packet length
                     int checksumCount = (int) Math.ceil(chunkPacket.getBufferLength()

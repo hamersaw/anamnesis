@@ -152,7 +152,8 @@ public class ClientNamenodeService {
         ClientNamenodeProtocolProtos.FsyncRequestProto req =
             ClientNamenodeProtocolProtos.FsyncRequestProto.parseDelimitedFrom(in);
 
-        // dummy method - meant to flush data from memory to disk
+        System.out.println(System.currentTimeMillis() + ": fsync for file '"
+            + req.getSrc() + "'");
 
         return ClientNamenodeProtocolProtos.FsyncResponseProto.newBuilder()
             .build();
@@ -245,7 +246,7 @@ public class ClientNamenodeService {
 
             // convert NSItem to HdfsFileStatusProto
             HdfsProtos.HdfsFileStatusProto hdfsFileStatusProto =
-                item.toHdfsFileStatusProto(false);
+                item.toHdfsFileStatusProto(req.getNeedLocation());
 
             totalSize += hdfsFileStatusProto.getSerializedSize();
             if (totalSize > 60000) { // TODO - find the ideal size for this

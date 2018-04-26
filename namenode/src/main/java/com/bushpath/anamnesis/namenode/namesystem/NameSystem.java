@@ -3,6 +3,7 @@ package com.bushpath.anamnesis.namenode.namesystem;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -54,8 +55,9 @@ public class NameSystem {
             // check if file already exists
             String[] elements = parseElements(path);
             if (parentDirectory.hasChild(elements[elements.length - 1])) {
-                throw new StatusRuntimeException(Status.ALREADY_EXISTS
-                    .withDescription("'" + path + "' already exists"));
+                //throw new StatusRuntimeException(Status.ALREADY_EXISTS
+                //    .withDescription("'" + path + "' already exists"));
+                return getFile(path);
             }
  
             // create new file and add as child of parent directory
@@ -72,7 +74,8 @@ public class NameSystem {
     public List<Long> delete(String path, boolean recursive) throws Exception {
         NSItem file = getFile(path);
         if (file == null) {
-            throw new Exception("file '" + path + "' does not exist");
+            //throw new Exception("file '" + path + "' does not exist");
+            return new ArrayList<>();
         }
 
         this.lock.writeLock().lock();
