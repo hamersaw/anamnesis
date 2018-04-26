@@ -188,7 +188,12 @@ public class BlockOutputStream extends OutputStream {
                         DataTransferProtocol.recvPipelineAck(in);
 
                     long sequenceNumber = pipelineAckProto.getSeqno();
+                    while(!pipelineAckQueue.contains(sequenceNumber)) {
+                        Thread.sleep(50);
+                    }
+
                     pipelineAckQueue.remove(sequenceNumber);
+                    //System.out.println("recv ack " + sequenceNumber);
                 } catch (Exception e) {
                     System.err.println("PipelineAckWriter failed: " + e.toString());
                     return;

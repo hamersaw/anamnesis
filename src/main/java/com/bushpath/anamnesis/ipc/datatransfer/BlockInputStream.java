@@ -170,6 +170,9 @@ public class BlockInputStream extends InputStream {
                             dataBuffer.length,
                             packetHeaderProto.getOffsetInBlock());
 
+                    //System.out.println("read " + packetHeaderProto.getSeqno()
+                    //    + ":" + lastPacketSeen);
+
                     while(!chunkPacketQueue.offer(chunkPacket)) {}
                 } catch(EOFException | SocketException e) {
                     break;
@@ -190,6 +193,7 @@ public class BlockInputStream extends InputStream {
                     // send pipeline ack
                     sequenceNumber = pipelineAckQueue.take();
                     DataTransferProtocol.sendPipelineAck(out, sequenceNumber);
+                    //System.out.println("sent ack " + sequenceNumber);
                 } catch (Exception e) {
                     System.err.println("PipelineAckWriter failed: " + e.toString());
                     return;
