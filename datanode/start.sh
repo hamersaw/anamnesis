@@ -1,8 +1,8 @@
-#!/bin/bash
-APPLICATION="anamnesis-namenode"
+#!/bin/sh
+APPLICATION="anamnesis-datanode"
 VERSION="0.1-SNAPSHOT"
 
-JAVA_OPTS="-Xmx2G"
+JAVA_OPTS="-Xmx12G -Djava.library.path=$BASEDIR/../build/generated"
 
 CLASSPATH=""
 BASEDIR=$(dirname $0)
@@ -14,4 +14,5 @@ else
     exit 1
 fi
 
-java -cp $CLASSPATH $JAVA_OPTS com.bushpath.anamnesis.namenode.Main $@
+java -cp $CLASSPATH $JAVA_OPTS com.bushpath.anamnesis.datanode.Main $@ > $BASEDIR/$HOSTNAME.log 2>&1 &
+echo $! > $BASEDIR/$HOSTNAME.pid

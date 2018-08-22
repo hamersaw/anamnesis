@@ -33,11 +33,11 @@ protobuf{
 // define environment variables
 def jniClass = "com.bushpath.anamnesis.checksum.NativeChecksumCRC32"
 def nativeIncludeDir = "build/generated"
-def javaHome = "/usr/lib/jvm/default-java"
+def javaHome = "/home/hamersaw/.sdkman/candidates/java/current"
       
 // generate jni headers        
 task generateJniHeaders(type: Exec) {
-    def classpath = "build/classes/main/"
+    def classpath = "build/classes/java/main/"
     commandLine "javah", "-d", "$nativeIncludeDir", "-classpath", classpath, 
         "$jniClass"       
 

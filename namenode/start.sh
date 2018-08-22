@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 APPLICATION="anamnesis-namenode"
 VERSION="0.1-SNAPSHOT"
 
@@ -14,4 +14,5 @@ else
     exit 1
 fi
 
-java -cp $CLASSPATH $JAVA_OPTS com.bushpath.anamnesis.namenode.Main $@
+java -cp $CLASSPATH $JAVA_OPTS com.bushpath.anamnesis.namenode.Main $@ > $BASEDIR/$HOSTNAME.log 2>&1 &
+echo $! > $BASEDIR/$HOSTNAME.pid

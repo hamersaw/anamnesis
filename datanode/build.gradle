@@ -2,6 +2,7 @@ apply plugin: 'application'
 apply plugin: 'java'
 apply plugin: 'com.google.protobuf'
 
+version '0.1-SNAPSHOT'
 mainClassName = 'com.bushpath.anamnesis.datanode.Main'
 
 jar {

@@ -1,14 +1,16 @@
 #!/bin/bash
-BASEDIR=$(dirname $0)
+APPLICATION="anamnesis-datanode"
+VERSION="0.1-SNAPSHOT"
 
-JAVA_OPTS="-Xmx2G -Djava.library.path=$BASEDIR/../build/generated"
+JAVA_OPTS="-Xmx12G -Djava.library.path=$BASEDIR/../build/generated"
 
 CLASSPATH=""
-if [ -f $BASEDIR/build/libs/anamnesis-datanode.jar ]
-then
-    CLASSPATH="$BASEDIR/build/libs/anamnesis-datanode.jar"
+BASEDIR=$(dirname $0)
+HOSTNAME=$(hostname)
+if [ -f $BASEDIR/build/libs/$APPLICATION-$VERSION.jar ]; then
+    CLASSPATH="$BASEDIR/build/libs/$APPLICATION-$VERSION.jar"
 else
-    echo "unable to find anamnesis-datanode.jar. please compile with 'gradle build'."
+    echo "unable to find $APPLICATION-$VERSION.jar."
     exit 1
 fi
 
