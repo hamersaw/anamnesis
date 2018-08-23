@@ -70,9 +70,9 @@ public class ClientNamenodeService {
         file.addBlock(block);
         this.blockManager.add(block);
 
-        System.out.println(System.currentTimeMillis() + ": added block "
-            + block.getBlockId() + " : '" + req.getSrc()
-            + "' : " + datanode.getDatanodeUuid());
+        //System.out.println(System.currentTimeMillis() + ": added block "
+        //    + block.getBlockId() + " : '" + req.getSrc()
+        //    + "' : " + datanode.getDatanodeUuid());
 
         // respond to request
         HdfsProtos.LocatedBlockProto locatedBlockProto =
@@ -100,8 +100,8 @@ public class ClientNamenodeService {
         // complete file with name system
         this.nameSystem.complete(req.getSrc());
 
-        System.out.println(System.currentTimeMillis() + ": completed file '"
-            + req.getSrc() + "'");
+        //System.out.println(System.currentTimeMillis() + ": completed file '"
+        //    + req.getSrc() + "'");
 
         // response to request
         return ClientNamenodeProtocolProtos.CompleteResponseProto.newBuilder()
@@ -119,8 +119,8 @@ public class ClientNamenodeService {
             socketContext.getEffectiveUser(), socketContext.getEffectiveUser(),
             req.getCreateParent(), req.getBlockSize());
 
-        System.out.println(System.currentTimeMillis() + ": created file '"
-            + req.getSrc() + "'");
+        //System.out.println(System.currentTimeMillis() + ": created file '"
+        //    + req.getSrc() + "' " + req.getCreateFlag());
 
         // respond to request
         return ClientNamenodeProtocolProtos.CreateResponseProto.newBuilder()
@@ -139,8 +139,8 @@ public class ClientNamenodeService {
             this.blockManager.delete(blockId);
         }
 
-        System.out.println(System.currentTimeMillis() + ": deleted file '"
-            + req.getSrc() + "' : " + req.getRecursive());
+        //System.out.println(System.currentTimeMillis() + ": deleted file '"
+        //    + req.getSrc() + "' : " + req.getRecursive());
 
         return ClientNamenodeProtocolProtos.DeleteResponseProto.newBuilder()
             .setResult(true)
@@ -152,9 +152,10 @@ public class ClientNamenodeService {
         ClientNamenodeProtocolProtos.FsyncRequestProto req =
             ClientNamenodeProtocolProtos.FsyncRequestProto.parseDelimitedFrom(in);
 
-        System.out.println(System.currentTimeMillis() + ": fsync for file '"
-            + req.getSrc() + "'");
+        //System.out.println(System.currentTimeMillis() + ": fsync for file '"
+        //    + req.getSrc() + "'");
 
+        // return file locations
         return ClientNamenodeProtocolProtos.FsyncResponseProto.newBuilder()
             .build();
     }
@@ -170,6 +171,9 @@ public class ClientNamenodeService {
             throw new Exception("file is not of type 'FILE'");
         }
         NSFile file = (NSFile) item;
+
+        //System.out.println(System.currentTimeMillis() + ": got block locations for file '"
+        //    + req.getSrc() + "' : " + ((NSFile) item).getBlockCount());
 
         // return file locations
         return ClientNamenodeProtocolProtos.GetBlockLocationsResponseProto.newBuilder()
@@ -264,6 +268,9 @@ public class ClientNamenodeService {
             directoryListingProtoBuilder.setRemainingEntries(0);
         }
 
+        //System.out.println(System.currentTimeMillis() + ": got listings for file '"
+        //    + req.getSrc() + "'");
+
         // respond to request
         return ClientNamenodeProtocolProtos.GetListingResponseProto.newBuilder()
             .setDirList(directoryListingProtoBuilder.build())
@@ -286,6 +293,8 @@ public class ClientNamenodeService {
                 .setChecksumType(HdfsProtos.ChecksumTypeProto.CHECKSUM_CRC32C)
                 .build();
 
+        //System.out.println(System.currentTimeMillis() + ": got server defaults");
+
         return ClientNamenodeProtocolProtos.GetServerDefaultsResponseProto.newBuilder()
             .setServerDefaults(fsServerDefaultsProto)
             .build();
@@ -301,8 +310,8 @@ public class ClientNamenodeService {
             socketContext.getEffectiveUser(), socketContext.getEffectiveUser(),
             req.getCreateParent());
 
-        System.out.println(System.currentTimeMillis() + ": made directory '"
-            + req.getSrc() + "' : " + req.getCreateParent());
+        //System.out.println(System.currentTimeMillis() + ": made directory '"
+        //    + req.getSrc() + "' : " + req.getCreateParent());
 
         // respond to request
         return ClientNamenodeProtocolProtos.MkdirsResponseProto.newBuilder()
@@ -318,8 +327,8 @@ public class ClientNamenodeService {
         // use name system to make directory
         this.nameSystem.rename(req.getSrc(), req.getDst());
 
-        System.out.println(System.currentTimeMillis() + ": renamed '"
-            + req.getSrc() + "' to '" + req.getDst() + "'");
+        //System.out.println(System.currentTimeMillis() + ": renamed '"
+        //    + req.getSrc() + "' to '" + req.getDst() + "'");
 
         // respond to request
         return ClientNamenodeProtocolProtos.RenameResponseProto.newBuilder()
@@ -352,9 +361,9 @@ public class ClientNamenodeService {
             item.setGroup(req.getGroupname());
         }
 
-        System.out.println(System.currentTimeMillis() + ": changed owner of '"
-            + req.getSrc()  + "' to '" + req.getUsername() + ":"
-            + req.getGroupname() + "'");
+        ///System.out.println(System.currentTimeMillis() + ": changed owner of '"
+        //    + req.getSrc()  + "' to '" + req.getUsername() + ":"
+        //    + req.getGroupname() + "'");
 
         // response to request
         return ClientNamenodeProtocolProtos.SetPermissionResponseProto.newBuilder()
@@ -370,8 +379,8 @@ public class ClientNamenodeService {
         NSItem item = this.nameSystem.getFile(req.getSrc());
         item.setPerm(req.getPermission().getPerm());
 
-        System.out.println(System.currentTimeMillis() + ": set permission of '"
-            + req.getSrc() + "' to " + req.getPermission().getPerm());
+        //System.out.println(System.currentTimeMillis() + ": set permission of '"
+        //    + req.getSrc() + "' to " + req.getPermission().getPerm());
 
         // response to request
         return ClientNamenodeProtocolProtos.SetPermissionResponseProto.newBuilder()

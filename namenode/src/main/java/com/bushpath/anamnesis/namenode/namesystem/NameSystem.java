@@ -25,6 +25,31 @@ public class NameSystem {
         this.root = new NSDirectory("", Integer.MAX_VALUE, "", "", null);
     }
 
+    public NSItem create(String path, int perm, String owner, String group,
+            boolean createParent, long blockSize) throws Exception {
+        // retrieve parent directory
+        NSDirectory parentDirectory =
+            getParentDirectory(path, createParent, perm, owner, group);
+
+        this.lock.writeLock().lock();
+        try {
+            // check if file already exists
+            String[] elements = parseElements(path);
+            if (parentDirectory.hasChild(elements[elements.length - 1])) {
+                return getFile(path);
+            }
+ 
+            // create new file and add as child of parent directory
+            NSItem file = new NSFile(elements[elements.length - 1], owner,
+                    group, perm, blockSize, parentDirectory);
+            parentDirectory.addChild(file);
+
+            return file;
+        } finally {
+            this.lock.writeLock().unlock();
+        }
+    }
+
     public void complete(String path) throws Exception {
         NSItem file = getFile(path);
         if (file == null) {
@@ -44,38 +69,11 @@ public class NameSystem {
         }
     }
 
-    public NSItem create(String path, int perm, String owner, String group,
-            boolean createParent, long blockSize) throws Exception {
-        // retrieve parent directory
-        NSDirectory parentDirectory =
-            getParentDirectory(path, createParent, perm, owner, group);
-
-        this.lock.writeLock().lock();
-        try {
-            // check if file already exists
-            String[] elements = parseElements(path);
-            if (parentDirectory.hasChild(elements[elements.length - 1])) {
-                //throw new StatusRuntimeException(Status.ALREADY_EXISTS
-                //    .withDescription("'" + path + "' already exists"));
-                return getFile(path);
-            }
- 
-            // create new file and add as child of parent directory
-            NSItem file = new NSFile(elements[elements.length - 1], owner,
-                    group, perm, blockSize, parentDirectory);
-            parentDirectory.addChild(file);
-
-            return file;
-        } finally {
-            this.lock.writeLock().unlock();
-        }
-    }
-
     public List<Long> delete(String path, boolean recursive) throws Exception {
         NSItem file = getFile(path);
         if (file == null) {
-            //throw new Exception("file '" + path + "' does not exist");
             return new ArrayList<>();
+            //throw new Exception("file '" + path + "' does not exist");
         }
 
         this.lock.writeLock().lock();

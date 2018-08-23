@@ -10,7 +10,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.InterruptedException;
-import java.net.SocketException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -66,7 +65,6 @@ public class BlockInputStream extends InputStream {
 
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
-        //System.out.println("*: read() " + off + ":" + len);
         int bytesRead = 0;
         int bIndex = 0;
 
@@ -98,13 +96,15 @@ public class BlockInputStream extends InputStream {
         try {
             ChunkPacket packet = this.chunkPacketQueue.take();
 
-            // refill buffer
-            this.buffer = packet.getBuffer();
-            this.startIndex = 0;
-            this.endIndex = (int) packet.getBufferLength();
+            if (packet.getSequenceNumber() != -1) {
+                // refill buffer
+                this.buffer = packet.getBuffer();
+                this.startIndex = 0;
+                this.endIndex = (int) packet.getBufferLength();
 
-            // send ack
-            while (!this.pipelineAckQueue.offer(packet.getSequenceNumber())) {};
+                // send ack
+                while (!this.pipelineAckQueue.offer(packet.getSequenceNumber())) {};
+            }
 
             // check lastPacketInBlock
             this.lastPacketSeen = packet.getLastPacketInBlock();
@@ -170,14 +170,14 @@ public class BlockInputStream extends InputStream {
                             dataBuffer.length,
                             packetHeaderProto.getOffsetInBlock());
 
-                    //System.out.println("read " + packetHeaderProto.getSeqno()
-                    //    + ":" + lastPacketSeen);
-
                     while(!chunkPacketQueue.offer(chunkPacket)) {}
-                } catch(EOFException | SocketException e) {
+                } catch(EOFException e) {
+                    ChunkPacket chunkPacket = new ChunkPacket(true, -1, null, 0, 0);
+                    while(!chunkPacketQueue.offer(chunkPacket)) {}
                     break;
                 } catch(Exception e) {
                     System.err.println("ChunkReader failed: " + e.toString());
+                    e.printStackTrace();
                 } 
             }
         }
@@ -188,15 +188,13 @@ public class BlockInputStream extends InputStream {
         public void run() {
             // loop until last packet has been seen
             Long sequenceNumber;
-            while (!lastPacketSeen || !pipelineAckQueue.isEmpty()) {
+            while (!lastPacketSeen) {
                 try {
                     // send pipeline ack
                     sequenceNumber = pipelineAckQueue.take();
                     DataTransferProtocol.sendPipelineAck(out, sequenceNumber);
-                    //System.out.println("sent ack " + sequenceNumber);
                 } catch (Exception e) {
                     System.err.println("PipelineAckWriter failed: " + e.toString());
-                    return;
                 }
             }
         }

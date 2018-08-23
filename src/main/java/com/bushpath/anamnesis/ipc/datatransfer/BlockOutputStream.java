@@ -17,8 +17,6 @@ public class BlockOutputStream extends OutputStream {
     private DataInputStream in;
     private DataOutputStream out;
     private Checksum checksum;
-    private boolean lastPacketSent;
-    private boolean readAck;
 
     private byte[] buffer;
     private int index;
@@ -26,15 +24,12 @@ public class BlockOutputStream extends OutputStream {
     private BlockingQueue<ChunkPacket> chunkPacketQueue;
     private BlockingQueue<Long> pipelineAckQueue;
     private Thread chunkWriterThread;
-    private Thread pipelineAckThread;
 
     public BlockOutputStream(DataInputStream in, DataOutputStream out,
-            Checksum checksum, long offsetInBlock, boolean readAck) {
+            Checksum checksum, long offsetInBlock) {
         this.in = in;
         this.out = out;
         this.checksum = checksum;
-        this.lastPacketSent = false;
-        this.readAck= readAck;
 
         this.buffer = new byte[DataTransferProtocol.CHUNK_SIZE
             * DataTransferProtocol.CHUNKS_PER_PACKET];
@@ -44,9 +39,7 @@ public class BlockOutputStream extends OutputStream {
         this.chunkPacketQueue = new ArrayBlockingQueue<>(CHUNK_PACKET_BUFFER_SIZE);
         this.pipelineAckQueue = new ArrayBlockingQueue<>(CHUNK_PACKET_BUFFER_SIZE);
         this.chunkWriterThread = new ChunkWriter();
-        this.chunkWriterThread.start();
-        this.pipelineAckThread = new PipelineAckReader();
-        this.pipelineAckThread.start();
+        chunkWriterThread.start();
     }
 
     @Override
@@ -98,7 +91,6 @@ public class BlockOutputStream extends OutputStream {
         // wait until all chunks are written
         try {
             this.chunkWriterThread.join();
-            this.pipelineAckThread.join();
         } catch(InterruptedException e) {
             throw new IOException("failed to join pipeline ack thread:" + e.toString());
         }
@@ -111,10 +103,6 @@ public class BlockOutputStream extends OutputStream {
 
         while (!this.chunkPacketQueue.offer(chunkPacket)) {}
 
-        if (this.readAck)  {
-            while (!this.pipelineAckQueue.offer(sequenceNumber)){}
-        }
-
         // update instance variables
         this.sequenceNumber += 1;
         this.offsetInBlock += this.index;
@@ -126,7 +114,7 @@ public class BlockOutputStream extends OutputStream {
     private class ChunkWriter extends Thread {
         @Override
         public void run() {
-            ChunkPacket chunkPacket;
+            ChunkPacket chunkPacket = null;
             while (true) {
                 try {
                     chunkPacket = chunkPacketQueue.take();
@@ -164,39 +152,13 @@ public class BlockOutputStream extends OutputStream {
 
                     // if last packet in block break from loop
                     if (chunkPacket.getLastPacketInBlock()) {
-                        lastPacketSent = true;
                         break;
                     }
                 } catch(Exception e) {
                     System.err.println("ChunkWriter failed: " + e.toString());
+                    System.err.println(chunkPacket.getSequenceNumber() + ":" + chunkPacket.getLastPacketInBlock());
+                    e.printStackTrace();
                     break;
-                }
-            }
-        }
-    }
-
-    private class PipelineAckReader extends Thread {
-        @Override
-        public void run() {
-            if (!readAck) {
-                return;
-            }
-
-            while (!lastPacketSent || !pipelineAckQueue.isEmpty()) {
-                try {
-                    DataTransferProtos.PipelineAckProto pipelineAckProto =
-                        DataTransferProtocol.recvPipelineAck(in);
-
-                    long sequenceNumber = pipelineAckProto.getSeqno();
-                    while(!pipelineAckQueue.contains(sequenceNumber)) {
-                        Thread.sleep(50);
-                    }
-
-                    pipelineAckQueue.remove(sequenceNumber);
-                    //System.out.println("recv ack " + sequenceNumber);
-                } catch (Exception e) {
-                    System.err.println("PipelineAckWriter failed: " + e.toString());
-                    return;
                 }
             }
         }

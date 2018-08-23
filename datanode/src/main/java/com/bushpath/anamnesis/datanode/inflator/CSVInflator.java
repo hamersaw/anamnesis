@@ -67,7 +67,7 @@ public class CSVInflator extends Inflator {
                     }
 
                     if (j != 0) {
-                        byteBuffer.put((byte) '\t');
+                        byteBuffer.put((byte) ',');
                     }
 
                     String valueString = Double.toString(value);
