@@ -2,8 +2,6 @@
 APPLICATION="anamnesis-namenode"
 VERSION="0.1-SNAPSHOT"
 
-JAVA_OPTS="-Xmx2G"
-
 CLASSPATH=""
 BASEDIR=$(dirname $0)
 HOSTNAME=$(hostname)
@@ -13,6 +11,8 @@ else
     echo "unable to find $APPLICATION-$VERSION.jar."
     exit 1
 fi
+
+JAVA_OPTS="-Xmx2G"
 
 java -cp $CLASSPATH $JAVA_OPTS com.bushpath.anamnesis.namenode.Main $@ > $BASEDIR/$HOSTNAME.log 2>&1 &
 echo $! > $BASEDIR/$HOSTNAME.pid
