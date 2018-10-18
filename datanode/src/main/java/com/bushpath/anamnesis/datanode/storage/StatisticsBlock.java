@@ -61,6 +61,8 @@ public class StatisticsBlock extends Block {
             return;
         }
 
+        System.out.println("inflating block with "
+            + this.getLength() + " bytes");
         ByteBuffer byteBuffer = ByteBuffer.allocate((int) this.getLength());
         long startTime = System.currentTimeMillis();
         this.inflator.inflate(this.means,

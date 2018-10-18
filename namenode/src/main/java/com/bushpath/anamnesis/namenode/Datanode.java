@@ -97,10 +97,26 @@ public class Datanode {
     }
     
     public HdfsProtos.DatanodeInfoProto toDatanodeInfoProto() {
+        long capacity = 0;
+        long remaining = 0;
+        for (Storage storage : this.storages.values()) {
+            capacity += storage.capacity;
+            remaining += storage.remaining;
+        }
+
         return HdfsProtos.DatanodeInfoProto.newBuilder()
             .setId(this.toDatanodeIdProto())
+            .setCapacity(capacity)
+            .setDfsUsed(capacity - remaining)
+            .setRemaining(remaining)
+            .setBlockPoolUsed(0) // TODO - populate
             .setLastUpdate(this.lastUpdate)
-            .setLocation("/") // TODO - set to correct location
+            .setXceiverCount(1)
+            .setLocation("/default-rack")
+            .setNonDfsUsed(0)
+            .setAdminState(HdfsProtos.DatanodeInfoProto.AdminState.NORMAL)
+            .setCacheCapacity(0)
+            .setCacheUsed(0)
             .build();
     }
 
