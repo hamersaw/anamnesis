@@ -76,8 +76,8 @@ public class DataTransferService extends Thread {
                         HdfsProtos.ExtendedBlockProto extendedBlockProto = 
                             writeBlockProto.getHeader().getBaseHeader().getBlock();
 
-                        //System.out.println(System.currentTimeMillis() + ": writing block "
-                        //    + extendedBlockProto.getBlockId());
+                        System.out.println(System.currentTimeMillis() + ": writing block "
+                            + extendedBlockProto.getBlockId());
 
                         DataTransferProtos.ChecksumProto writeChecksumProto =
                             writeBlockProto.getRequestedChecksum();
@@ -113,9 +113,9 @@ public class DataTransferService extends Thread {
 
                         blockIn.close();
 
-                        //System.out.println(System.currentTimeMillis() + ": wrote "
-                        //    + totalBytesRead + " bytes to block "
-                        //    + extendedBlockProto.getBlockId());
+                        System.out.println(System.currentTimeMillis() + ": wrote "
+                            + totalBytesRead + " bytes to block "
+                            + extendedBlockProto.getBlockId());
 
                         // TODO - fix this
                         /*switch (writeBlockProto.getStage()) {
@@ -132,9 +132,9 @@ public class DataTransferService extends Thread {
                             writeBlockStatsProto = DatanodeSketchProtocolProtos
                                 .WriteBlockStatsProto.parseDelimitedFrom(in);
 
-                        //System.out.println(System.currentTimeMillis()
-                        //    + ": writing stats block "
-                        //    + writeBlockStatsProto.getBlockId());
+                        System.out.println(System.currentTimeMillis()
+                            + ": writing stats block "
+                            + writeBlockStatsProto.getBlockId());
 
                         // initialize inflator
                         Inflator inflator = null;
@@ -185,9 +185,9 @@ public class DataTransferService extends Thread {
                                 means, standardDeviations, recordCounts, inflator
                             ));
 
-                        //System.out.println(System.currentTimeMillis() + ": wrote "
-                        //    + index + " micro-sketches to block "
-                        //    + writeBlockStatsProto.getBlockId());
+                        System.out.println(System.currentTimeMillis() + ": wrote "
+                            + index + " micro-sketches to block "
+                            + writeBlockStatsProto.getBlockId());
 
                         // send op reponse
                         DataTransferProtocol.sendBlockOpResponse(out,
@@ -202,9 +202,9 @@ public class DataTransferService extends Thread {
                         HdfsProtos.ExtendedBlockProto readExtendedBlockProto =
                             readBlockProto.getHeader().getBaseHeader().getBlock();
 
-                        //System.out.println(System.currentTimeMillis() + ": reading block "
-                        //    + readExtendedBlockProto.getBlockId() + " : " + readBlockProto.getOffset()
-                        //    + "-" + readBlockProto.getLen());
+                        System.out.println(System.currentTimeMillis() + ": reading block "
+                            + readExtendedBlockProto.getBlockId() + " : " + readBlockProto.getOffset()
+                            + "-" + readBlockProto.getLen());
 
                         // send op response
                         DataTransferProtocol.sendBlockOpResponse(out,
@@ -225,9 +225,9 @@ public class DataTransferService extends Thread {
                             (int) readBlockProto.getLen());
                         blockOut.close();
 
-                        //System.out.println(System.currentTimeMillis() + ": read "
-                        //    + readBlock.length + " bytes from block " +
-                        //    readExtendedBlockProto.getBlockId());
+                        System.out.println(System.currentTimeMillis() + ": read "
+                            + readBlock.length + " bytes from block " +
+                            readExtendedBlockProto.getBlockId());
 
                         // TODO - read client read status proto
                         DataTransferProtos.ClientReadStatusProto readProto =
