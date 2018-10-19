@@ -165,7 +165,9 @@ public class DatanodeService {
                 // add block location
                 HdfsProtos.DatanodeStorageProto datanodeStorage =
                     storageReport.getStorage();
-                block.addLoc(datanode, true, datanodeStorage.getStorageType(),
+                //block.addLoc(datanode, true, datanodeStorage.getStorageType(),
+                //    datanodeStorage.getStorageUuid());
+                block.addLoc(datanode, false, datanodeStorage.getStorageType(),
                     datanodeStorage.getStorageUuid());
             }
         }

@@ -106,10 +106,14 @@ public class Datanode {
 
         return HdfsProtos.DatanodeInfoProto.newBuilder()
             .setId(this.toDatanodeIdProto())
-            .setCapacity(capacity)
-            .setDfsUsed(capacity - remaining)
-            .setRemaining(remaining)
-            .setBlockPoolUsed(0) // TODO - populate
+            //.setCapacity(capacity)
+            //.setDfsUsed(capacity - remaining) // TODO - fix
+            //.setRemaining(remaining) // TODO - fix
+            //.setBlockPoolUsed(capacity - remaining) // TODO - fix
+            .setCapacity(5953756348416l)
+            .setDfsUsed(1250664165815l) // TODO - fix
+            .setRemaining(3433347485696l) // TODO - fix
+            .setBlockPoolUsed(1250664165815l) // TODO - fix
             .setLastUpdate(this.lastUpdate)
             .setXceiverCount(1)
             .setLocation("/default-rack")

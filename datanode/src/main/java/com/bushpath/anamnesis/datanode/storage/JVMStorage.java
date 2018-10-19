@@ -16,7 +16,8 @@ public class JVMStorage extends Storage {
     private Map<Long, Block> blocks;
 
     public JVMStorage(String storageUuid, boolean justInTimeInflation) {
-        super(storageUuid, HdfsProtos.StorageTypeProto.RAM_DISK, justInTimeInflation);
+        super(storageUuid, HdfsProtos.StorageTypeProto.DISK, justInTimeInflation);
+        //super(storageUuid, HdfsProtos.StorageTypeProto.RAM_DISK, justInTimeInflation);
 
         this.blocks = new HashMap<>();
     }
