@@ -31,17 +31,12 @@ protobuf{
 }
 
 // define environment variables
-def jniClass = "com.bushpath.anamnesis.checksum.NativeChecksumCRC32"
 def nativeIncludeDir = "build/generated"
 def javaHome = "/home/hamersaw/.sdkman/candidates/java/current"
       
 // generate jni headers        
 task generateJniHeaders(type: Exec) {
-    def classpath = "build/classes/java/main/"
-    commandLine "javah", "-d", "$nativeIncludeDir", "-classpath", classpath, 
-        "$jniClass"       
-
-    dependsOn classes
+    commandLine "javac", "-h", "$nativeIncludeDir", "-d", "$nativeIncludeDir", "src/main/java/com/bushpath/anamnesis/checksum/Checksum.java", "src/main/java/com/bushpath/anamnesis/checksum/NativeChecksumCRC32.java"
 }
 
 // compile cpp program
