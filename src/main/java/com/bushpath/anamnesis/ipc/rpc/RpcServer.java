@@ -7,7 +7,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 
 public class RpcServer extends Thread {
@@ -16,9 +15,10 @@ public class RpcServer extends Thread {
     private RpcPacketHandler rpcPacketHandler;
     private Map<Integer, PacketHandler> packetHandlers;
 
-    public RpcServer(ServerSocket serverSocket) {
+    public RpcServer(ServerSocket serverSocket,
+            ExecutorService executorService) {
         this.serverSocket = serverSocket;
-        this.executorService = Executors.newFixedThreadPool(24);
+        this.executorService = executorService;
         this.rpcPacketHandler = new RpcPacketHandler();
         this.packetHandlers = new HashMap<>();
     }

@@ -17,6 +17,8 @@ import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 
 public class Main {
     public static final String softwareVersion = "2.8.0";
@@ -41,8 +43,9 @@ public class Main {
             }
 
             // initialize rpc server
+            ExecutorService executorService = Executors.newFixedThreadPool(4);
             ServerSocket serverSocket = new ServerSocket(config.ipcPort);
-            RpcServer rpcServer = new RpcServer(serverSocket);
+            RpcServer rpcServer = new RpcServer(serverSocket, executorService);
 
             rpcServer.addRpcProtocol(
                 "org.apache.hadoop.hdfs.protocol.ClientDatanodeProtocol",

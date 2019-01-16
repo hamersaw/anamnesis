@@ -15,6 +15,8 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 
 public class Main {
     public static void main(String[] args) {
@@ -33,7 +35,8 @@ public class Main {
 
             // initialize rpc server
             ServerSocket serverSocket = new ServerSocket(config.port);
-            RpcServer rpcServer = new RpcServer(serverSocket);
+            ExecutorService executorService = Executors.newFixedThreadPool(4);
+            RpcServer rpcServer = new RpcServer(serverSocket, executorService);
 
             rpcServer.addRpcProtocol(
                 "org.apache.hadoop.hdfs.protocol.ClientProtocol",
