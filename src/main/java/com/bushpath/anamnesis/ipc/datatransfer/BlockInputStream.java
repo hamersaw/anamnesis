@@ -10,8 +10,9 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.InterruptedException;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 public class BlockInputStream extends InputStream {
     private final static int CHUNK_PACKET_BUFFER_SIZE = 3;
@@ -107,7 +108,8 @@ public class BlockInputStream extends InputStream {
             }
 
             // check lastPacketInBlock
-            this.lastPacketSeen = packet.getLastPacketInBlock();
+            this.lastPacketSeen = this.lastPacketSeen
+                || packet.getLastPacketInBlock();
 
             return this.endIndex;
         } catch(InterruptedException e) {
@@ -118,6 +120,7 @@ public class BlockInputStream extends InputStream {
     @Override
     public void close() throws IOException {
         try {
+            this.pipelineAckThread.interrupt();
             this.pipelineAckThread.join();
         } catch(InterruptedException e) {
             throw new IOException("failed to join pipeline ack thread:" + e.toString());
@@ -178,6 +181,7 @@ public class BlockInputStream extends InputStream {
                 } catch(Exception e) {
                     System.err.println("ChunkReader failed: " + e.toString());
                     e.printStackTrace();
+                    break;
                 } 
             }
         }
@@ -188,14 +192,19 @@ public class BlockInputStream extends InputStream {
         public void run() {
             // loop until last packet has been seen
             Long sequenceNumber;
-            while (!lastPacketSeen) {
-                try {
+            try {
+                while (!lastPacketSeen) {
                     // send pipeline ack
-                    sequenceNumber = pipelineAckQueue.take();
+                    sequenceNumber = pipelineAckQueue.poll(50,
+                        TimeUnit.MILLISECONDS);
+                    if (sequenceNumber == null) {
+                        continue;
+                    }
+
                     DataTransferProtocol.sendPipelineAck(out, sequenceNumber);
-                } catch (Exception e) {
-                    System.err.println("PipelineAckWriter failed: " + e.toString());
                 }
+            } catch (Exception e) {
+                System.err.println("PipelineAckWriter failed: " + e.toString());
             }
         }
     }
