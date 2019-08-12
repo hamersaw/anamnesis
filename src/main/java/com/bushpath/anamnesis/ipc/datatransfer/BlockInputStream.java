@@ -10,6 +10,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.InterruptedException;
+import java.net.SocketException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -174,7 +175,7 @@ public class BlockInputStream extends InputStream {
                             packetHeaderProto.getOffsetInBlock());
 
                     while(!chunkPacketQueue.offer(chunkPacket)) {}
-                } catch(EOFException e) {
+                } catch(EOFException | SocketException e) {
                     ChunkPacket chunkPacket = new ChunkPacket(true, -1, null, 0, 0);
                     while(!chunkPacketQueue.offer(chunkPacket)) {}
                     break;
@@ -203,6 +204,7 @@ public class BlockInputStream extends InputStream {
 
                     DataTransferProtocol.sendPipelineAck(out, sequenceNumber);
                 }
+            } catch (InterruptedException e) {
             } catch (Exception e) {
                 System.err.println("PipelineAckWriter failed: " + e.toString());
             }
